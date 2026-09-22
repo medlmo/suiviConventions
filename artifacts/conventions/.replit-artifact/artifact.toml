@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Suivi des conventions — Région Souss-Massa"
+description = "Application de suivi des conventions de partenariat de la Région Souss-Massa. Elle remplace un fichier Excel devenu inutilisable et garantit qu'aucune date de comité de suivi n'est manquée : statut d'alerte recalculé en permanence par rapport à la date du jour, tableau de bord des alertes du mois, liste filtrable de 230 conventions (titres majoritairement en arabe, support RTL), fiche détail éditable et export CSV/Excel. Destinée aux agents et responsables de projet de la Région."
+version = "1.0.0"
+id = "artifacts/conventions"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23192
+
+[services.development]
+run = "pnpm --filter @workspace/conventions run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/conventions", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/conventions/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23192"
+BASE_PATH = "/"

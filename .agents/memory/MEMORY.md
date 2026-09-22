@@ -1,0 +1,3 @@
+- [Alerte recalculée en SQL](alerte-sql-conventions.md) — le statut n'est jamais stocké ; contraintes Postgres rencontrées (sql.raw, casts ::int) à respecter avant de toucher au calcul.
+- [Recherche en arabe](recherche-arabe-postgres.md) — normaliser colonne ET terme, sinon un tiers des résultats manque ; liste des caractères à traiter.
+- [Contrat OpenAPI et coercition Zod](contrat-zod-coercition.md) — pourquoi les dates sont validées avant Zod et pourquoi les réponses ne sont jamais réécrites par `.parse()`.
