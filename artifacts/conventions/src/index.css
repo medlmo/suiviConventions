@@ -1,0 +1,169 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary-border: var(--sidebar-primary-border);
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent-border: var(--sidebar-accent-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: 'Outfit', 'IBM Plex Sans Arabic', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  /* Soft warm sand background inspired by the region */
+  --background: 40 20% 98%;
+  /* Deep dark blue text for high contrast */
+  --foreground: 220 40% 15%;
+  --border: 40 10% 85%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 220 40% 15%;
+  --card-border: 40 10% 92%;
+
+  /* Atlantic Blue for Sidebar (institutional, serious) */
+  --sidebar: 215 60% 18%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-border: 215 60% 14%;
+  /* Souss Ochre for accents */
+  --sidebar-primary: 30 70% 45%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 215 50% 25%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 30 70% 45%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 40% 15%;
+  --popover-border: 40 10% 92%;
+
+  /* Atlantic Blue */
+  --primary: 215 60% 25%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Souss Ochre */
+  --secondary: 30 70% 45%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 40 10% 92%;
+  --muted-foreground: 220 10% 40%;
+
+  --accent: 40 15% 94%;
+  --accent-foreground: 215 60% 25%;
+
+  --destructive: 0 70% 45%;
+  --destructive-foreground: 0 0% 100%;
+
+  --input: 40 10% 85%;
+  --ring: 215 60% 25%;
+  
+  --chart-1: 30 70% 45%;
+  --chart-2: 215 60% 25%;
+  --chart-3: 140 60% 40%;
+  --chart-4: 45 90% 45%;
+  --chart-5: 0 70% 45%;
+
+  --radius: 0.5rem; /* 8px */
+}
+
+/* Light mode only, forced as default */
+.dark {
+  --background: 40 20% 98%;
+  --foreground: 220 40% 15%;
+  --border: 40 10% 85%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 40% 15%;
+  --card-border: 40 10% 92%;
+  --sidebar: 215 60% 18%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-border: 215 60% 14%;
+  --sidebar-primary: 30 70% 45%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 215 50% 25%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 30 70% 45%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 40% 15%;
+  --popover-border: 40 10% 92%;
+  --primary: 215 60% 25%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 30 70% 45%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 40 10% 92%;
+  --muted-foreground: 220 10% 40%;
+  --accent: 40 15% 94%;
+  --accent-foreground: 215 60% 25%;
+  --destructive: 0 70% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 40 10% 85%;
+  --ring: 215 60% 25%;
+  --chart-1: 30 70% 45%;
+  --chart-2: 215 60% 25%;
+  --chart-3: 140 60% 40%;
+  --chart-4: 45 90% 45%;
+  --chart-5: 0 70% 45%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+  
+  /* Apply dir="auto" styles if not explicitly set for generic inputs/textareas to handle Arabic */
+  [dir="auto"] {
+    text-align: start;
+  }
+}

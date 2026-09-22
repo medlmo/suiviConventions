@@ -1,0 +1,89 @@
+# Mission
+
+Transforme le fichier Excel joint (« BDD comités de suivi », Région Souss-Massa) en 
+une application web complète de suivi des conventions de partenariat de la Région. 
+Objectif métier n°1 : ne plus jamais rater la date de tenue du comité de suivi 
+d'une convention.
+
+Le fichier actuel contient 3 onglets :
+- « Suivi simple » : la base de données (231 conventions), à importer
+- « À faire ce mois » : un tableau de bord dynamique qui ne fonctionne plus 
+  (erreurs #REF!) — ne pas importer son contenu, seulement reproduire son intention 
+  fonctionnelle (voir section « Écrans »)
+
+# Modèle de données (respecter strictement les types)
+
+Crée une table `conventions` avec les champs suivants. RÈGLE ABSOLUE : tout champ 
+de date doit être typé DATE (jamais texte/chaîne), tout champ de montant doit être 
+typé NUMERIC/DECIMAL (jamais texte). Devise : MAD (dirham marocain)
+| Champ (nom proposé)          | Libellé Excel                       | Type          | Notes |
+|---|---|---|---|
+| nom_convention                | Convention visée                    | TEXT, requis  | souvent en arabe |
+| rattachement                  | Rattachement                        | TEXT, (enum), nullable | valeurs : direction/division/service |
+| responsable_projet            | Responsable du projet               | TEXT, nullable |
+| session                       | Session                             | TEXT, nullable | année ou « SO » |
+| date_visa                     | Date de visa                        | DATE, nullable |
+| presidence_comite             | Présidence du comité                | TEXT, nullable |
+| membres_comite                | Membres du comité                   | TEXT, nullable |
+| frequence_reunions            | Fréquence des réunions du comité    | TEXT, nullable | texte libre, souvent en arabe |
+| enveloppe_budgetaire          | Enveloppe Budgétaire                | NUMERIC, nullable |
+| contribution_region           | Contribution de la Région           | NUMERIC, nullable |
+| maitrise_ouvrage               | Maîtrise d'ouvrage                  | TEXT, nullable |
+| maitrise_ouvrage_deleguee      | Maîtrise d'ouvrage déléguée         | TEXT, nullable |
+| prochain_comite                | prochain comité                     | DATE, nullable | date confirmée si déjà planifiée |
+| dernier_comite                 | Dernier comité                      | DATE, nullable | champ clé, mis à jour régulièrement |
+| pv                              | PV                                   | TEXT, nullable | référence/lien du procès-verbal |
+| decision                        | Décision                             | TEXT (enum), nullable | valeurs : A renouveler / A reconduire tacitement / A maintenir / A ne pas renouveler / A résilier |
+| document_convention             |  Convention                          | TEXT, nullable | référence/lien vers le document signé |
+| fiche_technique                 | Fiche technique                      | TEXT, nullable |
+| statut_convention               | Statut de la convention              | TEXT (enum), nullable | valeurs : En cours / Arrivée à terme / Résiliée |
+| prochaine_echeance              | Prochaine échéance                   | DATE, nullable | champ clé, pilote le calcul d'alerte |
+| nature_fonds                    | Nature des fonds                     | TEXT (enum), nullable | valeurs : propres / FEC |
+
+
+Le statut d'alerte (voir logique métier ci-dessous) NE DOIT PAS être stocké comme 
+une valeur figée en base — il doit être recalculé à chaque affichage (ou via un job 
+quotidien) par rapport à la date du jour, pour ne pas reproduire le bug de valeurs 
+gelées du fichier Excel d'origine.
+
+# Logique métier : calcul de l'alerte (à reproduire exactement)
+
+Reprend la logique de l'onglet « Référentiel » :
+
+- Si `prochaine_echeance` est une date valide :
+  - date dépassée → 🔴 En retard (action : organiser/régulariser immédiatement)
+  - dans les 30 jours → 🟠 À déclencher (action : préparer convocation et pièces)
+  - entre 31 et 60 jours → 🟡 À préparer (action : anticiper avec le responsable)
+  - au-delà de 60 jours → 🟢 À jour (aucune action immédiate)
+- Si `prochaine_echeance` est vide :
+  - si `frequence_reunions` évoque une notion de déclenchement conditionnel 
+    (« si besoin », « كلما دعت الضرورة », etc.) → ⚪ À surveiller (vérifier le 
+    déclencheur/la clause)
+  - sinon → ⚪ À qualifier (donnée manquante, à compléter)
+
+# Écrans attendus
+
+1. **Tableau de bord « Alertes du mois »** (remplace « À faire ce mois ») : liste 
+   vivante et toujours à jour des conventions en retard ou à échéance proche, triée 
+   par urgence, avec badges couleur identiques à la légende, et compteurs par niveau 
+   d'alerte.
+2. **Liste complète des conventions** : recherche texte (avec bon support de 
+   l'arabe/RTL, car beaucoup de noms de conventions sont en arabe), filtres 
+   (statut, rattachement, responsable, nature des fonds...), tri, pagination.
+3. **Fiche détail / édition d'une convention** : tous les champs regroupés par 
+   sections logiques (Identification, Comité de suivi, Budget, Avancement, 
+   Documents, Commentaires). La mise à jour de « Dernier comité » doit déclencher 
+   un recalcul immédiat du statut affiché.
+4. **Création d'une nouvelle convention**.
+5. **Export CSV/Excel** des données filtrées, pour garder une continuité avec 
+   l'usage actuel.
+
+# Exigences techniques
+
+- Choisis une stack simple et robuste (par ex. Next.js/React + API + base SQL 
+  PostgreSQL ou SQLite), avec migrations et un script de seed qui importe les 
+  vraies données du fichier joint en appliquant les corrections décrites ci-dessus.
+- Interface entièrement en français, responsive (usage terrain sur mobile/tablette).
+- Support RTL correct pour les champs en arabe.
+- Commence par proposer le schéma de base de données et la liste des écrans, 
+  valide-les avec moi, puis développe l'application complète.

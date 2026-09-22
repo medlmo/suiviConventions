@@ -3,13 +3,18 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: >-
+    Suivi des conventions de partenariat de la Région Souss-Massa.
+    Le statut d'alerte n'est jamais stocké : il est recalculé à chaque requête
+    par rapport à la date du jour.
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: conventions
+    description: Gestion des conventions et de leurs comités de suivi
 paths:
   /healthz:
     get:
@@ -24,6 +29,232 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /conventions:
+    get:
+      operationId: listConventions
+      tags: [conventions]
+      summary: Liste paginée et filtrée des conventions
+      parameters:
+        - name: q
+          in: query
+          description: Recherche texte (nom de convention, responsable, maîtrise d'ouvrage). Supporte l'arabe.
+          schema: { type: string }
+        - name: alerte
+          in: query
+          description: Filtre sur le niveau d'alerte recalculé
+          schema: { $ref: "#/components/schemas/NiveauAlerte" }
+        - name: statutConvention
+          in: query
+          schema: { type: string }
+        - name: rattachement
+          in: query
+          schema: { type: string }
+        - name: responsableProjet
+          in: query
+          schema: { type: string }
+        - name: natureFonds
+          in: query
+          schema: { type: string }
+        - name: decision
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 25 }
+        - name: tri
+          in: query
+          description: Champ de tri
+          schema:
+            type: string
+            enum:
+              - urgence
+              - nomConvention
+              - prochaineEcheance
+              - dernierComite
+              - responsableProjet
+              - statutConvention
+            default: urgence
+        - name: ordre
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        "200":
+          description: Page de résultats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConventionPage"
+    post:
+      operationId: createConvention
+      tags: [conventions]
+      summary: Créer une convention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConventionInput"
+      responses:
+        "201":
+          description: Convention créée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Convention"
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+
+  /conventions/resume:
+    get:
+      operationId: getResumeAlertes
+      tags: [conventions]
+      summary: Compteurs par niveau d'alerte et indicateurs de pilotage
+      responses:
+        "200":
+          description: Résumé recalculé à l'instant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumeAlertes"
+
+  /conventions/alertes:
+    get:
+      operationId: listAlertes
+      tags: [conventions]
+      summary: Conventions en retard ou à échéance proche, triées par urgence
+      parameters:
+        - name: horizonJours
+          in: query
+          description: Inclure les échéances jusqu'à N jours (les retards sont toujours inclus)
+          schema: { type: integer, minimum: 0, maximum: 365, default: 60 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Liste triée par urgence
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Convention"
+
+  /conventions/agenda:
+    get:
+      operationId: getAgenda
+      tags: [conventions]
+      summary: Échéances à venir regroupées par mois
+      parameters:
+        - name: mois
+          in: query
+          description: Nombre de mois à couvrir
+          schema: { type: integer, minimum: 1, maximum: 24, default: 6 }
+      responses:
+        "200":
+          description: Agenda groupé par mois
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MoisAgenda"
+
+  /conventions/options-filtres:
+    get:
+      operationId: getOptionsFiltres
+      tags: [conventions]
+      summary: Valeurs distinctes disponibles pour alimenter les filtres
+      responses:
+        "200":
+          description: Options de filtrage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptionsFiltres"
+
+  /conventions/{id}:
+    get:
+      operationId: getConvention
+      tags: [conventions]
+      summary: Détail d'une convention
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Convention
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Convention"
+        "404":
+          description: Introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+    patch:
+      operationId: updateConvention
+      tags: [conventions]
+      summary: Mettre à jour une convention
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConventionUpdate"
+      responses:
+        "200":
+          description: Convention mise à jour (statut d'alerte recalculé)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Convention"
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+        "404":
+          description: Introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+    delete:
+      operationId: deleteConvention
+      tags: [conventions]
+      summary: Supprimer une convention
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Supprimée
+        "404":
+          description: Introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +265,246 @@ components:
       required:
         - status
 
+    Erreur:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+
+    NiveauAlerte:
+      type: string
+      description: |
+        Niveau d'alerte recalculé par rapport à la date du jour.
+        EN_RETARD : échéance dépassée.
+        A_DECLENCHER : échéance dans 0 à 30 jours.
+        A_PREPARER : échéance dans 31 à 60 jours.
+        A_JOUR : échéance au-delà de 60 jours.
+        A_SURVEILLER : pas d'échéance, fréquence conditionnelle.
+        A_QUALIFIER : pas d'échéance, donnée manquante.
+      enum:
+        - EN_RETARD
+        - A_DECLENCHER
+        - A_PREPARER
+        - A_JOUR
+        - A_SURVEILLER
+        - A_QUALIFIER
+
+    Alerte:
+      type: object
+      required: [niveau, libelle, action, couleur]
+      properties:
+        niveau: { $ref: "#/components/schemas/NiveauAlerte" }
+        libelle:
+          type: string
+          description: Libellé français affichable, ex. "En retard"
+        action:
+          type: string
+          description: Action type associée au niveau
+        couleur:
+          type: string
+          description: Clé de couleur de la légende
+          enum: [rouge, orange, jaune, vert, gris]
+        joursRestants:
+          type: ["integer", "null"]
+          description: Jours avant l'échéance (négatif si dépassée), null si pas d'échéance
+
+    Convention:
+      type: object
+      required: [id, nomConvention, alerte]
+      properties:
+        id: { type: integer }
+        nomConvention: { type: string }
+        rattachement: { type: ["string", "null"] }
+        responsableProjet: { type: ["string", "null"] }
+        session: { type: ["string", "null"] }
+        dateVisa:
+          type: ["string", "null"]
+          format: date
+        presidenceComite: { type: ["string", "null"] }
+        membresComite: { type: ["string", "null"] }
+        frequenceReunions: { type: ["string", "null"] }
+        enveloppeBudgetaire:
+          type: ["number", "null"]
+          description: Montant en MAD
+        contributionRegion:
+          type: ["number", "null"]
+          description: Montant en MAD
+        maitriseOuvrage: { type: ["string", "null"] }
+        maitriseOuvrageDeleguee: { type: ["string", "null"] }
+        prochainComite:
+          type: ["string", "null"]
+          format: date
+        dernierComite:
+          type: ["string", "null"]
+          format: date
+        dernierComiteNote:
+          type: ["string", "null"]
+          description: Mention non convertible en date reprise du fichier source
+        pv: { type: ["string", "null"] }
+        decision: { type: ["string", "null"] }
+        documentConvention: { type: ["string", "null"] }
+        ficheTechnique: { type: ["string", "null"] }
+        statutConvention: { type: ["string", "null"] }
+        prochaineEcheance:
+          type: ["string", "null"]
+          format: date
+        prochaineEcheanceNote:
+          type: ["string", "null"]
+          description: Mention non convertible en date reprise du fichier source
+        natureFonds: { type: ["string", "null"] }
+        commentaires: { type: ["string", "null"] }
+        sourceImport: { type: ["string", "null"] }
+        alerte: { $ref: "#/components/schemas/Alerte" }
+        creeLe: { type: ["string", "null"], format: date-time }
+        modifieLe: { type: ["string", "null"], format: date-time }
+
+    ConventionInput:
+      type: object
+      required: [nomConvention]
+      properties:
+        nomConvention: { type: string, minLength: 1 }
+        rattachement: { type: ["string", "null"] }
+        responsableProjet: { type: ["string", "null"] }
+        session: { type: ["string", "null"] }
+        dateVisa: { type: ["string", "null"], format: date }
+        presidenceComite: { type: ["string", "null"] }
+        membresComite: { type: ["string", "null"] }
+        frequenceReunions: { type: ["string", "null"] }
+        enveloppeBudgetaire: { type: ["number", "null"] }
+        contributionRegion: { type: ["number", "null"] }
+        maitriseOuvrage: { type: ["string", "null"] }
+        maitriseOuvrageDeleguee: { type: ["string", "null"] }
+        prochainComite: { type: ["string", "null"], format: date }
+        dernierComite: { type: ["string", "null"], format: date }
+        dernierComiteNote: { type: ["string", "null"] }
+        pv: { type: ["string", "null"] }
+        decision: { type: ["string", "null"] }
+        documentConvention: { type: ["string", "null"] }
+        ficheTechnique: { type: ["string", "null"] }
+        statutConvention: { type: ["string", "null"] }
+        prochaineEcheance: { type: ["string", "null"], format: date }
+        prochaineEcheanceNote: { type: ["string", "null"] }
+        natureFonds: { type: ["string", "null"] }
+        commentaires: { type: ["string", "null"] }
+
+    ConventionUpdate:
+      type: object
+      properties:
+        nomConvention: { type: string, minLength: 1 }
+        rattachement: { type: ["string", "null"] }
+        responsableProjet: { type: ["string", "null"] }
+        session: { type: ["string", "null"] }
+        dateVisa: { type: ["string", "null"], format: date }
+        presidenceComite: { type: ["string", "null"] }
+        membresComite: { type: ["string", "null"] }
+        frequenceReunions: { type: ["string", "null"] }
+        enveloppeBudgetaire: { type: ["number", "null"] }
+        contributionRegion: { type: ["number", "null"] }
+        maitriseOuvrage: { type: ["string", "null"] }
+        maitriseOuvrageDeleguee: { type: ["string", "null"] }
+        prochainComite: { type: ["string", "null"], format: date }
+        dernierComite: { type: ["string", "null"], format: date }
+        dernierComiteNote: { type: ["string", "null"] }
+        pv: { type: ["string", "null"] }
+        decision: { type: ["string", "null"] }
+        documentConvention: { type: ["string", "null"] }
+        ficheTechnique: { type: ["string", "null"] }
+        statutConvention: { type: ["string", "null"] }
+        prochaineEcheance: { type: ["string", "null"], format: date }
+        prochaineEcheanceNote: { type: ["string", "null"] }
+        natureFonds: { type: ["string", "null"] }
+        commentaires: { type: ["string", "null"] }
+
+    ConventionPage:
+      type: object
+      required: [items, total, page, pageSize, totalPages]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Convention" }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+        totalPages: { type: integer }
+
+    CompteurAlerte:
+      type: object
+      required: [niveau, libelle, couleur, nombre]
+      properties:
+        niveau: { $ref: "#/components/schemas/NiveauAlerte" }
+        libelle: { type: string }
+        couleur:
+          type: string
+          enum: [rouge, orange, jaune, vert, gris]
+        nombre: { type: integer }
+
+    ResumeAlertes:
+      type: object
+      required:
+        - total
+        - compteurs
+        - aTraiter
+        - dateCalcul
+        - sansEcheance
+      properties:
+        total:
+          type: integer
+          description: Nombre total de conventions
+        compteurs:
+          type: array
+          description: Un compteur par niveau d'alerte, dans l'ordre d'urgence
+          items: { $ref: "#/components/schemas/CompteurAlerte" }
+        aTraiter:
+          type: integer
+          description: Conventions en retard ou à échéance dans 60 jours
+        sansEcheance:
+          type: integer
+          description: Conventions sans prochaine échéance renseignée
+        prochaineEcheanceDate:
+          type: ["string", "null"]
+          format: date
+          description: Date de la prochaine échéance à venir, tous dossiers confondus
+        dateCalcul:
+          type: string
+          format: date
+          description: Date du jour utilisée pour le calcul
+
+    MoisAgenda:
+      type: object
+      required: [mois, libelle, nombre, conventions]
+      properties:
+        mois:
+          type: string
+          description: Mois au format AAAA-MM
+        libelle:
+          type: string
+          description: Libellé français du mois, ex. "octobre 2026"
+        nombre: { type: integer }
+        conventions:
+          type: array
+          items: { $ref: "#/components/schemas/Convention" }
+
+    OptionsFiltres:
+      type: object
+      required:
+        - rattachements
+        - responsables
+        - statuts
+        - naturesFonds
+        - decisions
+      properties:
+        rattachements:
+          type: array
+          items: { type: string }
+        responsables:
+          type: array
+          items: { type: string }
+        statuts:
+          type: array
+          items: { type: string }
+        naturesFonds:
+          type: array
+          items: { type: string }
+        decisions:
+          type: array
+          items: { type: string }
