@@ -1,13 +1,30 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, FileText, PlusCircle, Settings, LogOut, Bell, Menu } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  PlusCircle,
+  Settings,
+  LogOut,
+  Bell,
+  Menu,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Tableau de bord", href: "/", icon: LayoutDashboard },
   { name: "Toutes les conventions", href: "/conventions", icon: FileText },
-  { name: "Nouvelle convention", href: "/conventions/nouvelle", icon: PlusCircle },
+  {
+    name: "Nouvelle convention",
+    href: "/conventions/nouvelle",
+    icon: PlusCircle,
+  },
 ];
 
 function estNavigationActive(location: string, href: string): boolean {
@@ -17,7 +34,9 @@ function estNavigationActive(location: string, href: string): boolean {
   // « Nouvelle convention » est une route distincte de la liste, même si son
   // chemin commence par « /conventions ». Les autres sous-pages, notamment
   // les fiches de détail, restent rattachées à la liste.
-  return location.startsWith(`${href}/`) && location !== "/conventions/nouvelle";
+  return (
+    location.startsWith(`${href}/`) && location !== "/conventions/nouvelle"
+  );
 }
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -36,15 +55,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             />
           </div>
           <h1 className="text-sidebar-foreground font-bold tracking-tight text-lg">
-            Souss Massa
+            Région Souss Massa
           </h1>
         </div>
-        
+
         <div className="px-6 py-4">
           <div className="text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold mb-4">
             Suivi des conventions
           </div>
-          
+
           <nav className="space-y-1">
             {navigation.map((item) => {
               const isActive = estNavigationActive(location, item.href);
@@ -56,17 +75,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
                     isActive
                       ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                   )}
                 >
-                  <item.icon className={cn("w-5 h-5", isActive ? "text-sidebar-primary" : "opacity-70")} />
+                  <item.icon
+                    className={cn(
+                      "w-5 h-5",
+                      isActive ? "text-sidebar-primary" : "opacity-70",
+                    )}
+                  />
                   {item.name}
                 </Link>
               );
             })}
           </nav>
         </div>
-
       </div>
 
       {/* Main Content */}
@@ -80,7 +103,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <Menu className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 bg-sidebar border-sidebar-border p-0">
+              <SheetContent
+                side="left"
+                className="w-72 bg-sidebar border-sidebar-border p-0"
+              >
                 <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
                 <div className="h-16 flex items-center px-6 border-b border-sidebar-border bg-sidebar/50">
                   <div className="w-10 h-10 rounded-md bg-white flex items-center justify-center mr-3 shadow-sm overflow-hidden">
@@ -94,12 +120,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     Souss Massa
                   </h1>
                 </div>
-                
+
                 <div className="px-6 py-4">
                   <div className="text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold mb-4">
                     Suivi des conventions
                   </div>
-                  
+
                   <nav className="space-y-1">
                     {navigation.map((item) => {
                       const isActive = estNavigationActive(location, item.href);
@@ -111,10 +137,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                             "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
                             isActive
                               ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                           )}
                         >
-                          <item.icon className={cn("w-5 h-5", isActive ? "text-sidebar-primary" : "opacity-70")} />
+                          <item.icon
+                            className={cn(
+                              "w-5 h-5",
+                              isActive ? "text-sidebar-primary" : "opacity-70",
+                            )}
+                          />
                           {item.name}
                         </Link>
                       );
@@ -131,10 +162,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               />
             </div>
           </div>
-          
+
           <div className="hidden md:block">
             <h2 className="text-lg font-semibold text-foreground">
-              {navigation.find(n => estNavigationActive(location, n.href))?.name || "Détail"}
+              {navigation.find((n) => estNavigationActive(location, n.href))
+                ?.name || "Détail"}
             </h2>
           </div>
 
@@ -143,16 +175,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
             </button>
-            <div className="h-6 w-px bg-border"></div>
-            <span className="text-sm font-medium text-muted-foreground">Poste de Pilotage</span>
           </div>
         </header>
 
         {/* Scrollable Content */}
         <main className="flex-1 overflow-auto bg-background p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+          <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
     </div>
