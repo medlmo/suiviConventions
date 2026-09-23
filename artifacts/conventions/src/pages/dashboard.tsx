@@ -7,8 +7,9 @@ import {
   Convention 
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertCircle, Calendar, ArrowRight, Activity, Clock, FileWarning, CheckCircle2, Info } from "lucide-react";
+import { AlertCircle, Calendar, ArrowRight, Activity, Clock, FileWarning, CheckCircle2, Info, RefreshCw, WifiOff } from "lucide-react";
 import { AlerteBadge } from "@/components/alerte-badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -81,10 +82,63 @@ const EXPLICATIONS_ALERTES = [
   },
 ] as const;
 
+/**
+ * Une section qui n'a pas pu être chargée doit le dire : sans ce bloc, une
+ * panne réseau se confond avec un tableau de bord réellement vide.
+ */
+function ErreurChargement({
+  titre,
+  erreur,
+  onReessayer,
+}: {
+  titre: string;
+  erreur: unknown;
+  onReessayer: () => void;
+}) {
+  const statut = (erreur as { status?: number } | null)?.status;
+
+  return (
+    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-5">
+      <div className="flex items-start gap-3">
+        <WifiOff className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className="font-semibold text-destructive">{titre}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            La requête au serveur a échoué{statut ? ` (erreur ${statut})` : ""}. Vérifiez votre
+            connexion, puis réessayez.
+          </p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={onReessayer}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  const { data: resume, isLoading: resumeLoading } = useGetResumeAlertes();
-  const { data: alertes, isLoading: alertesLoading } = useListAlertes({ limit: 10, horizonJours: 60 });
-  const { data: agenda, isLoading: agendaLoading } = useGetAgenda({ mois: 3 });
+  const {
+    data: resume,
+    isLoading: resumeLoading,
+    isError: resumeErreur,
+    error: resumeErreurDetail,
+    refetch: rechargerResume,
+  } = useGetResumeAlertes();
+  const {
+    data: alertes,
+    isLoading: alertesLoading,
+    isError: alertesErreur,
+    error: alertesErreurDetail,
+    refetch: rechargerAlertes,
+  } = useListAlertes({ limit: 10, horizonJours: 60 });
+  const {
+    data: agenda,
+    isLoading: agendaLoading,
+    isError: agendaErreur,
+    error: agendaErreurDetail,
+    refetch: rechargerAgenda,
+  } = useGetAgenda({ mois: 3 });
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -93,13 +147,22 @@ export default function Dashboard() {
         <div className="text-muted-foreground text-lg">
           {resumeLoading ? (
             <Skeleton className="h-6 w-64" />
+          ) : resume ? (
+            <>Vue d'ensemble au {format(new Date(resume.dateCalcul), "d MMMM yyyy", { locale: fr })}</>
           ) : (
-            <>Vue d'ensemble au {format(new Date(resume?.dateCalcul || new Date()), "d MMMM yyyy", { locale: fr })}</>
+            <>Vue d'ensemble momentanément indisponible</>
           )}
         </div>
       </div>
 
       {/* Compteurs */}
+      {resumeErreur ? (
+        <ErreurChargement
+          titre="Les compteurs d’alerte n’ont pas pu être chargés."
+          erreur={resumeErreurDetail}
+          onReessayer={() => void rechargerResume()}
+        />
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {resumeLoading ? (
           Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
@@ -122,6 +185,7 @@ export default function Dashboard() {
           })
         )}
       </div>
+      )}
 
       {/* Légende métier : rendre les compteurs compréhensibles sans devoir
           connaître le référentiel Excel d'origine. */}
@@ -196,6 +260,12 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
               </div>
+            ) : alertesErreur ? (
+              <ErreurChargement
+                titre="Les priorités d’action n’ont pas pu être chargées."
+                erreur={alertesErreurDetail}
+                onReessayer={() => void rechargerAlertes()}
+              />
             ) : alertes && alertes.length > 0 ? (
               <div className="space-y-3">
                 {alertes.map((convention) => (
@@ -267,6 +337,12 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
+            ) : agendaErreur ? (
+              <ErreurChargement
+                titre="L’agenda n’a pas pu être chargé."
+                erreur={agendaErreurDetail}
+                onReessayer={() => void rechargerAgenda()}
+              />
             ) : agenda && agenda.length > 0 ? (
               <div className="space-y-6">
                 {agenda.map((mois) => (
