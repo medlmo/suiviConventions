@@ -26,6 +26,7 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { ArrowLeft, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,7 +64,6 @@ const conventionSchema = z.object({
   maitriseOuvrage: z.string().nullable().optional(),
   maitriseOuvrageDeleguee: z.string().nullable().optional(),
   documentConvention: z.string().nullable().optional(),
-  ficheTechnique: z.string().nullable().optional(),
   commentaires: z.string().nullable().optional(),
 });
 
@@ -122,7 +122,6 @@ export default function ConventionDetail() {
         maitriseOuvrage: convention.maitriseOuvrage,
         maitriseOuvrageDeleguee: convention.maitriseOuvrageDeleguee,
         documentConvention: convention.documentConvention,
-        ficheTechnique: convention.ficheTechnique,
         commentaires: convention.commentaires,
       });
     }
@@ -256,7 +255,22 @@ export default function ConventionDetail() {
                     <FormField control={form.control} name="statutConvention" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Statut</FormLabel>
-                        <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                        <Select
+                          value={field.value || "non-renseigne"}
+                          onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choisir un statut" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="non-renseigne">Non renseigné</SelectItem>
+                            <SelectItem value="En cours">En cours</SelectItem>
+                            <SelectItem value="Arrivée à terme">Arrivée à terme</SelectItem>
+                            <SelectItem value="Résiliée">Résiliée</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="rattachement" render={({ field }) => (
@@ -326,7 +340,21 @@ export default function ConventionDetail() {
                   <FormField control={form.control} name="natureFonds" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nature des fonds</FormLabel>
-                      <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                      <Select
+                        value={field.value || "non-renseigne"}
+                        onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choisir une nature de fonds" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="non-renseigne">Non renseignée</SelectItem>
+                          <SelectItem value="Propres">Propres</SelectItem>
+                          <SelectItem value="FEC">FEC</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )} />
                   <div className="grid grid-cols-2 gap-4">
@@ -425,19 +453,13 @@ export default function ConventionDetail() {
                 <CardHeader className="bg-muted/30 pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <FileText className="w-5 h-5 text-secondary" />
-                    Documents & Méta
+                    Documents & commentaires
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
                   <FormField control={form.control} name="documentConvention" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Document Convention (Lien/Réf)</FormLabel>
-                      <FormControl><Input {...field} value={field.value || ""} /></FormControl>
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="ficheTechnique" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fiche Technique (Lien/Réf)</FormLabel>
                       <FormControl><Input {...field} value={field.value || ""} /></FormControl>
                     </FormItem>
                   )} />
