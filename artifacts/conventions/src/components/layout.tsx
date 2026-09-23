@@ -10,6 +10,16 @@ const navigation = [
   { name: "Nouvelle convention", href: "/conventions/nouvelle", icon: PlusCircle },
 ];
 
+function estNavigationActive(location: string, href: string): boolean {
+  if (location === href) return true;
+  if (href === "/") return false;
+
+  // « Nouvelle convention » est une route distincte de la liste, même si son
+  // chemin commence par « /conventions ». Les autres sous-pages, notamment
+  // les fiches de détail, restent rattachées à la liste.
+  return location.startsWith(`${href}/`) && location !== "/conventions/nouvelle";
+}
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
@@ -33,7 +43,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           
           <nav className="space-y-1">
             {navigation.map((item) => {
-              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+              const isActive = estNavigationActive(location, item.href);
               return (
                 <Link
                   key={item.name}
@@ -95,7 +105,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   
                   <nav className="space-y-1">
                     {navigation.map((item) => {
-                      const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+                      const isActive = estNavigationActive(location, item.href);
                       return (
                         <Link
                           key={item.name}
@@ -123,7 +133,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           
           <div className="hidden md:block">
             <h2 className="text-lg font-semibold text-foreground">
-              {navigation.find(n => location === n.href || (n.href !== "/" && location.startsWith(n.href)))?.name || "Détail"}
+              {navigation.find(n => estNavigationActive(location, n.href))?.name || "Détail"}
             </h2>
           </div>
 
