@@ -22,6 +22,7 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, CalendarIcon, FileText, Info, Wallet } from "lucide-react";
 
 // Un champ montant vidé doit repartir à NULL, pas à 0 : z.coerce.number()
@@ -55,7 +56,6 @@ const conventionSchema = z.object({
   maitriseOuvrage: z.string().nullable().optional(),
   maitriseOuvrageDeleguee: z.string().nullable().optional(),
   documentConvention: z.string().nullable().optional(),
-  ficheTechnique: z.string().nullable().optional(),
   commentaires: z.string().nullable().optional(),
 });
 
@@ -163,8 +163,23 @@ export default function ConventionCreate() {
                 )} />
                 <FormField control={form.control} name="statutConvention" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Statut initial</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                    <FormLabel>Statut</FormLabel>
+                    <Select
+                      value={field.value || "non-renseigne"}
+                      onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choisir un statut" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="non-renseigne">Non renseigné</SelectItem>
+                        <SelectItem value="En cours">En cours</SelectItem>
+                        <SelectItem value="Arrivée à terme">Arrivée à terme</SelectItem>
+                        <SelectItem value="Résiliée">Résiliée</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="decision" render={({ field }) => (
@@ -216,7 +231,21 @@ export default function ConventionCreate() {
               <FormField control={form.control} name="natureFonds" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nature des fonds</FormLabel>
-                  <FormControl><Input {...field} value={field.value || ""} dir="auto" placeholder="Ex : Fonds propres / FEC" /></FormControl>
+                  <Select
+                    value={field.value || "non-renseigne"}
+                    onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choisir une nature de fonds" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="non-renseigne">Non renseignée</SelectItem>
+                      <SelectItem value="Propres">Propres</SelectItem>
+                      <SelectItem value="FEC">FEC</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormItem>
               )} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -288,12 +317,6 @@ export default function ConventionCreate() {
                     <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="pv" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>PV (lien / référence)</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
-                  </FormItem>
-                )} />
                 <FormField control={form.control} name="presidenceComite" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Présidence du comité</FormLabel>
@@ -326,9 +349,9 @@ export default function ConventionCreate() {
                     <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="ficheTechnique" render={({ field }) => (
+                <FormField control={form.control} name="pv" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Fiche technique (lien / référence)</FormLabel>
+                    <FormLabel>PV (lien / référence)</FormLabel>
                     <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
                   </FormItem>
                 )} />
