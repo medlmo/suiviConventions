@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlerteBadge } from "@/components/alerte-badge";
-import { ArrowLeft, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet } from "lucide-react";
+import { ArrowLeft, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/utils";
 import { format } from "date-fns";
@@ -77,7 +77,7 @@ export default function ConventionDetail() {
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { data: convention, isLoading } = useGetConvention(id, {
+  const { data: convention, isLoading, isError, error, refetch } = useGetConvention(id, {
     query: {
       enabled: !!id,
       queryKey: getGetConventionQueryKey(id)
@@ -191,7 +191,50 @@ export default function ConventionDetail() {
     );
   }
 
-  if (!convention) return <div>Introuvable</div>;
+  // Une panne réseau ne doit pas être présentée comme une convention absente :
+  // seul un 404 signifie réellement que la fiche n'existe pas.
+  if (isError || !convention) {
+    const statut = (error as { status?: number } | null)?.status;
+    const introuvable = statut === 404 || (!isError && !convention);
+
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" onClick={() => setLocation("/conventions")} className="gap-2">
+          <ArrowLeft className="w-4 h-4" />
+          Retour à la liste
+        </Button>
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              {introuvable ? (
+                <Info className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              ) : (
+                <WifiOff className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className="font-semibold text-destructive">
+                  {introuvable
+                    ? "Cette convention est introuvable."
+                    : "La convention n’a pas pu être chargée."}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {introuvable
+                    ? "Elle a peut-être été supprimée, ou le lien utilisé n’est plus valide."
+                    : `La requête au serveur a échoué${statut ? ` (erreur ${statut})` : ""}. Vérifiez votre connexion, puis réessayez.`}
+                </p>
+                {!introuvable && (
+                  <Button variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Réessayer
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-300">

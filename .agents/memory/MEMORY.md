@@ -1,3 +1,4 @@
 - [Alerte recalculée en SQL](alerte-sql-conventions.md) — le statut n'est jamais stocké ; contraintes Postgres rencontrées (sql.raw, casts ::int) à respecter avant de toucher au calcul.
 - [Recherche en arabe](recherche-arabe-postgres.md) — normaliser colonne ET terme, sinon un tiers des résultats manque ; liste des caractères à traiter.
+- [Cache HTTP de l'API](cache-http-api.md) — aucune réponse API n'est cacheable (alertes liées à CURRENT_DATE, 304 traité comme un échec) ; un échec ne doit jamais s'afficher comme une section vide.
 - [Contrat OpenAPI et coercition Zod](contrat-zod-coercition.md) — pourquoi les dates sont validées avant Zod et pourquoi les réponses ne sont jamais réécrites par `.parse()`.

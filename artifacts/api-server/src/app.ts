@@ -6,6 +6,16 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// Les réponses dépendent de la date du jour (le niveau d'alerte est recalculé
+// à chaque requête) : elles ne doivent jamais être servies depuis le cache du
+// navigateur. L'ETag d'Express permettait en plus des réponses 304, que le
+// client HTTP traite comme un échec puisque `response.ok` y est faux.
+app.set("etag", false);
+app.use("/api", (_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 app.use(
   pinoHttp({
     logger,
