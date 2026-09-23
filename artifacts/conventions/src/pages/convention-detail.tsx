@@ -91,6 +91,7 @@ export default function ConventionDetail() {
     resolver: zodResolver(conventionSchema),
     defaultValues: {
       nomConvention: "",
+      natureFonds: "Propres",
     }
   });
 
@@ -118,7 +119,7 @@ export default function ConventionDetail() {
         pv: convention.pv,
         enveloppeBudgetaire: convention.enveloppeBudgetaire,
         contributionRegion: convention.contributionRegion,
-        natureFonds: convention.natureFonds,
+        natureFonds: convention.natureFonds || "Propres",
         maitriseOuvrage: convention.maitriseOuvrage,
         maitriseOuvrageDeleguee: convention.maitriseOuvrageDeleguee,
         documentConvention: convention.documentConvention,
@@ -358,7 +359,7 @@ export default function ConventionDetail() {
                     <FormItem>
                       <FormLabel>Nature des fonds</FormLabel>
                       <Select
-                        value={field.value || undefined}
+                        value={field.value || "Propres"}
                         onValueChange={field.onChange}
                       >
                         <FormControl>

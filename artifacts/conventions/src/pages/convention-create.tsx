@@ -73,6 +73,7 @@ export default function ConventionCreate() {
     defaultValues: {
       nomConvention: "",
       statutConvention: "En cours",
+      natureFonds: "Propres",
     }
   });
 
@@ -249,7 +250,7 @@ export default function ConventionCreate() {
                 <FormItem>
                   <FormLabel>Nature des fonds</FormLabel>
                   <Select
-                    value={field.value || undefined}
+                    value={field.value || "Propres"}
                     onValueChange={field.onChange}
                   >
                     <FormControl>
