@@ -304,7 +304,24 @@ export default function ConventionDetail() {
                     <FormField control={form.control} name="decision" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Décision</FormLabel>
-                        <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                        <Select
+                          value={field.value || "non-renseigne"}
+                          onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choisir une décision" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="non-renseigne">Non renseignée</SelectItem>
+                            <SelectItem value="A renouveler">A renouveler</SelectItem>
+                            <SelectItem value="A reconduire tacitemment">A reconduire tacitemment</SelectItem>
+                            <SelectItem value="A maintenir">A maintenir</SelectItem>
+                            <SelectItem value="A ne pas renouveler">A ne pas renouveler</SelectItem>
+                            <SelectItem value="A résilier">A résilier</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormItem>
                     )} />
                   </div>
