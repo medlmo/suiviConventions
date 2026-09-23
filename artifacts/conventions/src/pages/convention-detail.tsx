@@ -358,8 +358,8 @@ export default function ConventionDetail() {
                     <FormItem>
                       <FormLabel>Nature des fonds</FormLabel>
                       <Select
-                        value={field.value || "non-renseigne"}
-                        onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
+                        value={field.value || undefined}
+                        onValueChange={field.onChange}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -367,7 +367,6 @@ export default function ConventionDetail() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="non-renseigne">Non renseignée</SelectItem>
                           <SelectItem value="Propres">Propres</SelectItem>
                           <SelectItem value="FEC">FEC</SelectItem>
                         </SelectContent>
