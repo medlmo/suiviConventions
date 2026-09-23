@@ -63,17 +63,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
 
-        <div className="mt-auto p-6 border-t border-sidebar-border/50">
-          <div className="flex items-center gap-3 px-3 py-2 text-sm text-sidebar-foreground/70">
-            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center border border-sidebar-border text-xs font-medium">
-              AZ
-            </div>
-            <div>
-              <p className="font-medium text-sidebar-foreground">Agent Région</p>
-              <p className="text-xs opacity-70">Direction Générale</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Main Content */}
