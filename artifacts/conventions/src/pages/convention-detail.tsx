@@ -229,7 +229,7 @@ export default function ConventionDetail() {
                       <Textarea 
                         {...field} 
                         dir="auto"
-                        className="text-xl md:text-2xl font-bold min-h-[100px] leading-relaxed bg-accent/10 border-accent resize-y"
+                        className="text-base font-normal min-h-[100px] leading-normal bg-accent/10 border-accent resize-y"
                       />
                     </FormControl>
                     <FormMessage />

@@ -111,7 +111,7 @@ export default function ConventionCreate() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">Nouvelle Convention</h1>
-          <p className="text-muted-foreground text-sm">Ajoutez un nouveau dossier au suivi.</p>
+          <p className="text-muted-foreground text-sm">Ajoutez une nouvelle convention au suivi.</p>
         </div>
       </div>
 
@@ -131,7 +131,7 @@ export default function ConventionCreate() {
                         {...field} 
                         dir="auto"
                         placeholder="Ex: اتفاقية شراكة مع العصبة المغربية..."
-                        className="text-xl md:text-2xl font-bold min-h-[100px] leading-relaxed bg-accent/10 border-accent resize-y"
+                        className="text-base font-normal min-h-[100px] leading-normal bg-accent/10 border-accent resize-y"
                       />
                     </FormControl>
                     <FormMessage />
