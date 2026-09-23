@@ -28,11 +28,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <div className="hidden md:flex w-72 flex-col bg-sidebar border-r border-sidebar-border shadow-xl z-10">
         <div className="h-16 flex items-center px-6 border-b border-sidebar-border bg-sidebar/50">
-          <div className="w-8 h-8 rounded-md bg-sidebar-primary flex items-center justify-center mr-3 shadow-sm">
-            <span className="text-white font-bold text-lg leading-none">SM</span>
+          <div className="w-10 h-10 rounded-md bg-white flex items-center justify-center mr-3 shadow-sm overflow-hidden">
+            <img
+              src="/logo-crsm.png"
+              alt="Logo de la Région Souss Massa"
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-sidebar-foreground font-bold tracking-tight text-lg">
-            Souss-Massa
+            Souss Massa
           </h1>
         </div>
         
@@ -79,11 +83,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <SheetContent side="left" className="w-72 bg-sidebar border-sidebar-border p-0">
                 <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
                 <div className="h-16 flex items-center px-6 border-b border-sidebar-border bg-sidebar/50">
-                  <div className="w-8 h-8 rounded-md bg-sidebar-primary flex items-center justify-center mr-3 shadow-sm">
-                    <span className="text-white font-bold text-lg leading-none">SM</span>
+                  <div className="w-10 h-10 rounded-md bg-white flex items-center justify-center mr-3 shadow-sm overflow-hidden">
+                    <img
+                      src="/logo-crsm.png"
+                      alt="Logo de la Région Souss Massa"
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <h1 className="text-sidebar-foreground font-bold tracking-tight text-lg">
-                    Souss-Massa
+                    Souss Massa
                   </h1>
                 </div>
                 
@@ -115,8 +123,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </SheetContent>
             </Sheet>
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center shadow-sm">
-              <span className="text-white font-bold text-sm">SM</span>
+            <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center shadow-sm overflow-hidden">
+              <img
+                src="/logo-crsm.png"
+                alt="Logo de la Région Souss Massa"
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
           
