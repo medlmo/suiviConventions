@@ -7,7 +7,7 @@ import {
   Convention 
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertCircle, Calendar, ArrowRight, Activity, Clock, FileWarning, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Calendar, ArrowRight, Activity, Clock, FileWarning, CheckCircle2, Info } from "lucide-react";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -29,6 +29,57 @@ const BG_COLORS: Record<AlerteCouleur, string> = {
   vert: "bg-green-50 text-green-700 border-green-100",
   gris: "bg-slate-50 text-slate-700 border-slate-100",
 };
+
+const EXPLICATIONS_ALERTES = [
+  {
+    niveau: "EN_RETARD",
+    libelle: "En retard",
+    couleur: "rouge" as AlerteCouleur,
+    periode: "Échéance dépassée",
+    explication: "La date prévue du comité est passée et aucune nouvelle échéance n’est renseignée.",
+    action: "Organiser ou régulariser immédiatement",
+  },
+  {
+    niveau: "A_DECLENCHER",
+    libelle: "À déclencher",
+    couleur: "orange" as AlerteCouleur,
+    periode: "Échéance dans 0 à 30 jours",
+    explication: "Le comité est imminent. La convocation et les pièces nécessaires doivent être préparées.",
+    action: "Préparer la convocation et les pièces",
+  },
+  {
+    niveau: "A_PREPARER",
+    libelle: "À préparer",
+    couleur: "jaune" as AlerteCouleur,
+    periode: "Échéance dans 31 à 60 jours",
+    explication: "Le comité approche, mais il reste encore du temps pour coordonner sa préparation.",
+    action: "Anticiper avec le responsable",
+  },
+  {
+    niveau: "A_JOUR",
+    libelle: "À jour",
+    couleur: "vert" as AlerteCouleur,
+    periode: "Échéance dans plus de 60 jours",
+    explication: "Une échéance est renseignée et elle ne nécessite pas encore d’action immédiate.",
+    action: "Aucune action immédiate",
+  },
+  {
+    niveau: "A_SURVEILLER",
+    libelle: "À surveiller",
+    couleur: "gris" as AlerteCouleur,
+    periode: "Pas d’échéance, fréquence conditionnelle",
+    explication: "La convention prévoit un déclenchement selon les besoins, à la demande ou en cas de nécessité.",
+    action: "Vérifier le déclencheur ou la clause",
+  },
+  {
+    niveau: "A_QUALIFIER",
+    libelle: "À qualifier",
+    couleur: "gris" as AlerteCouleur,
+    periode: "Pas d’échéance renseignée",
+    explication: "Aucune date ni fréquence conditionnelle exploitable ne permet de déterminer la prochaine action.",
+    action: "Compléter les informations de suivi",
+  },
+] as const;
 
 export default function Dashboard() {
   const { data: resume, isLoading: resumeLoading } = useGetResumeAlertes();
@@ -71,6 +122,55 @@ export default function Dashboard() {
           })
         )}
       </div>
+
+      {/* Légende métier : rendre les compteurs compréhensibles sans devoir
+          connaître le référentiel Excel d'origine. */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+              <Info className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Comprendre les niveaux d’alerte</CardTitle>
+              <CardDescription>
+                Le niveau est recalculé chaque jour à partir de la prochaine échéance ou de la fréquence de la convention.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {EXPLICATIONS_ALERTES.map((explication) => {
+              const Icon = ICONS[explication.couleur];
+              const bgClass = BG_COLORS[explication.couleur];
+
+              return (
+                <div
+                  key={explication.niveau}
+                  className="rounded-lg border border-border/70 bg-background p-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={cn("rounded-md border p-1.5", bgClass)}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="font-semibold text-foreground">{explication.libelle}</div>
+                  </div>
+                  <div className="mt-3 text-sm font-medium text-foreground">
+                    {explication.periode}
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    {explication.explication}
+                  </p>
+                  <p className="mt-3 border-t border-border/60 pt-2 text-xs font-semibold text-primary">
+                    Action : {explication.action}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Actions urgentes */}
