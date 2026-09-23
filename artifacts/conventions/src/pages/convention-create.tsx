@@ -151,7 +151,7 @@ export default function ConventionCreate() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="rattachement" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rattachement (Direction/Service)</FormLabel>
+                    <FormLabel>Rattachement (Direction/Division)</FormLabel>
                     <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
                   </FormItem>
                 )} />
