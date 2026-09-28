@@ -141,6 +141,7 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
     const motif = normaliserPourRecherche(terme);
     const champsRecherchables = [
       conventionsTable.nomConvention,
+      conventionsTable.objetConventionFr,
       conventionsTable.responsableProjet,
       conventionsTable.maitriseOuvrage,
       conventionsTable.maitriseOuvrageDeleguee,

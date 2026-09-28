@@ -95,7 +95,7 @@ export default function ConventionsList() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input 
-                placeholder="Rechercher (nom, responsable, etc.)..." 
+                placeholder="Rechercher (intitulé en arabe ou en français, responsable, etc.)..."
                 value={q}
                 onChange={(e) => { setQ(e.target.value); setPage(1); }}
                 className="pl-9 h-10 w-full bg-accent/20"
