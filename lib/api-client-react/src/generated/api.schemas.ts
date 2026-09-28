@@ -63,6 +63,17 @@ export interface Alerte {
   joursRestants?: number | null;
 }
 
+/**
+ * @nullable
+ */
+export type ConventionTypeSession = typeof ConventionTypeSession[keyof typeof ConventionTypeSession] | null;
+
+
+export const ConventionTypeSession = {
+  Ordinaire: 'Ordinaire',
+  Extraordinaire: 'Extraordinaire',
+} as const;
+
 export interface Convention {
   id: number;
   nomConvention: string;
@@ -72,6 +83,8 @@ export interface Convention {
   rattachement?: string | null;
   /** @nullable */
   responsableProjet?: string | null;
+  /** @nullable */
+  typeSession?: ConventionTypeSession;
   /** @nullable */
   session?: string | null;
   /** @nullable */
@@ -139,6 +152,17 @@ export interface Convention {
   modifieLe?: string | null;
 }
 
+/**
+ * @nullable
+ */
+export type ConventionInputTypeSession = typeof ConventionInputTypeSession[keyof typeof ConventionInputTypeSession] | null;
+
+
+export const ConventionInputTypeSession = {
+  Ordinaire: 'Ordinaire',
+  Extraordinaire: 'Extraordinaire',
+} as const;
+
 export interface ConventionInput {
   /** @minLength 1 */
   nomConvention: string;
@@ -148,6 +172,8 @@ export interface ConventionInput {
   rattachement?: string | null;
   /** @nullable */
   responsableProjet?: string | null;
+  /** @nullable */
+  typeSession?: ConventionInputTypeSession;
   /** @nullable */
   session?: string | null;
   /** @nullable */
@@ -194,6 +220,17 @@ export interface ConventionInput {
   commentaires?: string | null;
 }
 
+/**
+ * @nullable
+ */
+export type ConventionUpdateTypeSession = typeof ConventionUpdateTypeSession[keyof typeof ConventionUpdateTypeSession] | null;
+
+
+export const ConventionUpdateTypeSession = {
+  Ordinaire: 'Ordinaire',
+  Extraordinaire: 'Extraordinaire',
+} as const;
+
 export interface ConventionUpdate {
   /** @minLength 1 */
   nomConvention?: string;
@@ -203,6 +240,8 @@ export interface ConventionUpdate {
   rattachement?: string | null;
   /** @nullable */
   responsableProjet?: string | null;
+  /** @nullable */
+  typeSession?: ConventionUpdateTypeSession;
   /** @nullable */
   session?: string | null;
   /** @nullable */
