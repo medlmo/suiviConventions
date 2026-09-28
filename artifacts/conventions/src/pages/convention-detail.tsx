@@ -44,6 +44,7 @@ const montantOptionnel = z.preprocess(
 
 const conventionSchema = z.object({
   nomConvention: z.string().min(1, "Le nom est requis"),
+  objetConventionFr: z.string().nullable().optional(),
   rattachement: z.string().nullable().optional(),
   responsableProjet: z.string().nullable().optional(),
   session: z.string().nullable().optional(),
@@ -106,6 +107,7 @@ export default function ConventionDetail() {
       initializedId.current = id;
       form.reset({
         nomConvention: convention.nomConvention,
+        objetConventionFr: convention.objetConventionFr,
         rattachement: convention.rattachement,
         responsableProjet: convention.responsableProjet,
         session: convention.session,
@@ -273,12 +275,31 @@ export default function ConventionDetail() {
                 name="nomConvention"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-primary">Objet de la convention (Arabe priorisé)</FormLabel>
+                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-primary">Objet de la convention (arabe)</FormLabel>
                     <FormControl>
                       <Textarea 
                         {...field} 
                         dir="auto"
                         className="text-base font-normal min-h-[100px] leading-normal bg-accent/10 border-accent resize-y"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="objetConventionFr"
+                render={({ field }) => (
+                  <FormItem className="mt-5">
+                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-primary">Objet de la convention (français)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        value={field.value || ""}
+                        dir="auto"
+                        placeholder="Saisir l'objet de la convention en français"
+                        className="text-base font-normal min-h-[80px] leading-normal resize-y"
                       />
                     </FormControl>
                     <FormMessage />

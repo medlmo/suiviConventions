@@ -36,6 +36,7 @@ const montantOptionnel = z.preprocess(
 
 const conventionSchema = z.object({
   nomConvention: z.string().min(1, "Le nom est requis"),
+  objetConventionFr: z.string().nullable().optional(),
   rattachement: z.string().nullable().optional(),
   responsableProjet: z.string().nullable().optional(),
   session: z.string().nullable().optional(),
@@ -128,13 +129,32 @@ export default function ConventionCreate() {
                 name="nomConvention"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base font-bold uppercase tracking-wider text-primary">Objet de la convention *</FormLabel>
+                    <FormLabel className="text-base font-bold uppercase tracking-wider text-primary">Objet de la convention (arabe) *</FormLabel>
                     <FormControl>
                       <Textarea 
                         {...field} 
                         dir="auto"
                         placeholder="Ex: اتفاقية شراكة مع العصبة المغربية..."
                         className="text-base font-normal min-h-[100px] leading-normal bg-accent/10 border-accent resize-y"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="objetConventionFr"
+                render={({ field }) => (
+                  <FormItem className="mt-5">
+                    <FormLabel className="text-base font-bold uppercase tracking-wider text-primary">Objet de la convention (français)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        value={field.value || ""}
+                        dir="auto"
+                        placeholder="Saisir l'objet de la convention en français"
+                        className="text-base font-normal min-h-[80px] leading-normal resize-y"
                       />
                     </FormControl>
                     <FormMessage />

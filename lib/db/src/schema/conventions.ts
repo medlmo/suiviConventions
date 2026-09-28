@@ -24,6 +24,7 @@ export const conventionsTable = pgTable(
 
     // Identification
     nomConvention: text("nom_convention").notNull(),
+    objetConventionFr: text("objet_convention_fr"),
     rattachement: text("rattachement"),
     responsableProjet: text("responsable_projet"),
     session: date("session", { mode: "string" }),

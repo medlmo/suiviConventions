@@ -10,6 +10,8 @@ export interface ConventionUpdate {
   /** @minLength 1 */
   nomConvention?: string;
   /** @nullable */
+  objetConventionFr?: string | null;
+  /** @nullable */
   rattachement?: string | null;
   /** @nullable */
   responsableProjet?: string | null;

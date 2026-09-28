@@ -314,6 +314,7 @@ components:
       properties:
         id: { type: integer }
         nomConvention: { type: string }
+        objetConventionFr: { type: ["string", "null"] }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
         session:
@@ -367,6 +368,7 @@ components:
       required: [nomConvention]
       properties:
         nomConvention: { type: string, minLength: 1 }
+        objetConventionFr: { type: ["string", "null"] }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
         session:
@@ -398,6 +400,7 @@ components:
       type: object
       properties:
         nomConvention: { type: string, minLength: 1 }
+        objetConventionFr: { type: ["string", "null"] }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
         session:
