@@ -279,11 +279,11 @@ export default function ConventionCreate() {
                 )} />
                 <FormField control={form.control} name="nature" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nature</FormLabel>
+                    <FormLabel>Nature du projet</FormLabel>
                     <Select value={field.value || ""} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Choisir une nature" />
+                          <SelectValue placeholder="Choisir la nature du projet" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
