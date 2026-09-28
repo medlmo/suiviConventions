@@ -401,7 +401,7 @@ export interface UserInput {
      */
   username: string;
   /**
-     * @minLength 12
+     * @minLength 8
      * @maxLength 1024
      */
   password: string;
@@ -433,7 +433,7 @@ export interface UserUpdate {
 
 export interface PasswordInput {
   /**
-     * @minLength 12
+     * @minLength 8
      * @maxLength 1024
      */
   password: string;

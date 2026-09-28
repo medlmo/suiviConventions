@@ -729,7 +729,7 @@ components:
       required: [username, password, role]
       properties:
         username: { type: string, minLength: 1, maxLength: 100 }
-        password: { type: string, minLength: 12, maxLength: 1024 }
+        password: { type: string, minLength: 8, maxLength: 1024 }
         role: { $ref: "#/components/schemas/Role" }
         direction: { type: ["string", "null"] }
         division: { type: ["string", "null"] }
@@ -748,7 +748,7 @@ components:
       type: object
       required: [password]
       properties:
-        password: { type: string, minLength: 12, maxLength: 1024 }
+        password: { type: string, minLength: 8, maxLength: 1024 }
     AuditEvent:
       type: object
       required: [id, conventionId, action, actorUsername, before, after, createdAt]

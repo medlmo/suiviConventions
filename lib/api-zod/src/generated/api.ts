@@ -84,7 +84,7 @@ export const ListUsersResponse = zod.array(ListUsersResponseItem)
  */
 export const createUserBodyUsernameMax = 100;
 
-export const createUserBodyPasswordMin = 12;
+export const createUserBodyPasswordMin = 8;
 export const createUserBodyPasswordMax = 1024;
 
 export const createUserBodyActiveDefault = true;
@@ -152,7 +152,7 @@ export const ResetUserPasswordParams = zod.object({
   "id": zod.coerce.number().int()
 })
 
-export const resetUserPasswordBodyPasswordMin = 12;
+export const resetUserPasswordBodyPasswordMin = 8;
 export const resetUserPasswordBodyPasswordMax = 1024;
 
 

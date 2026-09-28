@@ -51,8 +51,8 @@ router.post("/admin/users", adminRequired, async (req, res): Promise<void> => {
   }
   const username = body.username.trim();
   const role = body.role as Role;
-  if (!username || username.length > 100 || body.password.length < 12 || body.password.length > 1024) {
-    res.status(400).json({ error: "Identifiant ou mot de passe invalide (12 caractères minimum)." });
+  if (!username || username.length > 100 || body.password.length < 8 || body.password.length > 1024) {
+    res.status(400).json({ error: "Identifiant ou mot de passe invalide (8 caractères minimum)." });
     return;
   }
   if (
@@ -197,8 +197,8 @@ router.patch("/admin/users/:id", adminRequired, async (req, res): Promise<void> 
 router.post("/admin/users/:id/password", adminRequired, async (req, res): Promise<void> => {
   const id = idFrom(req.params.id);
   const password = (req.body as { password?: unknown } | null)?.password;
-  if (!id || typeof password !== "string" || password.length < 12 || password.length > 1024) {
-    res.status(400).json({ error: "Mot de passe invalide (12 caractères minimum)." });
+  if (!id || typeof password !== "string" || password.length < 8 || password.length > 1024) {
+    res.status(400).json({ error: "Mot de passe invalide (8 caractères minimum)." });
     return;
   }
   const [user] = await db.update(usersTable).set({
