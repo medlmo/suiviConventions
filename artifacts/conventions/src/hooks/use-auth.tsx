@@ -38,13 +38,19 @@ export function errorMessage(error: unknown): string {
   return "Le serveur est momentanément indisponible. Réessayez.";
 }
 
-type AuthContextValue = { user: User | null; refresh: () => Promise<void>; logout: () => Promise<void> };
+type AuthContextValue = { user: User | null; setUser: (user: User) => Promise<void>; logout: () => Promise<void> };
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const client = useQueryClient();
   useEffect(() => {
-    const expire = () => { void client.cancelQueries().then(() => { client.clear(); client.setQueryData(["auth", "me"], null); }); };
+    const expire = () => {
+      void (async () => {
+        await client.cancelQueries();
+        client.removeQueries({ predicate: query => query.queryKey[0] !== "auth" });
+        client.setQueryData(["auth", "me"], null);
+      })();
+    };
     window.addEventListener("conventions-session-expired", expire);
     return () => window.removeEventListener("conventions-session-expired", expire);
   }, [client]);
@@ -56,19 +62,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     retry: false, staleTime: 30_000, refetchOnWindowFocus: true,
   });
-  const refresh = async () => {
+  const setUser = async (user: User) => {
     await client.cancelQueries();
-    client.clear();
-    await client.fetchQuery({ queryKey: ["auth", "me"], queryFn: () => api<User>("/auth/me"), staleTime: 0 });
+    client.removeQueries({ predicate: query => query.queryKey[0] !== "auth" });
+    client.setQueryData(["auth", "me"], user);
   };
   const logout = async () => {
     try { await api<void>("/auth/logout", { method: "POST" }); }
     catch { /* A failed network logout must not leave protected cached data visible. */ }
-    finally { await client.cancelQueries(); client.clear(); client.setQueryData(["auth", "me"], null); }
+    finally {
+      await client.cancelQueries();
+      client.removeQueries({ predicate: query => query.queryKey[0] !== "auth" });
+      client.setQueryData(["auth", "me"], null);
+    }
   };
   if (query.isPending) return <div className="min-h-[100dvh] bg-background p-8" aria-label="Chargement de la session"><div className="mx-auto max-w-5xl animate-pulse space-y-6"><div className="h-14 w-64 rounded bg-muted" /><div className="h-40 rounded bg-muted" /><div className="h-64 rounded bg-muted" /></div></div>;
   if (query.isError) return <div className="min-h-[100dvh] bg-background grid place-items-center p-6"><div className="bg-card border rounded-xl p-8 max-w-md space-y-4"><h1 className="text-xl font-bold">Connexion au serveur impossible</h1><p className="text-muted-foreground">{errorMessage(query.error)}</p><button className="text-primary underline" onClick={() => void query.refetch()}>Réessayer</button></div></div>;
-  return <AuthContext.Provider value={{ user: query.data ?? null, refresh, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user: query.data ?? null, setUser, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
