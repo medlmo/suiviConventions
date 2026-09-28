@@ -108,6 +108,10 @@ export interface Convention {
   /** @nullable */
   decision?: string | null;
   /** @nullable */
+  competence?: string | null;
+  /** @nullable */
+  nature?: string | null;
+  /** @nullable */
   documentConvention?: string | null;
   /** @nullable */
   ficheTechnique?: string | null;
@@ -167,8 +171,6 @@ export interface ConventionInput {
   /** @nullable */
   pv?: string | null;
   /** @nullable */
-  decision?: string | null;
-  /** @nullable */
   documentConvention?: string | null;
   /** @nullable */
   ficheTechnique?: string | null;
@@ -180,6 +182,10 @@ export interface ConventionInput {
   prochaineEcheanceNote?: string | null;
   /** @nullable */
   natureFonds?: string | null;
+  /** @nullable */
+  competence?: string | null;
+  /** @nullable */
+  nature?: string | null;
   /** @nullable */
   commentaires?: string | null;
 }
@@ -219,6 +225,10 @@ export interface ConventionUpdate {
   pv?: string | null;
   /** @nullable */
   decision?: string | null;
+  /** @nullable */
+  competence?: string | null;
+  /** @nullable */
+  nature?: string | null;
   /** @nullable */
   documentConvention?: string | null;
   /** @nullable */

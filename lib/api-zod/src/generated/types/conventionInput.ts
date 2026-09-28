@@ -14,7 +14,7 @@ export interface ConventionInput {
   /** @nullable */
   responsableProjet?: string | null;
   /** @nullable */
-  session?: string | null;
+  session?: Date | null;
   /** @nullable */
   dateVisa?: Date | null;
   /** @nullable */
@@ -40,8 +40,6 @@ export interface ConventionInput {
   /** @nullable */
   pv?: string | null;
   /** @nullable */
-  decision?: string | null;
-  /** @nullable */
   documentConvention?: string | null;
   /** @nullable */
   ficheTechnique?: string | null;
@@ -53,6 +51,10 @@ export interface ConventionInput {
   prochaineEcheanceNote?: string | null;
   /** @nullable */
   natureFonds?: string | null;
+  /** @nullable */
+  competence?: string | null;
+  /** @nullable */
+  nature?: string | null;
   /** @nullable */
   commentaires?: string | null;
 }

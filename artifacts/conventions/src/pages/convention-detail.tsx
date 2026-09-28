@@ -49,6 +49,8 @@ const conventionSchema = z.object({
   dateVisa: z.string().nullable().optional(),
   statutConvention: z.string().nullable().optional(),
   decision: z.string().nullable().optional(),
+  competence: z.string().nullable().optional(),
+  nature: z.string().nullable().optional(),
   presidenceComite: z.string().nullable().optional(),
   membresComite: z.string().nullable().optional(),
   frequenceReunions: z.string().nullable().optional(),
@@ -108,6 +110,8 @@ export default function ConventionDetail() {
         dateVisa: convention.dateVisa?.split('T')[0] || null, // Handle dates from API if needed
         statutConvention: convention.statutConvention,
         decision: convention.decision,
+        competence: convention.competence,
+        nature: convention.nature,
         presidenceComite: convention.presidenceComite,
         membresComite: convention.membresComite,
         frequenceReunions: convention.frequenceReunions,
@@ -334,7 +338,43 @@ export default function ConventionDetail() {
                     <FormField control={form.control} name="session" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Session</FormLabel>
-                        <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                        <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="competence" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Compétence</FormLabel>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choisir une compétence" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Propre">Propre</SelectItem>
+                            <SelectItem value="Partagée">Partagée</SelectItem>
+                            <SelectItem value="Transférée">Transférée</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="nature" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nature</FormLabel>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choisir une nature" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Infrastructure">Infrastructure</SelectItem>
+                            <SelectItem value="Subventions">Subventions</SelectItem>
+                            <SelectItem value="Prestations">Prestations</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormItem>
                     )} />
                   </div>

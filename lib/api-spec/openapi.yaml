@@ -316,7 +316,9 @@ components:
         nomConvention: { type: string }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
-        session: { type: ["string", "null"] }
+        session:
+          type: ["string", "null"]
+          format: date
         dateVisa:
           type: ["string", "null"]
           format: date
@@ -342,6 +344,8 @@ components:
           description: Mention non convertible en date reprise du fichier source
         pv: { type: ["string", "null"] }
         decision: { type: ["string", "null"] }
+        competence: { type: ["string", "null"] }
+        nature: { type: ["string", "null"] }
         documentConvention: { type: ["string", "null"] }
         ficheTechnique: { type: ["string", "null"] }
         statutConvention: { type: ["string", "null"] }
@@ -365,7 +369,9 @@ components:
         nomConvention: { type: string, minLength: 1 }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
-        session: { type: ["string", "null"] }
+        session:
+          type: ["string", "null"]
+          format: date
         dateVisa: { type: ["string", "null"], format: date }
         presidenceComite: { type: ["string", "null"] }
         membresComite: { type: ["string", "null"] }
@@ -378,13 +384,14 @@ components:
         dernierComite: { type: ["string", "null"], format: date }
         dernierComiteNote: { type: ["string", "null"] }
         pv: { type: ["string", "null"] }
-        decision: { type: ["string", "null"] }
         documentConvention: { type: ["string", "null"] }
         ficheTechnique: { type: ["string", "null"] }
         statutConvention: { type: ["string", "null"] }
         prochaineEcheance: { type: ["string", "null"], format: date }
         prochaineEcheanceNote: { type: ["string", "null"] }
         natureFonds: { type: ["string", "null"] }
+        competence: { type: ["string", "null"] }
+        nature: { type: ["string", "null"] }
         commentaires: { type: ["string", "null"] }
 
     ConventionUpdate:
@@ -393,7 +400,9 @@ components:
         nomConvention: { type: string, minLength: 1 }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
-        session: { type: ["string", "null"] }
+        session:
+          type: ["string", "null"]
+          format: date
         dateVisa: { type: ["string", "null"], format: date }
         presidenceComite: { type: ["string", "null"] }
         membresComite: { type: ["string", "null"] }
@@ -407,6 +416,8 @@ components:
         dernierComiteNote: { type: ["string", "null"] }
         pv: { type: ["string", "null"] }
         decision: { type: ["string", "null"] }
+        competence: { type: ["string", "null"] }
+        nature: { type: ["string", "null"] }
         documentConvention: { type: ["string", "null"] }
         ficheTechnique: { type: ["string", "null"] }
         statutConvention: { type: ["string", "null"] }

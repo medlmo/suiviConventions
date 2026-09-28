@@ -46,6 +46,8 @@ export function versApi(ligne: LigneConvention) {
     dernierComiteNote: ligne.dernierComiteNote,
     pv: ligne.pv,
     decision: ligne.decision,
+    competence: ligne.competence,
+    nature: ligne.nature,
     documentConvention: ligne.documentConvention,
     ficheTechnique: ligne.ficheTechnique,
     statutConvention: ligne.statutConvention,
@@ -66,7 +68,6 @@ const CHAMPS_TEXTE = [
   "nomConvention",
   "rattachement",
   "responsableProjet",
-  "session",
   "presidenceComite",
   "membresComite",
   "frequenceReunions",
@@ -75,6 +76,8 @@ const CHAMPS_TEXTE = [
   "dernierComiteNote",
   "pv",
   "decision",
+  "competence",
+  "nature",
   "documentConvention",
   "ficheTechnique",
   "statutConvention",
@@ -84,6 +87,7 @@ const CHAMPS_TEXTE = [
 ] as const;
 
 const CHAMPS_DATE = [
+  "session",
   "dateVisa",
   "prochainComite",
   "dernierComite",

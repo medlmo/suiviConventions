@@ -26,10 +26,12 @@ export const conventionsTable = pgTable(
     nomConvention: text("nom_convention").notNull(),
     rattachement: text("rattachement"),
     responsableProjet: text("responsable_projet"),
-    session: text("session"),
+    session: date("session", { mode: "string" }),
     dateVisa: date("date_visa", { mode: "string" }),
     statutConvention: text("statut_convention"),
     decision: text("decision"),
+    competence: text("competence"),
+    nature: text("nature"),
 
     // Comité de suivi
     presidenceComite: text("presidence_comite"),
