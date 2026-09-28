@@ -18,6 +18,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Form, 
   FormControl, 
@@ -81,6 +90,7 @@ export default function ConventionDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { data: convention, isLoading, isError, error, refetch } = useGetConvention(id, {
     query: {
@@ -166,26 +176,26 @@ export default function ConventionDetail() {
   };
 
   const handleDelete = () => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette convention ? Cette action est irréversible.")) {
-      setIsDeleting(true);
-      deleteMutation.mutate({ id }, {
-        onSuccess: () => {
-          toast({
-            title: "Convention supprimée",
-          });
-          queryClient.invalidateQueries({ queryKey: getGetResumeAlertesQueryKey() });
-          setLocation("/conventions");
-        },
-        onError: () => {
-          setIsDeleting(false);
-          toast({
-            variant: "destructive",
-            title: "Erreur",
-            description: "Impossible de supprimer la convention.",
-          });
-        }
-      });
-    }
+    if (isDeleting) return;
+    setIsDeleting(true);
+    deleteMutation.mutate({ id }, {
+      onSuccess: () => {
+        toast({
+          title: "Convention supprimée",
+        });
+        queryClient.invalidateQueries({ queryKey: getGetResumeAlertesQueryKey() });
+        setDeleteDialogOpen(false);
+        setLocation("/conventions");
+      },
+      onError: () => {
+        setIsDeleting(false);
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de supprimer la convention.",
+        });
+      }
+    });
   };
 
   if (isLoading) {
@@ -255,7 +265,7 @@ export default function ConventionDetail() {
         <h1 className="text-2xl font-bold">Fiche Convention</h1>
         <div className="ml-auto flex items-center gap-3">
           <AlerteBadge alerte={convention.alerte} className="text-base px-3 py-1 mr-4" />
-          <Button variant="destructive" size="sm" onClick={handleDelete} disabled={isDeleting}>
+          <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)} disabled={isDeleting}>
             <Trash2 className="w-4 h-4 mr-2" />
             Supprimer
           </Button>
@@ -643,6 +653,27 @@ export default function ConventionDetail() {
           </div>
         </form>
       </Form>
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!isDeleting) setDeleteDialogOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette convention ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              La convention « {convention.nomConvention} » sera supprimée définitivement. Cette action ne peut pas être annulée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <Button type="button" variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? "Suppression..." : "Supprimer définitivement"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
