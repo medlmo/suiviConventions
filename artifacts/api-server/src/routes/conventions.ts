@@ -433,6 +433,7 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
     ["Jours restants", (c) => c.alerte.joursRestants],
     ["Rattachement", (c) => c.rattachement],
     ["Responsable du projet", (c) => c.responsableProjet],
+    ["Type de la session", (c) => c.typeSession],
     ["Session", (c) => c.session],
     ["Compétence", (c) => c.competence],
     ["Nature", (c) => c.nature],

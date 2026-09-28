@@ -27,6 +27,7 @@ export const conventionsTable = pgTable(
     objetConventionFr: text("objet_convention_fr"),
     rattachement: text("rattachement"),
     responsableProjet: text("responsable_projet"),
+    typeSession: text("type_session"),
     session: date("session", { mode: "string" }),
     dateVisa: date("date_visa", { mode: "string" }),
     statutConvention: text("statut_convention"),

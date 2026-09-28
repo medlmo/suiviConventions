@@ -47,6 +47,7 @@ const conventionSchema = z.object({
   objetConventionFr: z.string().nullable().optional(),
   rattachement: z.string().nullable().optional(),
   responsableProjet: z.string().nullable().optional(),
+  typeSession: z.string().nullable().optional(),
   session: z.string().nullable().optional(),
   dateVisa: z.string().nullable().optional(),
   statutConvention: z.string().nullable().optional(),
@@ -110,6 +111,7 @@ export default function ConventionDetail() {
         objetConventionFr: convention.objetConventionFr,
         rattachement: convention.rattachement,
         responsableProjet: convention.responsableProjet,
+        typeSession: convention.typeSession,
         session: convention.session,
         dateVisa: convention.dateVisa?.split('T')[0] || null, // Handle dates from API if needed
         statutConvention: convention.statutConvention,
@@ -366,6 +368,22 @@ export default function ConventionDetail() {
                           value={field.value}
                           onValueChange={field.onChange}
                         />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="typeSession" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type de la session</FormLabel>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choisir un type de session" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Ordinaire">Ordinaire</SelectItem>
+                            <SelectItem value="Extraordinaire">Extraordinaire</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="session" render={({ field }) => (
