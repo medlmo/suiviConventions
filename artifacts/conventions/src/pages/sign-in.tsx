@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function SignIn() {
-  const { refresh } = useAuth();
+  const { setUser } = useAuth();
   const [, navigate] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -17,8 +17,8 @@ export default function SignIn() {
     event.preventDefault();
     setPending(true); setError("");
     try {
-      await api<User>("/auth/login", { method: "POST", body: JSON.stringify({ username: username.trim(), password }) });
-      await refresh();
+      const authenticatedUser = await api<User>("/auth/login", { method: "POST", body: JSON.stringify({ username: username.trim(), password }) });
+      await setUser(authenticatedUser);
       navigate("/");
     } catch (cause) {
       setError(cause instanceof ApiError && cause.status === 401 ? "Identifiant ou mot de passe incorrect." : errorMessage(cause));
