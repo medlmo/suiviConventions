@@ -46,6 +46,7 @@ export const ListConventionsResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.number().int(),
   "nomConvention": zod.string(),
+  "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
   "responsableProjet": zod.string().nullish(),
   "session": zod.coerce.date().nullish(),
@@ -97,6 +98,7 @@ export const ListConventionsResponse = zod.object({
 
 export const CreateConventionBody = zod.object({
   "nomConvention": zod.string().min(1),
+  "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
   "responsableProjet": zod.string().nullish(),
   "session": zod.coerce.date().nullish(),
@@ -126,6 +128,7 @@ export const CreateConventionBody = zod.object({
 export const CreateConventionResponse = zod.object({
   "id": zod.number().int(),
   "nomConvention": zod.string(),
+  "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
   "responsableProjet": zod.string().nullish(),
   "session": zod.coerce.date().nullish(),
@@ -202,6 +205,7 @@ export const ListAlertesQueryParams = zod.object({
 export const ListAlertesResponseItem = zod.object({
   "id": zod.number().int(),
   "nomConvention": zod.string(),
+  "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
   "responsableProjet": zod.string().nullish(),
   "session": zod.coerce.date().nullish(),
@@ -260,6 +264,7 @@ export const GetAgendaResponseItem = zod.object({
   "conventions": zod.array(zod.object({
   "id": zod.number().int(),
   "nomConvention": zod.string(),
+  "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
   "responsableProjet": zod.string().nullish(),
   "session": zod.coerce.date().nullish(),
@@ -322,6 +327,7 @@ export const GetConventionParams = zod.object({
 export const GetConventionResponse = zod.object({
   "id": zod.number().int(),
   "nomConvention": zod.string(),
+  "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
   "responsableProjet": zod.string().nullish(),
   "session": zod.coerce.date().nullish(),
@@ -372,6 +378,7 @@ export const UpdateConventionParams = zod.object({
 
 export const UpdateConventionBody = zod.object({
   "nomConvention": zod.string().min(1).optional(),
+  "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
   "responsableProjet": zod.string().nullish(),
   "session": zod.coerce.date().nullish(),
@@ -402,6 +409,7 @@ export const UpdateConventionBody = zod.object({
 export const UpdateConventionResponse = zod.object({
   "id": zod.number().int(),
   "nomConvention": zod.string(),
+  "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
   "responsableProjet": zod.string().nullish(),
   "session": zod.coerce.date().nullish(),

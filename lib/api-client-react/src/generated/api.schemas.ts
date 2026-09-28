@@ -67,6 +67,8 @@ export interface Convention {
   id: number;
   nomConvention: string;
   /** @nullable */
+  objetConventionFr?: string | null;
+  /** @nullable */
   rattachement?: string | null;
   /** @nullable */
   responsableProjet?: string | null;
@@ -141,6 +143,8 @@ export interface ConventionInput {
   /** @minLength 1 */
   nomConvention: string;
   /** @nullable */
+  objetConventionFr?: string | null;
+  /** @nullable */
   rattachement?: string | null;
   /** @nullable */
   responsableProjet?: string | null;
@@ -193,6 +197,8 @@ export interface ConventionInput {
 export interface ConventionUpdate {
   /** @minLength 1 */
   nomConvention?: string;
+  /** @nullable */
+  objetConventionFr?: string | null;
   /** @nullable */
   rattachement?: string | null;
   /** @nullable */

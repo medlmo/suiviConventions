@@ -427,6 +427,7 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
 
   const colonnes: [string, (c: ReturnType<typeof versApi>) => unknown][] = [
     ["Convention visée", (c) => c.nomConvention],
+    ["Objet de la convention (français)", (c) => c.objetConventionFr],
     ["Statut d'alerte", (c) => c.alerte.libelle],
     ["Action à mener", (c) => c.alerte.action],
     ["Jours restants", (c) => c.alerte.joursRestants],

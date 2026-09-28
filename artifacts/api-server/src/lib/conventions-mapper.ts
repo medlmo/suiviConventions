@@ -30,6 +30,7 @@ export function versApi(ligne: LigneConvention) {
   return {
     id: ligne.id,
     nomConvention: ligne.nomConvention,
+    objetConventionFr: ligne.objetConventionFr,
     rattachement: ligne.rattachement,
     responsableProjet: ligne.responsableProjet,
     session: ligne.session,
@@ -66,6 +67,7 @@ export type ConventionApi = ReturnType<typeof versApi>;
 
 const CHAMPS_TEXTE = [
   "nomConvention",
+  "objetConventionFr",
   "rattachement",
   "responsableProjet",
   "presidenceComite",
