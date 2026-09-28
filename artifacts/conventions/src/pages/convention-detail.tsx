@@ -386,14 +386,14 @@ export default function ConventionDetail() {
                         </Select>
                       </FormItem>
                     )} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="session" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Session</FormLabel>
                         <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
                       </FormItem>
                     )} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="competence" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Compétence</FormLabel>
@@ -411,6 +411,8 @@ export default function ConventionDetail() {
                         </Select>
                       </FormItem>
                     )} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="nature" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nature</FormLabel>
@@ -428,14 +430,14 @@ export default function ConventionDetail() {
                         </Select>
                       </FormItem>
                     )} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="dateVisa" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Date de Visa</FormLabel>
                         <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
                       </FormItem>
                     )} />
+                  </div>
+                  <div>
                     <FormField control={form.control} name="decision" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Décision</FormLabel>

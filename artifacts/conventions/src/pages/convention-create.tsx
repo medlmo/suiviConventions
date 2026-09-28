@@ -259,6 +259,23 @@ export default function ConventionCreate() {
                     <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
                   </FormItem>
                 )} />
+                <FormField control={form.control} name="nature" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nature</FormLabel>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choisir une nature" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Infrastructure">Infrastructure</SelectItem>
+                        <SelectItem value="Subventions">Subventions</SelectItem>
+                        <SelectItem value="Prestations">Prestations</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
                 <FormField control={form.control} name="dateVisa" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Date de visa</FormLabel>
@@ -266,23 +283,6 @@ export default function ConventionCreate() {
                   </FormItem>
                 )} />
               </div>
-              <FormField control={form.control} name="nature" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nature</FormLabel>
-                  <Select value={field.value || ""} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choisir une nature" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Infrastructure">Infrastructure</SelectItem>
-                      <SelectItem value="Subventions">Subventions</SelectItem>
-                      <SelectItem value="Prestations">Prestations</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
             </CardContent>
           </Card>
 
