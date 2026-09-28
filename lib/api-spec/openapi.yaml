@@ -317,6 +317,9 @@ components:
         objetConventionFr: { type: ["string", "null"] }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
+        typeSession:
+          type: ["string", "null"]
+          enum: [Ordinaire, Extraordinaire, null]
         session:
           type: ["string", "null"]
           format: date
@@ -371,6 +374,9 @@ components:
         objetConventionFr: { type: ["string", "null"] }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
+        typeSession:
+          type: ["string", "null"]
+          enum: [Ordinaire, Extraordinaire, null]
         session:
           type: ["string", "null"]
           format: date
@@ -403,6 +409,9 @@ components:
         objetConventionFr: { type: ["string", "null"] }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
+        typeSession:
+          type: ["string", "null"]
+          enum: [Ordinaire, Extraordinaire, null]
         session:
           type: ["string", "null"]
           format: date

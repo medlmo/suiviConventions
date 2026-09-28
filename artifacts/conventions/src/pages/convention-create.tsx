@@ -39,6 +39,7 @@ const conventionSchema = z.object({
   objetConventionFr: z.string().nullable().optional(),
   rattachement: z.string().nullable().optional(),
   responsableProjet: z.string().nullable().optional(),
+  typeSession: z.string().nullable().optional(),
   session: z.string().nullable().optional(),
   dateVisa: z.string().nullable().optional(),
   statutConvention: z.string().nullable().optional(),
@@ -240,6 +241,22 @@ export default function ConventionCreate() {
                   <FormItem>
                     <FormLabel>Session</FormLabel>
                     <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="typeSession" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de la session</FormLabel>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choisir un type de session" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Ordinaire">Ordinaire</SelectItem>
+                        <SelectItem value="Extraordinaire">Extraordinaire</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="dateVisa" render={({ field }) => (
