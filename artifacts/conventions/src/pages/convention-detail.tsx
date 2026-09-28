@@ -3,7 +3,10 @@ import {
   useGetConvention, 
   getGetConventionQueryKey,
   getGetResumeAlertesQueryKey,
-  getListAlertesQueryKey
+  getListAlertesQueryKey,
+  getListConventionsQueryKey,
+  getGetAgendaQueryKey,
+  getGetOptionsFiltresQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -167,6 +170,9 @@ export default function ConventionDetail() {
         queryClient.setQueryData(getGetConventionQueryKey(id), updatedConvention);
         queryClient.invalidateQueries({ queryKey: getGetResumeAlertesQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListAlertesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListConventionsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetAgendaQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetOptionsFiltresQueryKey() });
       } catch (error) {
         if ((error as ApiError).status === 409 || (error as ApiError).status === 404) setConflict("Cette convention a été modifiée ou supprimée depuis son ouverture. Actualisez la fiche avant de réessayer.");
         toast({
@@ -187,6 +193,11 @@ export default function ConventionDetail() {
           title: "Convention supprimée",
         });
         queryClient.invalidateQueries({ queryKey: getGetResumeAlertesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListAlertesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListConventionsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetAgendaQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetOptionsFiltresQueryKey() });
+        queryClient.removeQueries({ queryKey: getGetConventionQueryKey(id) });
         setDeleteDialogOpen(false);
         setLocation("/conventions");
       } catch (error) {
@@ -670,13 +681,13 @@ export default function ConventionDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer cette convention ?</AlertDialogTitle>
             <AlertDialogDescription>
-              La convention « {convention.nomConvention} » sera supprimée définitivement. Cette action ne peut pas être annulée.
+              La convention « {convention.nomConvention} » sera retirée du suivi. La fiche ne sera plus visible, mais une trace restera dans le journal d'administration.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
             <Button type="button" variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? "Suppression..." : "Supprimer définitivement"}
+              {isDeleting ? "Suppression..." : "Supprimer la convention"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

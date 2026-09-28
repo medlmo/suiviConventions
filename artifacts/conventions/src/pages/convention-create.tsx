@@ -2,7 +2,10 @@ import { useLocation } from "wouter";
 import { 
   useCreateConvention,
   getGetResumeAlertesQueryKey,
-  getListAlertesQueryKey
+  getListAlertesQueryKey,
+  getListConventionsQueryKey,
+  getGetAgendaQueryKey,
+  getGetOptionsFiltresQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -107,6 +110,9 @@ export default function ConventionCreate() {
         });
         queryClient.invalidateQueries({ queryKey: getGetResumeAlertesQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListAlertesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListConventionsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetAgendaQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetOptionsFiltresQueryKey() });
         setLocation(`/conventions/${newConvention.id}`);
       },
       onError: (error) => {
