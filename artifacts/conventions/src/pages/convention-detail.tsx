@@ -581,8 +581,9 @@ export default function ConventionDetail() {
 
                   <FormField control={form.control} name="frequenceReunions" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Fréquence des réunions (Convention)</FormLabel>
-                      <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                      <FormLabel>Fréquence prévue des réunions (mois)</FormLabel>
+                      <FormControl><Input {...field} value={field.value || ""} dir="auto" placeholder="Ex. : 3" /></FormControl>
+                      <p className="text-xs text-muted-foreground">Indiquer le nombre de mois entre deux réunions.</p>
                     </FormItem>
                   )} />
 
