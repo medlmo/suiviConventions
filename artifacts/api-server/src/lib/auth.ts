@@ -70,8 +70,8 @@ export async function bootstrapAdmin(): Promise<void> {
       "Aucun compte administrateur n'existe. Configurez le secret ADMIN_BOOTSTRAP_PASSWORD pour créer le compte initial, puis redémarrez le serveur.",
     );
   }
-  if (password.length < 12) {
-    throw new Error("Le mot de passe initial de l'administrateur doit contenir au moins 12 caractères.");
+  if (password.length < 8) {
+    throw new Error("Le mot de passe initial de l'administrateur doit contenir au moins 8 caractères.");
   }
   await db.insert(usersTable).values({
     username: "admin",
