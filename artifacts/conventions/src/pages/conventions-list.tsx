@@ -16,8 +16,10 @@ import { AlerteBadge } from "@/components/alerte-badge";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/utils";
+import { useAuth, errorMessage } from "@/hooks/use-auth";
 
 export default function ConventionsList() {
+  const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
   const [alerte, setAlerte] = useState<NiveauAlerte | undefined>();
@@ -27,7 +29,7 @@ export default function ConventionsList() {
   // Urgence ascendante = les retards en tête (rang 0), « À qualifier » en fin.
   const [ordre, setOrdre] = useState<ListConventionsOrdre>("asc");
 
-  const { data, isLoading } = useListConventions({
+  const { data, isLoading, isError, error, refetch } = useListConventions({
     page,
     pageSize: 15,
     q: q || undefined,
@@ -79,11 +81,11 @@ export default function ConventionsList() {
               <Download className="w-4 h-4" /> Export CSV
             </a>
           </Button>
-          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
+          {user?.role !== "directeur" && <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
             <Link href="/conventions/nouvelle" className="flex items-center gap-2">
               <Plus className="w-4 h-4" /> Nouvelle Convention
             </Link>
-          </Button>
+          </Button>}
         </div>
       </div>
 
@@ -164,7 +166,8 @@ export default function ConventionsList() {
         </CardContent>
       </Card>
 
-      <div className="bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col">
+      {isError && <Card><CardContent className="p-8 text-center"><p role="alert" className="text-destructive">{errorMessage(error)}</p><Button variant="outline" className="mt-4" onClick={() => void refetch()}>Réessayer</Button></CardContent></Card>}
+      {!isError && <div className="bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col">
         {/* Sur mobile, le tableau devient une liste de cartes : un tableau à six
             colonnes forcerait un défilement horizontal, et les noms arabes,
             alignés à droite, démarreraient hors de l'écran. */}
@@ -180,7 +183,7 @@ export default function ConventionsList() {
           ) : data?.items.length === 0 ? (
             <div className="px-4 py-12 text-center text-muted-foreground">
               <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              Aucune convention trouvée avec ces filtres.
+              {user?.role === "chef_division" || user?.role === "chef_service" ? "Aucune convention attribuée à votre périmètre. Les anciennes conventions sans rattachement restent accessibles à l'administration." : "Aucune convention trouvée avec ces filtres."}
             </div>
           ) : (
             data?.items.map((conv) => (
@@ -256,7 +259,7 @@ export default function ConventionsList() {
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    Aucune convention trouvée avec ces filtres.
+                    {user?.role === "chef_division" || user?.role === "chef_service" ? "Aucune convention attribuée à votre périmètre. Les anciennes conventions sans rattachement restent accessibles à l'administration." : "Aucune convention trouvée avec ces filtres."}
                   </td>
                 </tr>
               ) : (
@@ -346,7 +349,7 @@ export default function ConventionsList() {
             </div>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

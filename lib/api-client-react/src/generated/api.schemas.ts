@@ -76,6 +76,7 @@ export const ConventionTypeSession = {
 
 export interface Convention {
   id: number;
+  version: number;
   nomConvention: string;
   /** @nullable */
   objetConventionFr?: string | null;
@@ -232,6 +233,8 @@ export const ConventionUpdateTypeSession = {
 } as const;
 
 export interface ConventionUpdate {
+  /** @minimum 1 */
+  version: number;
   /** @minLength 1 */
   nomConvention?: string;
   /** @nullable */
@@ -351,6 +354,143 @@ export interface OptionsFiltres {
   decisions: string[];
 }
 
+export type Role = typeof Role[keyof typeof Role];
+
+
+export const Role = {
+  admin: 'admin',
+  directeur: 'directeur',
+  chef_division: 'chef_division',
+  chef_service: 'chef_service',
+} as const;
+
+export interface AuthUser {
+  id: number;
+  username: string;
+  role: Role;
+  /** @nullable */
+  direction: string | null;
+  /** @nullable */
+  division: string | null;
+  /** @nullable */
+  service: string | null;
+  active: boolean;
+}
+
+export type AdminUser = AuthUser & {
+  createdAt: string;
+};
+
+export interface LoginInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  username: string;
+  /**
+     * @minLength 1
+     * @maxLength 1024
+     */
+  password: string;
+}
+
+export interface UserInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  username: string;
+  /**
+     * @minLength 12
+     * @maxLength 1024
+     */
+  password: string;
+  role: Role;
+  /** @nullable */
+  direction?: string | null;
+  /** @nullable */
+  division?: string | null;
+  /** @nullable */
+  service?: string | null;
+  active?: boolean;
+}
+
+export interface UserUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  username?: string;
+  role?: Role;
+  /** @nullable */
+  direction?: string | null;
+  /** @nullable */
+  division?: string | null;
+  /** @nullable */
+  service?: string | null;
+  active?: boolean;
+}
+
+export interface PasswordInput {
+  /**
+     * @minLength 12
+     * @maxLength 1024
+     */
+  password: string;
+}
+
+export type AuditEventAction = typeof AuditEventAction[keyof typeof AuditEventAction];
+
+
+export const AuditEventAction = {
+  create: 'create',
+  update: 'update',
+  delete: 'delete',
+} as const;
+
+/**
+ * @nullable
+ */
+export type AuditEventBefore = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type AuditEventAfter = { [key: string]: unknown } | null;
+
+export interface AuditEvent {
+  id: number;
+  conventionId: number;
+  action: AuditEventAction;
+  actorUsername: string;
+  /** @nullable */
+  before: AuditEventBefore;
+  /** @nullable */
+  after: AuditEventAfter;
+  createdAt: string;
+}
+
+export interface AuditPage {
+  items: AuditEvent[];
+  total: number;
+}
+
+export type ListAuditParams = {
+/**
+ * @minimum 1
+ * @maximum 200
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+/**
+ * @minimum 1
+ */
+conventionId?: number;
+};
+
 export type ListConventionsParams = {
 /**
  * Recherche texte (nom de convention, responsable, maîtrise d'ouvrage). Supporte l'arabe.
@@ -422,5 +562,13 @@ export type GetAgendaParams = {
  * @maximum 24
  */
 mois?: number;
+};
+
+export type DeleteConventionParams = {
+/**
+ * Version attendue pour empêcher les suppressions obsolètes
+ * @minimum 1
+ */
+version: number;
 };
 

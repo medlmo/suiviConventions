@@ -1,6 +1,7 @@
 import { FormControl } from "@/components/ui/form";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { organisation, rattachementConnu, servicesDeDivision } from "@/lib/organisation";
+import { useAuth } from "@/hooks/use-auth";
 
 type ChoixProps = {
   value: string | null | undefined;
@@ -8,6 +9,8 @@ type ChoixProps = {
 };
 
 export function RattachementSelect({ value, onValueChange }: ChoixProps) {
+  const { user } = useAuth();
+  const divisionsPermises = user?.role === "chef_division" || user?.role === "chef_service" ? user.division : null;
   const ancien = !!value && !rattachementConnu(value);
 
   return (
@@ -22,12 +25,12 @@ export function RattachementSelect({ value, onValueChange }: ChoixProps) {
           </SelectTrigger>
         </FormControl>
         <SelectContent className="max-h-80 w-[min(34rem,90vw)]">
-          {organisation.map(({ direction, divisions }) => (
+          {organisation.filter(({ direction }) => !divisionsPermises || direction === user?.direction).map(({ direction, divisions }) => (
             <SelectGroup key={direction}>
-              <SelectItem value={direction} className="font-semibold whitespace-normal">
+              {!divisionsPermises && <SelectItem value={direction} className="font-semibold whitespace-normal">
                 {direction}
-              </SelectItem>
-              {divisions.map(({ nom }) => (
+              </SelectItem>}
+              {divisions.filter(({ nom }) => !divisionsPermises || nom === divisionsPermises).map(({ nom }) => (
                 <SelectItem key={nom} value={nom} className="pl-8 whitespace-normal">
                   {nom}
                 </SelectItem>
@@ -36,7 +39,7 @@ export function RattachementSelect({ value, onValueChange }: ChoixProps) {
           ))}
         </SelectContent>
       </Select>
-      {value && (
+      {value && !divisionsPermises && (
         <button type="button" className="text-xs text-muted-foreground underline hover:text-foreground" onClick={() => onValueChange(null)} data-testid="button-effacer-rattachement">
           Effacer le rattachement
         </button>
@@ -55,7 +58,8 @@ type ServiceSelectProps = ChoixProps & {
 };
 
 export function ServiceSelect({ rattachement, value, onValueChange }: ServiceSelectProps) {
-  const services = servicesDeDivision(rattachement);
+  const { user } = useAuth();
+  const services = servicesDeDivision(rattachement).filter(service => user?.role !== "chef_service" || service === user.service);
   const ancien = !!value && !services.includes(value);
 
   return (
@@ -78,7 +82,7 @@ export function ServiceSelect({ rattachement, value, onValueChange }: ServiceSel
           ))}
         </SelectContent>
       </Select>
-      {value && (
+      {value && user?.role !== "chef_service" && (
         <button type="button" className="text-xs text-muted-foreground underline hover:text-foreground" onClick={() => onValueChange(null)} data-testid="button-effacer-responsable-projet">
           Effacer le service
         </button>

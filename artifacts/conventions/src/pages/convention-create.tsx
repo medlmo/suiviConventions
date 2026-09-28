@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth, errorMessage } from "@/hooks/use-auth";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ export default function ConventionCreate() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const createMutation = useCreateConvention();
 
@@ -78,11 +80,20 @@ export default function ConventionCreate() {
       nomConvention: "",
       statutConvention: "En cours",
       natureFonds: "Propres",
+      rattachement: user?.role === "chef_division" || user?.role === "chef_service" ? user.division : null,
+      responsableProjet: user?.role === "chef_service" ? user.service : null,
     }
   });
   const rattachementChoisi = form.watch("rattachement");
 
   const onSubmit = (data: FormValues) => {
+    if (!user || user.role === "directeur") return;
+    if ((user.role === "chef_division" || user.role === "chef_service") && data.rattachement !== user.division) {
+      toast({ variant: "destructive", title: "Rattachement non autorisé", description: "Choisissez votre division." }); return;
+    }
+    if (user.role === "chef_service" && data.responsableProjet !== user.service) {
+      toast({ variant: "destructive", title: "Service non autorisé", description: "Choisissez votre service." }); return;
+    }
     const cleanData = Object.fromEntries(
       Object.entries(data).map(([k, v]) => [k, v === "" ? null : v])
     );
@@ -98,11 +109,12 @@ export default function ConventionCreate() {
         queryClient.invalidateQueries({ queryKey: getListAlertesQueryKey() });
         setLocation(`/conventions/${newConvention.id}`);
       },
-      onError: () => {
+      onError: (error) => {
+        if ((error as { status?: number }).status === 401) window.dispatchEvent(new Event("conventions-session-expired"));
         toast({
           variant: "destructive",
           title: "Erreur",
-          description: "Impossible de créer la convention.",
+          description: errorMessage(error),
         });
       }
     });

@@ -116,6 +116,15 @@
   --radius: 0.5rem; /* 8px */
 }
 
+/* Surfaces d'accès : le bleu institutionnel reste le point d'ancrage. */
+.auth-panel {
+  background: radial-gradient(circle at 15% 85%, hsl(30 70% 45% / .16), transparent 35%), hsl(var(--sidebar));
+}
+.auth-grid {
+  background-image: linear-gradient(hsl(0 0% 100% / .07) 1px, transparent 1px), linear-gradient(90deg, hsl(0 0% 100% / .07) 1px, transparent 1px);
+  background-size: 46px 46px;
+}
+
 /* Light mode only, forced as default */
 .dark {
   --background: 40 20% 98%;
