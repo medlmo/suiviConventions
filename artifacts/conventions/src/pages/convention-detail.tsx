@@ -442,11 +442,11 @@ export default function ConventionDetail() {
                   <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="nature" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nature</FormLabel>
+                        <FormLabel>Nature du projet</FormLabel>
                         <Select value={field.value || ""} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Choisir une nature" />
+                              <SelectValue placeholder="Choisir la nature du projet" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
