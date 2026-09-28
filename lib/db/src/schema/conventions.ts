@@ -1,4 +1,4 @@
-import { date, index, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { date, index, integer, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -66,6 +66,8 @@ export const conventionsTable = pgTable(
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    version: integer("version").notNull().default(1),
   },
   (table) => [
     index("conventions_prochaine_echeance_idx").on(table.prochaineEcheance),
@@ -79,6 +81,8 @@ export const insertConventionSchema = createInsertSchema(conventionsTable).omit(
   id: true,
   createdAt: true,
   updatedAt: true,
+  deletedAt: true,
+  version: true,
 });
 
 export type InsertConvention = z.infer<typeof insertConventionSchema>;

@@ -29,6 +29,7 @@ function nombreOuNull(valeur: string | null): number | null {
 export function versApi(ligne: LigneConvention) {
   return {
     id: ligne.id,
+    version: ligne.version,
     nomConvention: ligne.nomConvention,
     objetConventionFr: ligne.objetConventionFr,
     rattachement: ligne.rattachement,

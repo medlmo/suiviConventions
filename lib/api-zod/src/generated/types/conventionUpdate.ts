@@ -8,6 +8,8 @@
 import type { ConventionUpdateTypeSession } from './conventionUpdateTypeSession';
 
 export interface ConventionUpdate {
+  /** @minimum 1 */
+  version: number;
   /** @minLength 1 */
   nomConvention?: string;
   /** @nullable */

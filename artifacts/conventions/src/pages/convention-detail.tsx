@@ -1,8 +1,6 @@
 import { useLocation, useParams } from "wouter";
 import { 
   useGetConvention, 
-  useUpdateConvention,
-  useDeleteConvention,
   getGetConventionQueryKey,
   getGetResumeAlertesQueryKey,
   getListAlertesQueryKey
@@ -12,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useEffect, useRef, useState } from "react";
+import { api, canEditConvention, errorMessage, useAuth, type ApiError } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,6 +90,9 @@ export default function ConventionDetail() {
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [conflict, setConflict] = useState("");
+  const { user } = useAuth();
 
   const { data: convention, isLoading, isError, error, refetch } = useGetConvention(id, {
     query: {
@@ -99,8 +101,7 @@ export default function ConventionDetail() {
     }
   });
 
-  const updateMutation = useUpdateConvention();
-  const deleteMutation = useDeleteConvention();
+  const canEdit = !!user && !!convention && canEditConvention(user, convention);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(conventionSchema),
@@ -148,54 +149,54 @@ export default function ConventionDetail() {
     }
   }, [convention, id, form]);
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
+    if (!canEdit || !convention) return;
     // Nettoyer les chaines vides en null pour l'API
     const cleanData = Object.fromEntries(
       Object.entries(data).map(([k, v]) => [k, v === "" ? null : v])
     );
 
-    updateMutation.mutate({ id, data: cleanData }, {
-      onSuccess: (updatedConvention) => {
+    setSaving(true); setConflict("");
+    try {
+        const updatedConvention = await api<typeof convention>(`/conventions/${id}`, { method: "PATCH", body: JSON.stringify({ ...cleanData, version: (convention as typeof convention & { version: number }).version }) });
         toast({
           title: "Convention mise à jour",
           description: "Les modifications ont été enregistrées avec succès.",
         });
         // On invalide les requetes du TDB car les dates de comites impactent les alertes
-        queryClient.invalidateQueries({ queryKey: getGetConventionQueryKey(id) });
+        queryClient.setQueryData(getGetConventionQueryKey(id), updatedConvention);
         queryClient.invalidateQueries({ queryKey: getGetResumeAlertesQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListAlertesQueryKey() });
-      },
-      onError: (error) => {
+      } catch (error) {
+        if ((error as ApiError).status === 409 || (error as ApiError).status === 404) setConflict("Cette convention a été modifiée ou supprimée depuis son ouverture. Actualisez la fiche avant de réessayer.");
         toast({
           variant: "destructive",
           title: "Erreur",
-          description: "Impossible de mettre à jour la convention.",
+          description: errorMessage(error),
         });
-      }
-    });
+      } finally { setSaving(false); }
   };
 
-  const handleDelete = () => {
-    if (isDeleting) return;
+  const handleDelete = async () => {
+    if (isDeleting || !canEdit || !convention) return;
     setIsDeleting(true);
-    deleteMutation.mutate({ id }, {
-      onSuccess: () => {
+    setConflict("");
+    try {
+        await api<void>(`/conventions/${id}?version=${encodeURIComponent(String((convention as typeof convention & { version: number }).version))}`, { method: "DELETE" });
         toast({
           title: "Convention supprimée",
         });
         queryClient.invalidateQueries({ queryKey: getGetResumeAlertesQueryKey() });
         setDeleteDialogOpen(false);
         setLocation("/conventions");
-      },
-      onError: () => {
-        setIsDeleting(false);
+      } catch (error) {
+        if ((error as ApiError).status === 409 || (error as ApiError).status === 404) { setConflict("Cette convention a été modifiée ou supprimée depuis son ouverture. Actualisez la fiche avant de réessayer."); setDeleteDialogOpen(false); }
         toast({
           variant: "destructive",
           title: "Erreur",
-          description: "Impossible de supprimer la convention.",
+          description: errorMessage(error),
         });
-      }
-    });
+      } finally { setIsDeleting(false); }
   };
 
   if (isLoading) {
@@ -263,21 +264,26 @@ export default function ConventionDetail() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="text-2xl font-bold">Fiche Convention</h1>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-3 flex-wrap justify-end">
           <AlerteBadge alerte={convention.alerte} className="text-base px-3 py-1 mr-4" />
+          {canEdit && <>
           <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)} disabled={isDeleting}>
             <Trash2 className="w-4 h-4 mr-2" />
             Supprimer
           </Button>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={updateMutation.isPending}>
+          <Button onClick={form.handleSubmit(onSubmit)} disabled={saving}>
             <Save className="w-4 h-4 mr-2" />
-            {updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+            {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
+          </>}
         </div>
       </div>
+      {!canEdit && <div className="rounded-lg border border-primary/20 bg-accent/50 p-4 text-sm text-primary">Consultation uniquement : cette convention est hors de votre périmètre de modification.</div>}
+      {conflict && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex flex-wrap items-center justify-between gap-3"><span className="text-sm text-destructive">{conflict}</span><Button variant="outline" size="sm" onClick={async () => { const result = await refetch(); if (result.data) { initializedId.current = null; form.reset(result.data as unknown as FormValues); setConflict(""); } }}>Actualiser la fiche</Button></div>}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <fieldset disabled={!canEdit} className="space-y-6 min-w-0">
           
           {/* Titre Principal Large */}
           <Card className="border-t-4 border-t-primary shadow-md bg-card">
@@ -651,6 +657,7 @@ export default function ConventionDetail() {
 
             </div>
           </div>
+          </fieldset>
         </form>
       </Form>
       <AlertDialog

@@ -10,6 +10,7 @@ import type { ConventionTypeSession } from './conventionTypeSession';
 
 export interface Convention {
   id: number;
+  version: number;
   nomConvention: string;
   /** @nullable */
   objetConventionFr?: string | null;

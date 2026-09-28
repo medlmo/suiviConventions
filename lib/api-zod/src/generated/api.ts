@@ -18,6 +18,185 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Utilisateur authentifié
+ */
+export const GetCurrentUserResponse = zod.object({
+  "id": zod.number().int(),
+  "username": zod.string(),
+  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "direction": zod.string().nullable(),
+  "division": zod.string().nullable(),
+  "service": zod.string().nullable(),
+  "active": zod.boolean()
+})
+
+
+/**
+ * @summary Ouvrir une session avec identifiant et mot de passe
+ */
+export const loginBodyUsernameMax = 100;
+
+export const loginBodyPasswordMax = 1024;
+
+
+
+export const LoginBody = zod.object({
+  "username": zod.string().min(1).max(loginBodyUsernameMax),
+  "password": zod.string().min(1).max(loginBodyPasswordMax)
+})
+
+export const LoginResponse = zod.object({
+  "id": zod.number().int(),
+  "username": zod.string(),
+  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "direction": zod.string().nullable(),
+  "division": zod.string().nullable(),
+  "service": zod.string().nullable(),
+  "active": zod.boolean()
+})
+
+
+/**
+ * @summary Révoquer la session courante
+ */
+export const LogoutResponse = zod.void()
+
+
+/**
+ * @summary Lister les comptes (administrateur uniquement)
+ */
+export const ListUsersResponseItem = zod.object({
+  "id": zod.number().int(),
+  "username": zod.string(),
+  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "direction": zod.string().nullable(),
+  "division": zod.string().nullable(),
+  "service": zod.string().nullable(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "createdAt": zod.coerce.date()
+}))
+export const ListUsersResponse = zod.array(ListUsersResponseItem)
+
+
+/**
+ * @summary Créer un compte (administrateur uniquement)
+ */
+export const createUserBodyUsernameMax = 100;
+
+export const createUserBodyPasswordMin = 12;
+export const createUserBodyPasswordMax = 1024;
+
+export const createUserBodyActiveDefault = true;
+
+export const CreateUserBody = zod.object({
+  "username": zod.string().min(1).max(createUserBodyUsernameMax),
+  "password": zod.string().min(createUserBodyPasswordMin).max(createUserBodyPasswordMax),
+  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "direction": zod.string().nullish(),
+  "division": zod.string().nullish(),
+  "service": zod.string().nullish(),
+  "active": zod.boolean().default(createUserBodyActiveDefault)
+})
+
+export const CreateUserResponse = zod.object({
+  "id": zod.number().int(),
+  "username": zod.string(),
+  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "direction": zod.string().nullable(),
+  "division": zod.string().nullable(),
+  "service": zod.string().nullable(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "createdAt": zod.coerce.date()
+}))
+
+
+/**
+ * @summary Modifier un compte (administrateur uniquement)
+ */
+export const UpdateUserParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const updateUserBodyUsernameMax = 100;
+
+
+
+export const UpdateUserBody = zod.object({
+  "username": zod.string().min(1).max(updateUserBodyUsernameMax).optional(),
+  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']).optional(),
+  "direction": zod.string().nullish(),
+  "division": zod.string().nullish(),
+  "service": zod.string().nullish(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdateUserResponse = zod.object({
+  "id": zod.number().int(),
+  "username": zod.string(),
+  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "direction": zod.string().nullable(),
+  "division": zod.string().nullable(),
+  "service": zod.string().nullable(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "createdAt": zod.coerce.date()
+}))
+
+
+/**
+ * @summary Réinitialiser le mot de passe et révoquer les sessions
+ */
+export const ResetUserPasswordParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const resetUserPasswordBodyPasswordMin = 12;
+export const resetUserPasswordBodyPasswordMax = 1024;
+
+
+
+export const ResetUserPasswordBody = zod.object({
+  "password": zod.string().min(resetUserPasswordBodyPasswordMin).max(resetUserPasswordBodyPasswordMax)
+})
+
+export const ResetUserPasswordResponse = zod.void()
+
+
+/**
+ * @summary Consulter l'historique des modifications (administrateur uniquement)
+ */
+export const listAuditQueryLimitDefault = 50;
+export const listAuditQueryLimitMax = 200;
+
+export const listAuditQueryOffsetDefault = 0;
+export const listAuditQueryOffsetMin = 0;
+
+
+
+
+export const ListAuditQueryParams = zod.object({
+  "limit": zod.coerce.number().int().min(1).max(listAuditQueryLimitMax).default(listAuditQueryLimitDefault),
+  "offset": zod.coerce.number().int().min(listAuditQueryOffsetMin).default(listAuditQueryOffsetDefault),
+  "conventionId": zod.coerce.number().int().min(1).optional()
+})
+
+export const ListAuditResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number().int(),
+  "conventionId": zod.number().int(),
+  "action": zod.enum(['create', 'update', 'delete']),
+  "actorUsername": zod.string(),
+  "before": zod.record(zod.string(), zod.unknown()).nullable(),
+  "after": zod.record(zod.string(), zod.unknown()).nullable(),
+  "createdAt": zod.coerce.date()
+})),
+  "total": zod.number().int()
+})
+
+
+/**
  * @summary Liste paginée et filtrée des conventions
  */
 export const listConventionsQueryPageDefault = 1;
@@ -45,6 +224,7 @@ export const ListConventionsQueryParams = zod.object({
 export const ListConventionsResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.number().int(),
+  "version": zod.number().int(),
   "nomConvention": zod.string(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
@@ -129,6 +309,7 @@ export const CreateConventionBody = zod.object({
 
 export const CreateConventionResponse = zod.object({
   "id": zod.number().int(),
+  "version": zod.number().int(),
   "nomConvention": zod.string(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
@@ -207,6 +388,7 @@ export const ListAlertesQueryParams = zod.object({
 
 export const ListAlertesResponseItem = zod.object({
   "id": zod.number().int(),
+  "version": zod.number().int(),
   "nomConvention": zod.string(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
@@ -267,6 +449,7 @@ export const GetAgendaResponseItem = zod.object({
   "nombre": zod.number().int(),
   "conventions": zod.array(zod.object({
   "id": zod.number().int(),
+  "version": zod.number().int(),
   "nomConvention": zod.string(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
@@ -331,6 +514,7 @@ export const GetConventionParams = zod.object({
 
 export const GetConventionResponse = zod.object({
   "id": zod.number().int(),
+  "version": zod.number().int(),
   "nomConvention": zod.string(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
@@ -382,7 +566,9 @@ export const UpdateConventionParams = zod.object({
 
 
 
+
 export const UpdateConventionBody = zod.object({
+  "version": zod.number().int().min(1),
   "nomConvention": zod.string().min(1).optional(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
@@ -415,6 +601,7 @@ export const UpdateConventionBody = zod.object({
 
 export const UpdateConventionResponse = zod.object({
   "id": zod.number().int(),
+  "version": zod.number().int(),
   "nomConvention": zod.string(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
@@ -461,6 +648,13 @@ export const UpdateConventionResponse = zod.object({
  */
 export const DeleteConventionParams = zod.object({
   "id": zod.coerce.number().int()
+})
+
+
+
+
+export const DeleteConventionQueryParams = zod.object({
+  "version": zod.coerce.number().int().min(1).describe('Version attendue pour empêcher les suppressions obsolètes')
 })
 
 export const DeleteConventionResponse = zod.void()

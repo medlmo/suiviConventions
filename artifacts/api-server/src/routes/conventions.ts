@@ -1,6 +1,12 @@
 import { Router, type IRouter } from "express";
-import { and, asc, count, desc, eq, gte, isNotNull, isNull, lte, or, sql, type SQL } from "drizzle-orm";
-import { db, conventionsTable } from "@workspace/db";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lte, or, sql, type SQL } from "drizzle-orm";
+import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
+import {
+  divisionDeDirection,
+  serviceDansDivision,
+  servicesDeDivision,
+} from "@workspace/organisation";
+import type { SessionUser } from "../lib/auth";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   CreateConventionBody,
@@ -176,6 +182,89 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
   return conditions.length > 0 ? and(...conditions) : undefined;
 }
 
+function filtrePerimetre(user: SessionUser): SQL | undefined {
+  if (user.role === "admin" || user.role === "directeur") {
+    // Directors intentionally retain read access to every convention.
+    return undefined;
+  }
+  if (
+    user.role === "chef_division" &&
+    user.direction &&
+    user.division &&
+    divisionDeDirection(user.direction, user.division)
+  ) {
+    const services = servicesDeDivision(user.division);
+    if (services.length === 0) return sql`FALSE`;
+    return and(
+      eq(conventionsTable.rattachement, user.division),
+      or(isNull(conventionsTable.responsableProjet), inArray(conventionsTable.responsableProjet, [...services])),
+    );
+  }
+  if (
+    user.role === "chef_service" &&
+    user.direction &&
+    user.division &&
+    user.service &&
+    divisionDeDirection(user.direction, user.division) &&
+    serviceDansDivision(user.division, user.service)
+  ) {
+    return and(
+      eq(conventionsTable.rattachement, user.division),
+      eq(conventionsTable.responsableProjet, user.service),
+    );
+  }
+  return sql`FALSE`;
+}
+
+function accessible(row: typeof conventionsTable.$inferSelect, user: SessionUser): boolean {
+  if (user.role === "admin" || user.role === "directeur") return true;
+  if (user.role === "chef_division") {
+    return !!user.direction && !!user.division &&
+      divisionDeDirection(user.direction, user.division) &&
+      row.rattachement === user.division &&
+      (!row.responsableProjet || serviceDansDivision(user.division, row.responsableProjet));
+  }
+  if (user.role === "chef_service") {
+    return !!user.direction && !!user.division && !!user.service &&
+      divisionDeDirection(user.direction, user.division) &&
+      serviceDansDivision(user.division, user.service) &&
+      row.rattachement === user.division && row.responsableProjet === user.service;
+  }
+  return false;
+}
+
+function peutEcrire(user: SessionUser): boolean {
+  return user.role === "admin" || user.role === "chef_division" || user.role === "chef_service";
+}
+
+function affectationsValides(
+  rattachement: string | null | undefined,
+  responsableProjet: string | null | undefined,
+  user: SessionUser,
+): boolean {
+  if (user.role === "chef_division") {
+    return !!user.division && rattachement === user.division &&
+      (!responsableProjet || serviceDansDivision(user.division, responsableProjet));
+  }
+  if (user.role === "chef_service") {
+    return !!user.division && !!user.service &&
+      rattachement === user.division && responsableProjet === user.service;
+  }
+  if (user.role === "admin") {
+    return (!rattachement || !responsableProjet || serviceDansDivision(rattachement, responsableProjet)) &&
+      (!responsableProjet || (!!rattachement && serviceDansDivision(rattachement, responsableProjet)));
+  }
+  return false;
+}
+
+function conditionsVisibles(user: SessionUser, filtre?: SQL): SQL {
+  return and(isNull(conventionsTable.deletedAt), filtrePerimetre(user), filtre)!;
+}
+
+function snapshot(row: typeof conventionsTable.$inferSelect): Record<string, unknown> {
+  return { ...row };
+}
+
 function construireTri(tri: string, ordre: string): SQL[] {
   const sens = ordre === "desc" ? desc : asc;
 
@@ -219,7 +308,7 @@ router.get("/conventions", async (req, res): Promise<void> => {
   }
 
   const { page = 1, pageSize = 25, tri = "urgence", ordre = "asc", ...filtres } = query.data;
-  const where = construireFiltres(filtres);
+  const where = conditionsVisibles(req.user!, construireFiltres(filtres));
 
   const [lignes, [total]] = await Promise.all([
     db
@@ -245,16 +334,18 @@ router.get("/conventions", async (req, res): Promise<void> => {
   );
 });
 
-router.get("/conventions/resume", async (_req, res): Promise<void> => {
+router.get("/conventions/resume", async (req, res): Promise<void> => {
+  const visible = conditionsVisibles(req.user!);
   const [repartition, [prochaine], jourCourant] = await Promise.all([
     db
       .select({ niveau: niveauAlerteSql, nombre: count() })
       .from(conventionsTable)
+      .where(visible)
       .groupBy(niveauAlerteSql),
     db
       .select({ date: conventionsTable.prochaineEcheance })
       .from(conventionsTable)
-      .where(gte(conventionsTable.prochaineEcheance, sql`CURRENT_DATE`))
+      .where(and(visible, gte(conventionsTable.prochaineEcheance, sql`CURRENT_DATE`)))
       .orderBy(asc(conventionsTable.prochaineEcheance))
       .limit(1),
     db.execute<{ valeur: string }>(sql`SELECT CURRENT_DATE::text AS valeur`),
@@ -306,6 +397,7 @@ router.get("/conventions/alertes", async (req, res): Promise<void> => {
     .from(conventionsTable)
     .where(
       and(
+        conditionsVisibles(req.user!),
         isNotNull(conventionsTable.prochaineEcheance),
         lte(
           conventionsTable.prochaineEcheance,
@@ -335,6 +427,7 @@ router.get("/conventions/agenda", async (req, res): Promise<void> => {
     .from(conventionsTable)
     .where(
       and(
+        conditionsVisibles(req.user!),
         gte(conventionsTable.prochaineEcheance, sql`CURRENT_DATE`),
         lte(
           conventionsTable.prochaineEcheance,
@@ -373,12 +466,12 @@ router.get("/conventions/agenda", async (req, res): Promise<void> => {
   res.json(valide(GetAgendaResponse, agenda));
 });
 
-router.get("/conventions/options-filtres", async (_req, res): Promise<void> => {
+router.get("/conventions/options-filtres", async (req, res): Promise<void> => {
   async function valeursDistinctes(colonne: AnyPgColumn) {
     const lignes = await db
       .selectDistinct({ valeur: colonne })
       .from(conventionsTable)
-      .where(and(isNotNull(colonne), sql`btrim(${colonne}) <> ''`))
+      .where(and(conditionsVisibles(req.user!), isNotNull(colonne), sql`btrim(${colonne}) <> ''`))
       .orderBy(asc(colonne));
     return lignes
       .map((ligne) => ligne.valeur as string | null)
@@ -422,7 +515,7 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
   const lignes = await db
     .select(colonnesConvention)
     .from(conventionsTable)
-    .where(construireFiltres(filtres))
+    .where(conditionsVisibles(req.user!, construireFiltres(filtres)))
     .orderBy(...construireTri(tri, ordre));
 
   const colonnes: [string, (c: ReturnType<typeof versApi>) => unknown][] = [
@@ -492,6 +585,10 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
 });
 
 router.post("/conventions", async (req, res): Promise<void> => {
+  if (!peutEcrire(req.user!)) {
+    res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
+    return;
+  }
   const nettoye = normaliserCorps(req.body);
   if (!nettoye.ok) {
     res.status(400).json({ error: nettoye.erreur });
@@ -511,22 +608,54 @@ router.post("/conventions", async (req, res): Promise<void> => {
     return;
   }
 
-  const [creee] = await db
-    .insert(conventionsTable)
-    .values({ ...valeurs, nomConvention: valeurs.nomConvention })
-    .returning({ id: conventionsTable.id });
-
-  if (!creee) {
-    res.status(400).json({ error: "La convention n'a pas pu être créée." });
+  const user = req.user!;
+  if (user.role === "chef_division") {
+    if (valeurs.rattachement !== undefined && valeurs.rattachement !== user.division) {
+      res.status(403).json({ error: "La convention doit rester dans votre division." });
+      return;
+    }
+    valeurs.rattachement = user.division;
+  }
+  if (user.role === "chef_service") {
+    if (
+      (valeurs.rattachement !== undefined && valeurs.rattachement !== user.division) ||
+      (valeurs.responsableProjet !== undefined && valeurs.responsableProjet !== user.service)
+    ) {
+      res.status(403).json({ error: "La convention doit rester dans votre service." });
+      return;
+    }
+    valeurs.rattachement = user.division;
+    valeurs.responsableProjet = user.service;
+  }
+  const rattachement = valeurs.rattachement as string | null | undefined;
+  const responsable = valeurs.responsableProjet as string | null | undefined;
+  if (!affectationsValides(rattachement, responsable, user)) {
+    res.status(400).json({ error: "Le rattachement et le service doivent correspondre à l'organigramme officiel." });
     return;
   }
 
-  const [ligne] = await db
-    .select(colonnesConvention)
-    .from(conventionsTable)
-    .where(eq(conventionsTable.id, creee.id));
-
-  res.status(201).json(valide(CreateConventionResponse, versApi(ligne!)));
+  const result = await db.transaction(async (tx) => {
+    const [created] = await tx.insert(conventionsTable)
+      .values({ ...valeurs, nomConvention: valeurs.nomConvention as string })
+      .returning();
+    if (!created) return undefined;
+    await tx.insert(conventionAuditTable).values({
+      conventionId: created.id,
+      action: "create",
+      actorUsername: user.username,
+      before: null,
+      after: snapshot(created),
+    });
+    const [line] = await tx.select(colonnesConvention)
+      .from(conventionsTable)
+      .where(eq(conventionsTable.id, created.id));
+    return line;
+  });
+  if (!result) {
+    res.status(400).json({ error: "La convention n'a pas pu être créée." });
+    return;
+  }
+  res.status(201).json(valide(CreateConventionResponse, versApi(result)));
 });
 
 router.get("/conventions/:id", async (req, res): Promise<void> => {
@@ -539,7 +668,10 @@ router.get("/conventions/:id", async (req, res): Promise<void> => {
   const [ligne] = await db
     .select(colonnesConvention)
     .from(conventionsTable)
-    .where(eq(conventionsTable.id, params.data.id));
+    .where(and(
+      eq(conventionsTable.id, params.data.id),
+      conditionsVisibles(req.user!),
+    ));
 
   if (!ligne) {
     res.status(404).json({ error: "Convention introuvable." });
@@ -550,6 +682,10 @@ router.get("/conventions/:id", async (req, res): Promise<void> => {
 });
 
 router.patch("/conventions/:id", async (req, res): Promise<void> => {
+  if (!peutEcrire(req.user!)) {
+    res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
+    return;
+  }
   const params = UpdateConventionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -575,49 +711,109 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  if (Object.keys(valeurs).length > 0) {
-    const [misAJour] = await db
-      .update(conventionsTable)
-      .set(valeurs)
-      .where(eq(conventionsTable.id, params.data.id))
-      .returning({ id: conventionsTable.id });
+  const user = req.user!;
+  const result = await db.transaction(async (tx) => {
+    const [current] = await tx.select().from(conventionsTable)
+      .where(and(eq(conventionsTable.id, params.data.id), isNull(conventionsTable.deletedAt)))
+      .for("update");
+    if (!current || !accessible(current, user)) return { status: 404 as const };
+    if (current.version !== parsed.data.version) return { status: 409 as const };
 
-    if (!misAJour) {
-      res.status(404).json({ error: "Convention introuvable." });
-      return;
+    const rattachementFinal = (
+      Object.hasOwn(valeurs, "rattachement") ? valeurs.rattachement : current.rattachement
+    ) as string | null;
+    const responsableFinal = (
+      Object.hasOwn(valeurs, "responsableProjet") ? valeurs.responsableProjet : current.responsableProjet
+    ) as string | null;
+    if (
+      (user.role === "admin" && ("rattachement" in valeurs || "responsableProjet" in valeurs) &&
+        !affectationsValides(rattachementFinal, responsableFinal, user)) ||
+      (user.role !== "admin" && !affectationsValides(rattachementFinal, responsableFinal, user))
+    ) {
+      return { status: 403 as const };
     }
-  }
-
-  // Relecture obligatoire : le statut d'alerte renvoyé doit refléter les
-  // nouvelles dates, c'est ce qui permet au client de l'afficher à jour
-  // immédiatement après l'enregistrement.
-  const [ligne] = await db
-    .select(colonnesConvention)
-    .from(conventionsTable)
-    .where(eq(conventionsTable.id, params.data.id));
-
-  if (!ligne) {
+    const [updated] = await tx.update(conventionsTable)
+      .set({ ...valeurs, version: current.version + 1, updatedAt: new Date() })
+      .where(and(
+        eq(conventionsTable.id, params.data.id),
+        eq(conventionsTable.version, parsed.data.version),
+        isNull(conventionsTable.deletedAt),
+      ))
+      .returning();
+    if (!updated) return { status: 409 as const };
+    await tx.insert(conventionAuditTable).values({
+      conventionId: updated.id,
+      action: "update",
+      actorUsername: user.username,
+      before: snapshot(current),
+      after: snapshot(updated),
+    });
+    const [line] = await tx.select(colonnesConvention).from(conventionsTable)
+      .where(eq(conventionsTable.id, updated.id));
+    return line ? { status: 200 as const, line } : { status: 404 as const };
+  });
+  if (result.status === 404) {
     res.status(404).json({ error: "Convention introuvable." });
     return;
   }
-
-  res.json(valide(UpdateConventionResponse, versApi(ligne)));
+  if (result.status === 403) {
+    res.status(403).json({ error: "Affectation non autorisée pour votre périmètre." });
+    return;
+  }
+  if (result.status === 409) {
+    res.status(409).json({ error: "La convention a été modifiée entre-temps. Rechargez-la avant de réessayer." });
+    return;
+  }
+  res.json(valide(UpdateConventionResponse, versApi(result.line)));
 });
 
 router.delete("/conventions/:id", async (req, res): Promise<void> => {
+  if (!peutEcrire(req.user!)) {
+    res.status(403).json({ error: "Ce rôle ne peut pas supprimer les conventions." });
+    return;
+  }
   const params = DeleteConventionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
-  const [supprimee] = await db
-    .delete(conventionsTable)
-    .where(eq(conventionsTable.id, params.data.id))
-    .returning({ id: conventionsTable.id });
-
-  if (!supprimee) {
+  const version = Number(req.query.version);
+  if (!Number.isSafeInteger(version) || version < 1) {
+    res.status(400).json({ error: "Le paramètre version est obligatoire." });
+    return;
+  }
+  const result = await db.transaction(async (tx) => {
+    const [current] = await tx.select().from(conventionsTable)
+      .where(and(eq(conventionsTable.id, params.data.id), isNull(conventionsTable.deletedAt)))
+      .for("update");
+    if (!current || !accessible(current, req.user!)) return "missing" as const;
+    if (current.version !== version) return "stale" as const;
+    const [removed] = await tx.update(conventionsTable).set({
+      deletedAt: new Date(),
+      updatedAt: new Date(),
+      version: current.version + 1,
+    }).where(and(
+      eq(conventionsTable.id, params.data.id),
+      eq(conventionsTable.version, version),
+      isNull(conventionsTable.deletedAt),
+    )).returning();
+    if (!removed) return "stale" as const;
+    await tx.insert(conventionAuditTable).values({
+      conventionId: removed.id,
+      action: "delete",
+      actorUsername: req.user!.username,
+      before: snapshot(current),
+      after: snapshot(removed),
+    });
+    return "deleted" as const;
+  });
+  if (result === "missing") {
     res.status(404).json({ error: "Convention introuvable." });
+    return;
+  }
+  if (result === "stale") {
+    res.status(409).json({ error: "La convention a été modifiée entre-temps. Rechargez-la avant de réessayer." });
     return;
   }
 

@@ -3,11 +3,12 @@ import {
   LayoutDashboard,
   FileText,
   PlusCircle,
-  Settings,
   LogOut,
-  Bell,
   Menu,
+  Users,
+  History,
 } from "lucide-react";
+import { useAuth, roleLabels } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -41,9 +42,20 @@ function estNavigationActive(location: string, href: string): boolean {
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { user, logout } = useAuth();
+  const items = navigation.filter(item => item.href !== "/conventions/nouvelle" || user?.role !== "directeur");
+  const adminItems = user?.role === "admin" ? [
+    { name: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
+    { name: "Journal des modifications", href: "/admin/journal", icon: History },
+  ] : [];
+  const allItems = [...items, ...adminItems];
+  const account = <div className="border-t border-sidebar-border p-4 mt-auto">
+    <div className="px-3 py-2 text-sidebar-foreground"><div className="font-semibold truncate">{user?.username}</div><div className="text-xs text-sidebar-foreground/60">{user ? roleLabels[user.role] : ""}</div></div>
+    <button type="button" onClick={() => void logout()} className="w-full text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-md px-3 py-2.5 flex items-center gap-3 text-sm"><LogOut className="w-4 h-4" /> Se déconnecter</button>
+  </div>;
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex min-h-[100dvh] h-[100dvh] bg-background overflow-hidden">
       {/* Sidebar */}
       <div className="hidden md:flex w-72 flex-col bg-sidebar border-r border-sidebar-border shadow-xl z-10">
         <div className="h-16 flex items-center px-6 border-b border-sidebar-border bg-sidebar/50">
@@ -65,7 +77,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="space-y-1">
-            {navigation.map((item) => {
+            {allItems.map((item) => {
               const isActive = estNavigationActive(location, item.href);
               return (
                 <Link
@@ -90,6 +102,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
         </div>
+        {account}
       </div>
 
       {/* Main Content */}
@@ -127,7 +140,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </div>
 
                   <nav className="space-y-1">
-                    {navigation.map((item) => {
+                    {allItems.map((item) => {
                       const isActive = estNavigationActive(location, item.href);
                       return (
                         <Link
@@ -151,6 +164,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       );
                     })}
                   </nav>
+                  <div className="mt-8 border-t border-sidebar-border pt-4 text-sidebar-foreground">
+                    <p className="px-3 text-sm font-semibold">{user?.username}</p><p className="px-3 text-xs opacity-60">{user ? roleLabels[user.role] : ""}</p>
+                    <button type="button" onClick={() => void logout()} className="mt-3 px-3 py-2 flex items-center gap-2 text-sm"><LogOut className="w-4 h-4" /> Se déconnecter</button>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
@@ -165,16 +182,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
           <div className="hidden md:block">
             <h2 className="text-lg font-semibold text-foreground">
-              {navigation.find((n) => estNavigationActive(location, n.href))
+              {allItems.find((n) => estNavigationActive(location, n.href))
                 ?.name || "Détail"}
             </h2>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
-            </button>
+            <span className="text-xs text-muted-foreground hidden sm:inline">{user?.username} · {user ? roleLabels[user.role] : ""}</span>
           </div>
         </header>
 
