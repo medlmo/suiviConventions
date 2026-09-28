@@ -40,7 +40,8 @@ const conventionSchema = z.object({
   session: z.string().nullable().optional(),
   dateVisa: z.string().nullable().optional(),
   statutConvention: z.string().nullable().optional(),
-  decision: z.string().nullable().optional(),
+  competence: z.string().nullable().optional(),
+  nature: z.string().nullable().optional(),
   presidenceComite: z.string().nullable().optional(),
   membresComite: z.string().nullable().optional(),
   frequenceReunions: z.string().nullable().optional(),
@@ -183,25 +184,22 @@ export default function ConventionCreate() {
                     </Select>
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="decision" render={({ field }) => (
+                <FormField control={form.control} name="competence" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Décision</FormLabel>
+                    <FormLabel>Compétence</FormLabel>
                     <Select
-                      value={field.value || "non-renseigne"}
-                      onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Choisir une décision" />
+                        <SelectValue placeholder="Choisir une compétence" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="non-renseigne">Non renseignée</SelectItem>
-                        <SelectItem value="A renouveler">A renouveler</SelectItem>
-                        <SelectItem value="A reconduire tacitemment">A reconduire tacitemment</SelectItem>
-                        <SelectItem value="A maintenir">A maintenir</SelectItem>
-                        <SelectItem value="A ne pas renouveler">A ne pas renouveler</SelectItem>
-                        <SelectItem value="A résilier">A résilier</SelectItem>
+                        <SelectItem value="Propre">Propre</SelectItem>
+                        <SelectItem value="Partagée">Partagée</SelectItem>
+                        <SelectItem value="Transférée">Transférée</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -209,7 +207,7 @@ export default function ConventionCreate() {
                 <FormField control={form.control} name="session" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Session</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                    <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="dateVisa" render={({ field }) => (
@@ -219,6 +217,23 @@ export default function ConventionCreate() {
                   </FormItem>
                 )} />
               </div>
+              <FormField control={form.control} name="nature" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nature</FormLabel>
+                  <Select value={field.value || ""} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choisir une nature" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Infrastructure">Infrastructure</SelectItem>
+                      <SelectItem value="Subventions">Subventions</SelectItem>
+                      <SelectItem value="Prestations">Prestations</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
             </CardContent>
           </Card>
 

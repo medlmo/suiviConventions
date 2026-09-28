@@ -15,7 +15,7 @@ export interface Convention {
   /** @nullable */
   responsableProjet?: string | null;
   /** @nullable */
-  session?: string | null;
+  session?: Date | null;
   /** @nullable */
   dateVisa?: Date | null;
   /** @nullable */
@@ -51,6 +51,10 @@ export interface Convention {
   pv?: string | null;
   /** @nullable */
   decision?: string | null;
+  /** @nullable */
+  competence?: string | null;
+  /** @nullable */
+  nature?: string | null;
   /** @nullable */
   documentConvention?: string | null;
   /** @nullable */

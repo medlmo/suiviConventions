@@ -38,6 +38,7 @@ import {
 const router: IRouter = Router();
 
 const CHAMPS_DATE_CORPS = [
+  "session",
   "dateVisa",
   "prochainComite",
   "dernierComite",
@@ -432,6 +433,8 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
     ["Rattachement", (c) => c.rattachement],
     ["Responsable du projet", (c) => c.responsableProjet],
     ["Session", (c) => c.session],
+    ["Compétence", (c) => c.competence],
+    ["Nature", (c) => c.nature],
     ["Date de visa", (c) => c.dateVisa],
     ["Présidence du comité", (c) => c.presidenceComite],
     ["Membres du comité", (c) => c.membresComite],
