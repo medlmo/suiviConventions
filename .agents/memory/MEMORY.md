@@ -3,4 +3,4 @@
 - [Cache HTTP de l'API](cache-http-api.md) — aucune réponse API n'est cacheable (alertes liées à CURRENT_DATE, 304 traité comme un échec) ; un échec ne doit jamais s'afficher comme une section vide.
 - [Contrat OpenAPI et coercition Zod](contrat-zod-coercition.md) — pourquoi les dates sont validées avant Zod et pourquoi les réponses ne sont jamais réécrites par `.parse()`.
 - [Valeurs historiques des conventions](valeurs-historiques-conventions.md) — les nouvelles listes guidées ne doivent pas effacer les anciennes valeurs libres sans action de l'utilisateur.
-- [Applicabilité des avenants](applicabilite-avenants.md) — un avenant ne modifie la situation en vigueur qu'après son visa ; signature et saisie ne suffisent pas.
+- [Applicabilité des avenants](applicabilite-avenants.md) — l'application suit normalement des conventions visées ; ne pas appliquer un avenant avant son propre visa.
