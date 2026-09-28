@@ -23,6 +23,7 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RattachementSelect, ServiceSelect } from "@/components/organisation-selects";
 import { ArrowLeft, Save, CalendarIcon, FileText, Info, Wallet } from "lucide-react";
 
 // Un champ montant vidé doit repartir à NULL, pas à 0 : z.coerce.number()
@@ -77,6 +78,7 @@ export default function ConventionCreate() {
       natureFonds: "Propres",
     }
   });
+  const rattachementChoisi = form.watch("rattachement");
 
   const onSubmit = (data: FormValues) => {
     const cleanData = Object.fromEntries(
@@ -154,13 +156,23 @@ export default function ConventionCreate() {
                 <FormField control={form.control} name="rattachement" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Rattachement (Direction/Division)</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                    <RattachementSelect
+                      value={field.value}
+                      onValueChange={(valeur) => {
+                        field.onChange(valeur);
+                        form.setValue("responsableProjet", null, { shouldDirty: true });
+                      }}
+                    />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="responsableProjet" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Responsable du projet</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                    <ServiceSelect
+                      rattachement={rattachementChoisi}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="statutConvention" render={({ field }) => (

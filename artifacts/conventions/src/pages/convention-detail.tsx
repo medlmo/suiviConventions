@@ -27,6 +27,7 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RattachementSelect, ServiceSelect } from "@/components/organisation-selects";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { ArrowLeft, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -96,6 +97,7 @@ export default function ConventionDetail() {
       natureFonds: "Propres",
     }
   });
+  const rattachementChoisi = form.watch("rattachement");
 
   // Watch pour init les valeurs
   const initializedId = useRef<number | null>(null);
@@ -324,7 +326,13 @@ export default function ConventionDetail() {
                     <FormField control={form.control} name="rattachement" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Rattachement</FormLabel>
-                        <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                        <RattachementSelect
+                          value={field.value}
+                          onValueChange={(valeur) => {
+                            field.onChange(valeur);
+                            form.setValue("responsableProjet", null, { shouldDirty: true });
+                          }}
+                        />
                       </FormItem>
                     )} />
                   </div>
@@ -332,7 +340,11 @@ export default function ConventionDetail() {
                     <FormField control={form.control} name="responsableProjet" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Responsable Projet</FormLabel>
-                        <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                        <ServiceSelect
+                          rattachement={rattachementChoisi}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="session" render={({ field }) => (
