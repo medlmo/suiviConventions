@@ -8,3 +8,9 @@ Les utilisateurs se connectent avec un identifiant **sans adresse e-mail** et un
 **Why:** L'utilisateur a explicitement choisi ces règles. La configuration gérée d'authentification disponible par défaut était orientée e-mail/mot de passe et inscription publique ; l'imposer aurait modifié le parcours demandé. Les anciennes conventions sans rattachement ne peuvent pas être attribuées de façon sûre à un chef.
 
 **How to apply:** Garder la règle d'autorisation côté serveur sur toutes les lectures, écritures et exports ; ne pas élargir silencieusement l'accès aux enregistrements historiques non affectés. Préserver la visibilité globale en lecture pour les directeurs, même lorsqu'ils ont une direction associée.
+
+Lors d'une connexion, d'une déconnexion ou d'une expiration, conserver la requête de session observée par l'interface et mettre sa donnée à jour ; nettoyer séparément les autres données mises en cache.
+
+**Why:** Évincer tout le cache alors que l'interface observe la session peut rompre sa mise à jour immédiate : le serveur accepte la connexion ou la déconnexion, mais l'écran ne change qu'après un rechargement.
+
+**How to apply:** Ne pas vider globalement le cache React Query pendant une transition d'authentification ; préserver l'abonnement de session, retirer les autres données privées et publier explicitement le nouvel utilisateur ou l'état déconnecté.
