@@ -64,14 +64,14 @@ function hashToken(token: string): string {
 export async function bootstrapAdmin(): Promise<void> {
   const existing = await db.select({ value: usersTable.id }).from(usersTable).limit(1);
   if (existing.length > 0) return;
-  const password = process.env.INITIAL_ADMIN_PASSWORD;
+  const password = process.env.ADMIN_BOOTSTRAP_PASSWORD || process.env.INITIAL_ADMIN_PASSWORD;
   if (!password) {
     throw new Error(
-      "Aucun compte administrateur n'existe. Configurez le secret INITIAL_ADMIN_PASSWORD pour créer le compte initial, puis redémarrez le serveur.",
+      "Aucun compte administrateur n'existe. Configurez le secret ADMIN_BOOTSTRAP_PASSWORD pour créer le compte initial, puis redémarrez le serveur.",
     );
   }
   if (password.length < 12) {
-    throw new Error("INITIAL_ADMIN_PASSWORD doit contenir au moins 12 caractères.");
+    throw new Error("Le mot de passe initial de l'administrateur doit contenir au moins 12 caractères.");
   }
   await db.insert(usersTable).values({
     username: "admin",
