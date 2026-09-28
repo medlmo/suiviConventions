@@ -47,7 +47,7 @@ const conventionSchema = z.object({
   objetConventionFr: z.string().nullable().optional(),
   rattachement: z.string().nullable().optional(),
   responsableProjet: z.string().nullable().optional(),
-  typeSession: z.string().nullable().optional(),
+  typeSession: z.enum(["Ordinaire", "Extraordinaire"]).nullable().optional(),
   session: z.string().nullable().optional(),
   dateVisa: z.string().nullable().optional(),
   statutConvention: z.string().nullable().optional(),

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Alerte } from './alerte';
+import type { ConventionTypeSession } from './conventionTypeSession';
 
 export interface Convention {
   id: number;
@@ -16,6 +17,8 @@ export interface Convention {
   rattachement?: string | null;
   /** @nullable */
   responsableProjet?: string | null;
+  /** @nullable */
+  typeSession?: ConventionTypeSession;
   /** @nullable */
   session?: Date | null;
   /** @nullable */
