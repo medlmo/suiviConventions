@@ -13,6 +13,55 @@ export interface Erreur {
   error: string;
 }
 
+export type UploadUrlInputContentType = typeof UploadUrlInputContentType[keyof typeof UploadUrlInputContentType];
+
+
+export const UploadUrlInputContentType = {
+  'application/pdf': 'application/pdf',
+  'application/msword': 'application/msword',
+  'application/vndopenxmlformats-officedocumentwordprocessingmldocument': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+} as const;
+
+export interface UploadUrlInput {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  contentType: UploadUrlInputContentType;
+}
+
+export interface UploadUrl {
+  uploadURL: string;
+  objectPath: string;
+}
+
+export interface CompleteUploadInput {
+  /** @minLength 1 */
+  objectPath: string;
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  name: string;
+}
+
+export interface StoredDocument {
+  objectPath: string;
+  name: string;
+  contentType: string;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+}
+
 /**
  * Niveau d'alerte recalculé par rapport à la date du jour.
  * EN_RETARD : échéance dépassée.

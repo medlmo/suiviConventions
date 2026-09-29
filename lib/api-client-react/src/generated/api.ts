@@ -23,6 +23,7 @@ import type {
   AdminUser,
   AuditPage,
   AuthUser,
+  CompleteUploadInput,
   Convention,
   ConventionInput,
   ConventionPage,
@@ -39,6 +40,9 @@ import type {
   OptionsFiltres,
   PasswordInput,
   ResumeAlertes,
+  StoredDocument,
+  UploadUrl,
+  UploadUrlInput,
   UserInput,
   UserUpdate
 } from './api.schemas';
@@ -136,6 +140,264 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getHealthCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRequestUploadUrlUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/request-url`
+}
+
+/**
+ * @summary Obtenir une URL temporaire pour téléverser un document
+ */
+export const requestUploadUrl = async (uploadUrlInput: UploadUrlInput, options?: Parameters<typeof customFetch>[1]): Promise<UploadUrl> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<UploadUrl>(getRequestUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(uploadUrlInput)
+  }
+);}
+
+
+
+
+
+export const getRequestUploadUrlMutationKey = () => ['requestUploadUrl'] as const;
+
+export const getRequestUploadUrlMutationOptions = <TError = ErrorType<Erreur | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestUploadUrl>>, RequestUploadUrlMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestUploadUrl>>>
+    export type RequestUploadUrlMutationBody = BodyType<UploadUrlInput>
+    export type RequestUploadUrlMutationError = ErrorType<Erreur | void>
+    export type RequestUploadUrlMutationVariables = {data: BodyType<UploadUrlInput>}
+
+    /**
+ * @summary Obtenir une URL temporaire pour téléverser un document
+ */
+export const useRequestUploadUrl = <TError = ErrorType<Erreur | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestUploadUrl>>,
+        TError,
+        RequestUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestUploadUrlMutationOptions(options));
+    }
+
+export const getCompleteUploadUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/complete`
+}
+
+/**
+ * @summary Vérifier et finaliser un document téléversé
+ */
+export const completeUpload = async (completeUploadInput: CompleteUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<StoredDocument> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<StoredDocument>(getCompleteUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(completeUploadInput)
+  }
+);}
+
+
+
+
+
+export const getCompleteUploadMutationKey = () => ['completeUpload'] as const;
+
+export const getCompleteUploadMutationOptions = <TError = ErrorType<Erreur | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeUpload>>, TError,CompleteUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeUpload>>, TError,CompleteUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompleteUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeUpload>>, CompleteUploadMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  completeUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeUpload>>>
+    export type CompleteUploadMutationBody = BodyType<CompleteUploadInput>
+    export type CompleteUploadMutationError = ErrorType<Erreur | void>
+    export type CompleteUploadMutationVariables = {data: BodyType<CompleteUploadInput>}
+
+    /**
+ * @summary Vérifier et finaliser un document téléversé
+ */
+export const useCompleteUpload = <TError = ErrorType<Erreur | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeUpload>>, TError,CompleteUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeUpload>>,
+        TError,
+        CompleteUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteUploadMutationOptions(options));
+    }
+
+export const getDownloadConventionDocumentUrl = (id: number,
+    field: 'documentConvention' | 'pv',) => {
+
+
+
+
+  return `/api/conventions/${id}/documents/${field}`
+}
+
+/**
+ * @summary Télécharger un document privé d'une convention
+ */
+export const downloadConventionDocument = async (id: number,
+    field: 'documentConvention' | 'pv', options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadConventionDocumentUrl(id,field),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadConventionDocumentQueryKey = (id: number,
+    field: 'documentConvention' | 'pv',) => {
+    return [
+    `/api/conventions/${id}/documents/${field}`
+    ] as const;
+    }
+
+
+export const getDownloadConventionDocumentQueryOptions = <TData = Awaited<ReturnType<typeof downloadConventionDocument>>, TError = ErrorType<void | Erreur>>(id: number,
+    field: 'documentConvention' | 'pv', options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadConventionDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadConventionDocumentQueryKey(id,field);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadConventionDocument>>> = ({ signal }) => downloadConventionDocument(id,field, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && field !== null && field !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadConventionDocument>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadConventionDocumentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadConventionDocument>>>
+export type DownloadConventionDocumentQueryError = ErrorType<void | Erreur>
+
+
+/**
+ * @summary Télécharger un document privé d'une convention
+ */
+
+export function useDownloadConventionDocument<TData = Awaited<ReturnType<typeof downloadConventionDocument>>, TError = ErrorType<void | Erreur>>(
+ id: number,
+    field: 'documentConvention' | 'pv', options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadConventionDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadConventionDocumentQueryOptions(id,field,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

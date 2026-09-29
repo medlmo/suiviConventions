@@ -15,6 +15,7 @@ import * as z from "zod";
 import { useEffect, useRef, useState } from "react";
 import { api, canEditConvention, errorMessage, useAuth, type ApiError } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentUploadField } from "@/components/document-upload-field";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -652,14 +653,28 @@ export default function ConventionDetail() {
                 <CardContent className="pt-6 space-y-4">
                   <FormField control={form.control} name="documentConvention" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Document Convention (Lien/Réf)</FormLabel>
-                      <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                      <FormLabel htmlFor="documentConvention">Convention</FormLabel>
+                      <DocumentUploadField
+                        id="documentConvention"
+                        field="documentConvention"
+                        value={field.value}
+                        persistedValue={convention.documentConvention}
+                        conventionId={id}
+                        onChange={field.onChange}
+                      />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="pv" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>PV (Lien/Réf)</FormLabel>
-                      <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                      <FormLabel htmlFor="pv">PV</FormLabel>
+                      <DocumentUploadField
+                        id="pv"
+                        field="pv"
+                        value={field.value}
+                        persistedValue={convention.pv}
+                        conventionId={id}
+                        onChange={field.onChange}
+                      />
                     </FormItem>
                   )} />
                   

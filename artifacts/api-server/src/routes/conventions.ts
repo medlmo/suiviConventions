@@ -9,6 +9,10 @@ import {
 import type { SessionUser } from "../lib/auth";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
+  ObjectStorageService,
+  type VerifiedDocument,
+} from "../lib/objectStorage";
+import {
   CreateConventionBody,
   CreateConventionResponse,
   DeleteConventionParams,
@@ -42,6 +46,7 @@ import {
 } from "../lib/conventions-mapper";
 
 const router: IRouter = Router();
+const objectStorageService = new ObjectStorageService();
 
 const CHAMPS_DATE_CORPS = [
   "session",
@@ -53,12 +58,18 @@ const CHAMPS_DATE_CORPS = [
 
 const CHAMPS_MONTANT_CORPS = ["enveloppeBudgetaire", "contributionRegion"] as const;
 const ERREUR_CONTRIBUTION = "La contribution de la Région (MAD) ne peut pas dépasser l'enveloppe budgétaire (MAD).";
+const ERREUR_DOCUMENT = "Les champs Convention et PV doivent contenir un PDF ou un document Word de 10 Mo maximum.";
+const CHAMPS_DOCUMENTS = ["documentConvention", "pv"] as const;
 
 function contributionDepasseEnveloppe(
   enveloppe: number | string | null | undefined,
   contribution: number | string | null | undefined,
 ): boolean {
   return enveloppe != null && contribution != null && Number(contribution) > Number(enveloppe);
+}
+
+async function documentVerifie(path: string): Promise<VerifiedDocument | null> {
+  return objectStorageService.getVerifiedDocumentInfo(path);
 }
 
 const JOUR_ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -614,6 +625,13 @@ router.post("/conventions", async (req, res): Promise<void> => {
     res.status(400).json({ error: ERREUR_CONTRIBUTION });
     return;
   }
+  for (const champ of CHAMPS_DOCUMENTS) {
+    const chemin = parsed.data[champ];
+    if (chemin != null && chemin.trim() !== "" && !(await documentVerifie(chemin))) {
+      res.status(400).json({ error: ERREUR_DOCUMENT });
+      return;
+    }
+  }
 
   const valeurs = versColonnes(parsed.data);
   if (typeof valeurs.nomConvention !== "string" || valeurs.nomConvention === "") {
@@ -694,6 +712,59 @@ router.get("/conventions/:id", async (req, res): Promise<void> => {
   res.json(valide(GetConventionResponse, versApi(ligne)));
 });
 
+router.get("/conventions/:id/documents/:field", async (req, res): Promise<void> => {
+  const params = GetConventionParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(404).json({ error: "Convention ou document introuvable." });
+    return;
+  }
+  if (req.params.field !== "documentConvention" && req.params.field !== "pv") {
+    res.status(404).json({ error: "Convention ou document introuvable." });
+    return;
+  }
+
+  const [ligne] = await db.select().from(conventionsTable).where(and(
+    eq(conventionsTable.id, params.data.id),
+    isNull(conventionsTable.deletedAt),
+    conditionsVisibles(req.user!),
+  ));
+  if (!ligne) {
+    res.status(404).json({ error: "Convention ou document introuvable." });
+    return;
+  }
+
+  const chemin = req.params.field === "pv" ? ligne.pv : ligne.documentConvention;
+  if (!chemin) {
+    res.status(404).json({ error: "Convention ou document introuvable." });
+    return;
+  }
+  const document = await documentVerifie(chemin);
+  if (!document) {
+    res.status(404).json({ error: "Convention ou document introuvable." });
+    return;
+  }
+
+  const fichier = await objectStorageService.getObjectEntityFile(chemin);
+  const nomAscii = document.name.replace(/[^A-Za-z0-9._-]/g, "_") || "document";
+  const nomEncode = encodeURIComponent(document.name).replace(/[!'()*]/g, (caractere) =>
+    `%${caractere.charCodeAt(0).toString(16).toUpperCase()}`);
+  res.setHeader("Content-Type", document.contentType);
+  res.setHeader("Content-Length", String(document.size));
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${nomAscii}"; filename*=UTF-8''${nomEncode}`,
+  );
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "private, no-store");
+  fichier.createReadStream()
+    .on("error", (error) => {
+      req.log.error({ err: error }, "Téléchargement du document impossible");
+      if (!res.headersSent) res.status(500).end();
+      else res.destroy(error);
+    })
+    .pipe(res);
+});
+
 router.patch("/conventions/:id", async (req, res): Promise<void> => {
   if (!peutEcrire(req.user!)) {
     res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
@@ -731,6 +802,15 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       .for("update");
     if (!current || !accessible(current, user)) return { status: 404 as const };
     if (current.version !== parsed.data.version) return { status: 409 as const };
+
+    for (const champ of CHAMPS_DOCUMENTS) {
+      if (!Object.hasOwn(parsed.data, champ)) continue;
+      const valeur = parsed.data[champ];
+      if (valeur == null || valeur.trim() === "" || valeur === current[champ]) continue;
+      if (!(await documentVerifie(valeur))) {
+        return { status: 400 as const, error: ERREUR_DOCUMENT };
+      }
+    }
 
     const enveloppeFinale = Object.hasOwn(parsed.data, "enveloppeBudgetaire")
       ? parsed.data.enveloppeBudgetaire : current.enveloppeBudgetaire;
@@ -782,7 +862,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     return;
   }
   if (result.status === 400) {
-    res.status(400).json({ error: ERREUR_CONTRIBUTION });
+    res.status(400).json({ error: result.error ?? ERREUR_CONTRIBUTION });
     return;
   }
   if (result.status === 409) {
