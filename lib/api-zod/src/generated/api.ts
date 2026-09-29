@@ -18,6 +18,66 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Obtenir une URL temporaire pour téléverser un document
+ */
+export const requestUploadUrlBodyNameMax = 255;
+
+export const requestUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1).max(requestUploadUrlBodyNameMax),
+  "size": zod.number().int().min(1).max(requestUploadUrlBodySizeMax),
+  "contentType": zod.enum(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+})
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string()
+})
+
+
+/**
+ * @summary Vérifier et finaliser un document téléversé
+ */
+
+export const completeUploadBodyNameMax = 255;
+
+
+
+export const CompleteUploadBody = zod.object({
+  "objectPath": zod.string().min(1),
+  "name": zod.string().min(1).max(completeUploadBodyNameMax)
+})
+
+export const completeUploadResponseSizeMax = 10485760;
+
+
+
+export const CompleteUploadResponse = zod.object({
+  "objectPath": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int().min(1).max(completeUploadResponseSizeMax)
+})
+
+
+/**
+ * @summary Télécharger un document privé d'une convention
+ */
+
+
+
+export const DownloadConventionDocumentParams = zod.object({
+  "id": zod.coerce.number().int().min(1),
+  "field": zod.enum(['documentConvention', 'pv'])
+})
+
+export const DownloadConventionDocumentResponse = zod.unknown()
+
+
+/**
  * @summary Utilisateur authentifié
  */
 export const GetCurrentUserResponse = zod.object({

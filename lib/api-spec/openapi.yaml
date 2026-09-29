@@ -21,6 +21,8 @@ tags:
     description: Authentification
   - name: admin
     description: Administration des comptes et audit
+  - name: storage
+    description: Téléversement privé des documents de convention
 paths:
   /healthz:
     get:
@@ -36,6 +38,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Obtenir une URL temporaire pour téléverser un document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadUrlInput" }
+      responses:
+        "200":
+          description: URL temporaire générée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadUrl" }
+        "400":
+          description: Métadonnées de fichier invalides
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+        "401": { description: Authentification requise }
+        "403": { description: Rôle non autorisé à téléverser }
+        "500":
+          description: Impossible de préparer le téléversement
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+  /storage/uploads/complete:
+    post:
+      operationId: completeUpload
+      tags: [storage]
+      summary: Vérifier et finaliser un document téléversé
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompleteUploadInput" }
+      responses:
+        "200":
+          description: Document validé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoredDocument" }
+        "400":
+          description: Document invalide, trop volumineux ou de format non autorisé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+        "401": { description: Authentification requise }
+        "403": { description: Rôle non autorisé à téléverser }
+        "404":
+          description: Fichier temporaire introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+  /conventions/{id}/documents/{field}:
+    get:
+      operationId: downloadConventionDocument
+      tags: [conventions]
+      summary: Télécharger un document privé d'une convention
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - name: field
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [documentConvention, pv]
+      responses:
+        "200":
+          description: Fichier PDF ou Word
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "401": { description: Authentification requise }
+        "403": { description: Accès à la convention non autorisé }
+        "404":
+          description: Convention ou fichier introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
 
   /auth/me:
     get:
@@ -432,6 +520,39 @@ components:
       required: [error]
       properties:
         error: { type: string }
+
+    UploadUrlInput:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+        contentType:
+          type: string
+          enum:
+            - application/pdf
+            - application/msword
+            - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    UploadUrl:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL: { type: string, format: uri }
+        objectPath: { type: string }
+    CompleteUploadInput:
+      type: object
+      required: [objectPath, name]
+      properties:
+        objectPath: { type: string, minLength: 1 }
+        name: { type: string, minLength: 1, maxLength: 255 }
+    StoredDocument:
+      type: object
+      required: [objectPath, name, contentType, size]
+      properties:
+        objectPath: { type: string }
+        name: { type: string }
+        contentType: { type: string }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
 
     NiveauAlerte:
       type: string

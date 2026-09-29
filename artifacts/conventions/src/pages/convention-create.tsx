@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentUploadField } from "@/components/document-upload-field";
 import { useAuth, errorMessage } from "@/hooks/use-auth";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -455,14 +456,24 @@ export default function ConventionCreate() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="documentConvention" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Convention (lien / référence)</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                    <FormLabel htmlFor="documentConvention">Convention</FormLabel>
+                    <DocumentUploadField
+                      id="documentConvention"
+                      field="documentConvention"
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="pv" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>PV (lien / référence)</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                    <FormLabel htmlFor="pv">PV</FormLabel>
+                    <DocumentUploadField
+                      id="pv"
+                      field="pv"
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
                   </FormItem>
                 )} />
               </div>
