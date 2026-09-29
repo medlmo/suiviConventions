@@ -52,6 +52,14 @@ const CHAMPS_DATE_CORPS = [
 ] as const;
 
 const CHAMPS_MONTANT_CORPS = ["enveloppeBudgetaire", "contributionRegion"] as const;
+const ERREUR_CONTRIBUTION = "La contribution de la Région (MAD) ne peut pas dépasser l'enveloppe budgétaire (MAD).";
+
+function contributionDepasseEnveloppe(
+  enveloppe: number | string | null | undefined,
+  contribution: number | string | null | undefined,
+): boolean {
+  return enveloppe != null && contribution != null && Number(contribution) > Number(enveloppe);
+}
 
 const JOUR_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -602,6 +610,10 @@ router.post("/conventions", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  if (contributionDepasseEnveloppe(parsed.data.enveloppeBudgetaire, parsed.data.contributionRegion)) {
+    res.status(400).json({ error: ERREUR_CONTRIBUTION });
+    return;
+  }
 
   const valeurs = versColonnes(parsed.data);
   if (typeof valeurs.nomConvention !== "string" || valeurs.nomConvention === "") {
@@ -720,6 +732,14 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     if (!current || !accessible(current, user)) return { status: 404 as const };
     if (current.version !== parsed.data.version) return { status: 409 as const };
 
+    const enveloppeFinale = Object.hasOwn(parsed.data, "enveloppeBudgetaire")
+      ? parsed.data.enveloppeBudgetaire : current.enveloppeBudgetaire;
+    const contributionFinale = Object.hasOwn(parsed.data, "contributionRegion")
+      ? parsed.data.contributionRegion : current.contributionRegion;
+    if (contributionDepasseEnveloppe(enveloppeFinale, contributionFinale)) {
+      return { status: 400 as const };
+    }
+
     const rattachementFinal = (
       Object.hasOwn(valeurs, "rattachement") ? valeurs.rattachement : current.rattachement
     ) as string | null;
@@ -759,6 +779,10 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
   }
   if (result.status === 403) {
     res.status(403).json({ error: "Affectation non autorisée pour votre périmètre." });
+    return;
+  }
+  if (result.status === 400) {
+    res.status(400).json({ error: ERREUR_CONTRIBUTION });
     return;
   }
   if (result.status === 409) {

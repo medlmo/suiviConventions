@@ -81,6 +81,15 @@ const conventionSchema = z.object({
   maitriseOuvrageDeleguee: z.string().nullable().optional(),
   documentConvention: z.string().nullable().optional(),
   commentaires: z.string().nullable().optional(),
+}).superRefine((valeurs, contexte) => {
+  if (valeurs.enveloppeBudgetaire != null && valeurs.contributionRegion != null &&
+      valeurs.contributionRegion > valeurs.enveloppeBudgetaire) {
+    contexte.addIssue({
+      code: "custom",
+      path: ["contributionRegion"],
+      message: "La contribution de la Région ne peut pas dépasser l'enveloppe budgétaire.",
+    });
+  }
 });
 
 type FormValues = z.infer<typeof conventionSchema>;
@@ -503,18 +512,20 @@ export default function ConventionDetail() {
                   <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="enveloppeBudgetaire" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Enveloppe Globale (MAD)</FormLabel>
+                        <FormLabel>Enveloppe budgétaire (MAD)</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} value={field.value || ""} />
+                          <Input type="number" min="0" step="0.01" {...field} value={field.value ?? ""} />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="contributionRegion" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contribution Région (MAD)</FormLabel>
+                        <FormLabel>Contribution de la Région (MAD)</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} value={field.value || ""} />
+                          <Input type="number" min="0" step="0.01" {...field} value={field.value ?? ""} />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>

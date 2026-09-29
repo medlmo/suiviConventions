@@ -65,6 +65,15 @@ const conventionSchema = z.object({
   maitriseOuvrageDeleguee: z.string().nullable().optional(),
   documentConvention: z.string().nullable().optional(),
   commentaires: z.string().nullable().optional(),
+}).superRefine((valeurs, contexte) => {
+  if (valeurs.enveloppeBudgetaire != null && valeurs.contributionRegion != null &&
+      valeurs.contributionRegion > valeurs.enveloppeBudgetaire) {
+    contexte.addIssue({
+      code: "custom",
+      path: ["contributionRegion"],
+      message: "La contribution de la Région ne peut pas dépasser l'enveloppe budgétaire.",
+    });
+  }
 });
 
 type FormValues = z.infer<typeof conventionSchema>;
