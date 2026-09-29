@@ -206,6 +206,19 @@ export const UpdateUserResponse = zod.object({
 
 
 /**
+ * @summary Supprimer définitivement un compte non administrateur
+ */
+
+
+
+export const DeleteUserParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const DeleteUserResponse = zod.void()
+
+
+/**
  * @summary Réinitialiser le mot de passe et révoquer les sessions
  */
 export const ResetUserPasswordParams = zod.object({
