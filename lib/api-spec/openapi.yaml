@@ -21,6 +21,8 @@ tags:
     description: Authentification
   - name: admin
     description: Administration des comptes et audit
+  - name: reference-data
+    description: Référentiel organisationnel et maîtrises d'ouvrage
   - name: storage
     description: Téléversement privé des documents de convention
 paths:
@@ -197,6 +199,71 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AdminUser" }
         "400": { description: Données invalides }
+  /reference-data:
+    get:
+      operationId: getReferenceData
+      tags: [reference-data]
+      summary: Référentiel courant de l'organigramme et des maîtrises d'ouvrage
+      responses:
+        "200":
+          description: Référentiel hiérarchique courant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReferenceData" }
+        "401": { description: Authentification requise }
+  /admin/reference-data/{kind}:
+    post:
+      operationId: createReferenceDataEntry
+      tags: [admin]
+      summary: Ajouter une entrée au référentiel (administrateur uniquement)
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/ReferenceDataKind" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReferenceDataInput" }
+      responses:
+        "200":
+          description: Référentiel complet mis à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReferenceData" }
+        "400": { description: Données ou parent invalides }
+        "403": { description: Administrateur uniquement }
+        "409": { description: Une entrée de même nom existe déjà }
+  /admin/reference-data/{kind}/{id}:
+    patch:
+      operationId: renameReferenceDataEntry
+      tags: [admin]
+      summary: Renommer une entrée sans la supprimer (administrateur uniquement)
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/ReferenceDataKind" }
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReferenceDataRename" }
+      responses:
+        "200":
+          description: Référentiel complet mis à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReferenceData" }
+        "400": { description: Nom invalide ou conflit d'unicité }
+        "403": { description: Administrateur uniquement }
+        "404": { description: Entrée introuvable }
+        "409": { description: Une entrée de même nom existe déjà }
   /admin/users/{id}:
     patch:
       operationId: updateUser
@@ -607,7 +674,7 @@ components:
 
     Convention:
       type: object
-      required: [id, nomConvention, alerte, version]
+      required: [id, nomConvention, alerte, version, maitriseOuvrage, maitriseOuvrageDeleguee]
       properties:
         id: { type: integer }
         version: { type: integer }
@@ -633,8 +700,8 @@ components:
         contributionRegion:
           type: ["number", "null"]
           description: Montant en MAD
-        maitriseOuvrage: { type: ["string", "null"] }
-        maitriseOuvrageDeleguee: { type: ["string", "null"] }
+        maitriseOuvrage: { type: array, items: { type: string } }
+        maitriseOuvrageDeleguee: { type: array, items: { type: string } }
         prochainComite:
           type: ["string", "null"]
           format: date
@@ -684,8 +751,12 @@ components:
         frequenceReunions: { type: ["string", "null"] }
         enveloppeBudgetaire: { type: ["number", "null"] }
         contributionRegion: { type: ["number", "null"] }
-        maitriseOuvrage: { type: ["string", "null"] }
-        maitriseOuvrageDeleguee: { type: ["string", "null"] }
+        maitriseOuvrage:
+          type: ["array", "null"]
+          items: { type: string }
+        maitriseOuvrageDeleguee:
+          type: ["array", "null"]
+          items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }
         dernierComite: { type: ["string", "null"], format: date }
         dernierComiteNote: { type: ["string", "null"] }
@@ -721,8 +792,12 @@ components:
         frequenceReunions: { type: ["string", "null"] }
         enveloppeBudgetaire: { type: ["number", "null"] }
         contributionRegion: { type: ["number", "null"] }
-        maitriseOuvrage: { type: ["string", "null"] }
-        maitriseOuvrageDeleguee: { type: ["string", "null"] }
+        maitriseOuvrage:
+          type: ["array", "null"]
+          items: { type: string }
+        maitriseOuvrageDeleguee:
+          type: ["array", "null"]
+          items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }
         dernierComite: { type: ["string", "null"], format: date }
         dernierComiteNote: { type: ["string", "null"] }
@@ -831,6 +906,58 @@ components:
         decisions:
           type: array
           items: { type: string }
+
+    ReferenceDataKind:
+      type: string
+      enum: [directions, divisions, services, maitrises-ouvrage]
+    ReferenceService:
+      type: object
+      required: [id, nom]
+      properties:
+        id: { type: integer }
+        nom: { type: string }
+    ReferenceDivision:
+      type: object
+      required: [id, nom, services]
+      properties:
+        id: { type: integer }
+        nom: { type: string }
+        services:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceService" }
+    ReferenceDirection:
+      type: object
+      required: [id, direction, divisions]
+      properties:
+        id: { type: integer }
+        direction: { type: string }
+        divisions:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceDivision" }
+    ReferenceData:
+      type: object
+      required: [organisation, maitrisesOuvrage]
+      properties:
+        organisation:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceDirection" }
+        maitrisesOuvrage:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceService" }
+    ReferenceDataInput:
+      type: object
+      required: [nom]
+      properties:
+        nom: { type: string, minLength: 1, maxLength: 255 }
+        parentId:
+          type: integer
+          minimum: 1
+          description: ID de direction pour une division ou de division pour un service; interdit pour les directions et maîtrises d'ouvrage.
+    ReferenceDataRename:
+      type: object
+      required: [nom]
+      properties:
+        nom: { type: string, minLength: 1, maxLength: 255 }
 
     Role:
       type: string

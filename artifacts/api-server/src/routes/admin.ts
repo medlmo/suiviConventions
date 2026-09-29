@@ -1,32 +1,52 @@
 import { Router, type IRouter } from "express";
 import { asc, count, desc, eq, sql } from "drizzle-orm";
-import { db, conventionAuditTable, sessionsTable, usersTable } from "@workspace/db";
 import {
-  directionConnue,
-  divisionDeDirection,
-  serviceDansDivision,
-} from "@workspace/organisation";
+  db,
+  conventionAuditTable,
+  conventionsTable,
+  directionsTable,
+  divisionsTable,
+  maitrisesOuvrageTable,
+  servicesTable,
+  sessionsTable,
+  usersTable,
+} from "@workspace/db";
 import {
   adminRequired,
   hashPassword,
   type Role,
   versUtilisateur,
 } from "../lib/auth";
+import {
+  chargerReferentiel,
+  chargerReferentielDepuis,
+  directionConnue,
+  divisionDeDirection,
+  serviceDansDivision,
+  type ReferenceData,
+} from "../lib/reference-data";
+import {
+  CreateReferenceDataEntryBody,
+  CreateReferenceDataEntryResponse,
+  GetReferenceDataResponse,
+  RenameReferenceDataEntryBody,
+  RenameReferenceDataEntryResponse,
+} from "@workspace/api-zod";
 
 const router: IRouter = Router();
 const ROLES = ["admin", "directeur", "chef_division", "chef_service"] as const;
 type Profile = Pick<typeof usersTable.$inferInsert, "role" | "direction" | "division" | "service">;
 
-function profileIsValid(profile: Profile): boolean {
+function profileIsValid(profile: Profile, reference: ReferenceData): boolean {
   const { role, direction, division, service } = profile;
   if (!ROLES.includes(role as Role)) return false;
-  if (direction !== null && direction !== undefined && !directionConnue(direction)) return false;
-  if (division !== null && division !== undefined && (!direction || !divisionDeDirection(direction, division))) return false;
-  if (service !== null && service !== undefined && (!division || !serviceDansDivision(division, service))) return false;
+  if (direction !== null && direction !== undefined && !directionConnue(reference, direction)) return false;
+  if (division !== null && division !== undefined && (!direction || !divisionDeDirection(reference, direction, division))) return false;
+  if (service !== null && service !== undefined && (!division || !serviceDansDivision(reference, division, service))) return false;
   if (role === "admin") return true;
-  if (role === "directeur") return !!direction && directionConnue(direction) && !division && !service;
-  if (role === "chef_division") return !!direction && !!division && divisionDeDirection(direction, division) && !service;
-  return !!direction && !!division && !!service && serviceDansDivision(division, service);
+  if (role === "directeur") return !!direction && directionConnue(reference, direction) && !division && !service;
+  if (role === "chef_division") return !!direction && !!division && divisionDeDirection(reference, direction, division) && !service;
+  return !!direction && !!division && !!service && serviceDansDivision(reference, division, service);
 }
 
 function idFrom(raw: string | string[] | undefined): number | undefined {
@@ -70,22 +90,31 @@ router.post("/admin/users", adminRequired, async (req, res): Promise<void> => {
     division: typeof body.division === "string" ? body.division : null,
     service: typeof body.service === "string" ? body.service : null,
   };
-  if (!profileIsValid(profile)) {
-    res.status(400).json({ error: "Le rôle et le périmètre ne correspondent pas à l'organigramme officiel." });
-    return;
-  }
+  await chargerReferentiel();
   try {
     const passwordHash = await hashPassword(body.password);
-    const [user] = await db.transaction(async (tx) => {
+    const outcome = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
+      const reference = await chargerReferentielDepuis(tx);
       await tx.execute(sql`SELECT pg_advisory_xact_lock(741023, 1)`);
-      return tx.insert(usersTable).values({
+      if (!profileIsValid(profile, reference)) return { kind: "invalid-profile" as const };
+      const [user] = await tx.insert(usersTable).values({
         username,
         passwordHash,
         ...profile,
         active: typeof body.active === "boolean" ? body.active : true,
       }).returning();
+      return user ? { kind: "created" as const, user } : { kind: "missing" as const };
     });
-    res.status(201).json(publicUser(user!));
+    if (outcome.kind === "invalid-profile") {
+      res.status(400).json({ error: "Le rôle et le périmètre ne correspondent pas à l'organigramme officiel." });
+      return;
+    }
+    if (outcome.kind !== "created") {
+      res.status(400).json({ error: "Le compte n'a pas pu être créé." });
+      return;
+    }
+    res.status(201).json(publicUser(outcome.user));
   } catch (error) {
     if ((error as { code?: string }).code === "23505") {
       res.status(409).json({ error: "Cet identifiant existe déjà." });
@@ -132,7 +161,10 @@ router.patch("/admin/users/:id", adminRequired, async (req, res): Promise<void> 
     return;
   }
   try {
+    await chargerReferentiel();
     const outcome = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
+      const reference = await chargerReferentielDepuis(tx);
       // Serialize account changes so parallel admin requests cannot each
       // believe they are leaving another active administrator behind.
       await tx.execute(sql`SELECT pg_advisory_xact_lock(741023, 1)`);
@@ -147,7 +179,7 @@ router.patch("/admin/users/:id", adminRequired, async (req, res): Promise<void> 
         division: (body.division === undefined ? current.division : body.division) as string | null,
         service: (body.service === undefined ? current.service : body.service) as string | null,
       };
-      if (!profileIsValid(profile)) return { kind: "invalid-profile" as const };
+       if (!profileIsValid(profile, reference)) return { kind: "invalid-profile" as const };
 
       const nextActive = body.active === undefined ? current.active : body.active as boolean;
       const willRemainActiveAdmin = profile.role === "admin" && nextActive;
@@ -244,6 +276,162 @@ router.post("/admin/users/:id/password", adminRequired, async (req, res): Promis
   }
   await db.delete(sessionsTable).where(eq(sessionsTable.userId, id));
   res.sendStatus(204);
+});
+
+router.get("/reference-data", async (_req, res): Promise<void> => {
+  res.json(GetReferenceDataResponse.parse(await chargerReferentiel()));
+});
+
+router.post("/admin/reference-data/:kind", adminRequired, async (req, res): Promise<void> => {
+  const params = CreateReferenceDataEntryBody.safeParse(req.body);
+  const kind = Array.isArray(req.params.kind) ? req.params.kind[0] : req.params.kind;
+  if (
+    !params.success ||
+    Object.keys(req.body as Record<string, unknown>).some((key) => !["nom", "parentId"].includes(key)) ||
+    typeof kind !== "string" ||
+    !["directions", "divisions", "services", "maitrises-ouvrage"].includes(kind)
+  ) {
+    res.status(400).json({ error: params.success ? "Type de référentiel invalide." : params.error.message });
+    return;
+  }
+  const { nom: brut, parentId } = params.data;
+  const nom = brut.trim();
+  if (!nom || nom.length > 255) {
+    res.status(400).json({ error: "Le nom doit contenir entre 1 et 255 caractères." });
+    return;
+  }
+  if ((kind === "divisions" || kind === "services") !== (parentId !== undefined)) {
+    res.status(400).json({ error: "Un parentId est requis uniquement pour les divisions et services." });
+    return;
+  }
+
+  await chargerReferentiel();
+  try {
+    const result = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
+      if (kind === "directions") {
+        await tx.insert(directionsTable).values({ nom });
+      } else if (kind === "divisions") {
+        const [parent] = await tx.select({ id: directionsTable.id }).from(directionsTable)
+          .where(eq(directionsTable.id, parentId!));
+        if (!parent) return "bad-parent" as const;
+        await tx.insert(divisionsTable).values({ directionId: parent.id, nom });
+      } else if (kind === "services") {
+        const [parent] = await tx.select({ id: divisionsTable.id }).from(divisionsTable)
+          .where(eq(divisionsTable.id, parentId!));
+        if (!parent) return "bad-parent" as const;
+        await tx.insert(servicesTable).values({ divisionId: parent.id, nom });
+      } else {
+        await tx.insert(maitrisesOuvrageTable).values({ nom });
+      }
+      return "created" as const;
+    });
+    if (result === "bad-parent") {
+      res.status(400).json({ error: "Parent introuvable ou de type incompatible." });
+      return;
+    }
+    res.json(CreateReferenceDataEntryResponse.parse(await chargerReferentiel()));
+  } catch (error) {
+    if ((error as { code?: string }).code === "23505") {
+      res.status(409).json({ error: "Une entrée portant ce nom existe déjà dans cette catégorie." });
+      return;
+    }
+    throw error;
+  }
+});
+
+router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res): Promise<void> => {
+  const params = RenameReferenceDataEntryBody.safeParse(req.body);
+  const kind = Array.isArray(req.params.kind) ? req.params.kind[0] : req.params.kind;
+  const id = idFrom(req.params.id);
+  if (
+    !params.success ||
+    Object.keys(req.body as Record<string, unknown>).some((key) => key !== "nom") ||
+    !id ||
+    typeof kind !== "string" ||
+    !["directions", "divisions", "services", "maitrises-ouvrage"].includes(kind)
+  ) {
+    res.status(400).json({ error: !params.success ? params.error.message : "Paramètres de référentiel invalides." });
+    return;
+  }
+  const nom = params.data.nom.trim();
+  if (!nom || nom.length > 255) {
+    res.status(400).json({ error: "Le nom doit contenir entre 1 et 255 caractères." });
+    return;
+  }
+
+  await chargerReferentiel();
+  try {
+    const outcome = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
+      if (kind === "directions") {
+        const [current] = await tx.select().from(directionsTable).where(eq(directionsTable.id, id)).for("update");
+        if (!current) return false;
+        await tx.update(directionsTable).set({ nom }).where(eq(directionsTable.id, id));
+        await tx.update(usersTable).set({ direction: nom, updatedAt: new Date() })
+          .where(eq(usersTable.direction, current.nom));
+        await tx.update(conventionsTable).set({
+          rattachement: nom,
+          updatedAt: new Date(),
+          version: sql`${conventionsTable.version} + 1`,
+        }).where(eq(conventionsTable.rattachement, current.nom));
+      } else if (kind === "divisions") {
+        const [current] = await tx.select().from(divisionsTable).where(eq(divisionsTable.id, id)).for("update");
+        if (!current) return false;
+        await tx.update(divisionsTable).set({ nom }).where(eq(divisionsTable.id, id));
+        await tx.update(usersTable).set({ division: nom, updatedAt: new Date() })
+          .where(eq(usersTable.division, current.nom));
+        await tx.update(conventionsTable).set({
+          rattachement: nom,
+          updatedAt: new Date(),
+          version: sql`${conventionsTable.version} + 1`,
+        })
+          .where(eq(conventionsTable.rattachement, current.nom));
+      } else if (kind === "services") {
+        const [current] = await tx.select().from(servicesTable).where(eq(servicesTable.id, id)).for("update");
+        if (!current) return false;
+        await tx.update(servicesTable).set({ nom }).where(eq(servicesTable.id, id));
+        await tx.update(usersTable).set({ service: nom, updatedAt: new Date() })
+          .where(eq(usersTable.service, current.nom));
+        await tx.update(conventionsTable).set({
+          responsableProjet: nom,
+          updatedAt: new Date(),
+          version: sql`${conventionsTable.version} + 1`,
+        })
+          .where(eq(conventionsTable.responsableProjet, current.nom));
+      } else {
+        const [current] = await tx.select().from(maitrisesOuvrageTable)
+          .where(eq(maitrisesOuvrageTable.id, id)).for("update");
+        if (!current) return false;
+        await tx.update(maitrisesOuvrageTable).set({ nom }).where(eq(maitrisesOuvrageTable.id, id));
+        await tx.update(conventionsTable).set({
+          maitriseOuvrage: sql`CASE WHEN ${conventionsTable.maitriseOuvrage} = ${current.nom} THEN ${nom} ELSE ${conventionsTable.maitriseOuvrage} END`,
+          maitriseOuvrageDeleguee: sql`CASE WHEN ${conventionsTable.maitriseOuvrageDeleguee} = ${current.nom} THEN ${nom} ELSE ${conventionsTable.maitriseOuvrageDeleguee} END`,
+          maitrisesOuvrage: sql`CASE WHEN ${conventionsTable.maitrisesOuvrage} IS NULL THEN NULL ELSE array_replace(${conventionsTable.maitrisesOuvrage}, ${current.nom}, ${nom}) END`,
+          maitrisesOuvrageDeleguees: sql`CASE WHEN ${conventionsTable.maitrisesOuvrageDeleguees} IS NULL THEN NULL ELSE array_replace(${conventionsTable.maitrisesOuvrageDeleguees}, ${current.nom}, ${nom}) END`,
+          updatedAt: new Date(),
+          version: sql`${conventionsTable.version} + 1`,
+        }).where(sql`
+          ${conventionsTable.maitriseOuvrage} = ${current.nom}
+          OR ${conventionsTable.maitriseOuvrageDeleguee} = ${current.nom}
+          OR ${conventionsTable.maitrisesOuvrage} @> ARRAY[${current.nom}]::text[]
+          OR ${conventionsTable.maitrisesOuvrageDeleguees} @> ARRAY[${current.nom}]::text[]
+        `);
+      }
+      return true;
+    });
+    if (!outcome) {
+      res.status(404).json({ error: "Entrée de référentiel introuvable." });
+      return;
+    }
+    res.json(RenameReferenceDataEntryResponse.parse(await chargerReferentiel()));
+  } catch (error) {
+    if ((error as { code?: string }).code === "23505") {
+      res.status(409).json({ error: "Une entrée portant ce nom existe déjà dans cette catégorie." });
+      return;
+    }
+    throw error;
+  }
 });
 
 router.get("/admin/audit", adminRequired, async (req, res): Promise<void> => {

@@ -12,6 +12,7 @@ import ConventionDetail from '@/pages/convention-detail';
 import SignIn from '@/pages/sign-in';
 import AdminUsers from '@/pages/admin-users';
 import AdminJournal from '@/pages/admin-journal';
+import AdminReferentiel from '@/pages/admin-referentiel';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 
@@ -49,6 +50,7 @@ function Router() {
           <Route path="/conventions/nouvelle" component={ConventionCreate} />
           <Route path="/conventions/:id" component={ConventionDetail} />
           <Route path="/admin/utilisateurs" component={AdminUsers} />
+          <Route path="/admin/referentiel" component={AdminReferentiel} />
           <Route path="/admin/journal" component={AdminJournal} />
           <Route component={NotFound} />
         </Switch>

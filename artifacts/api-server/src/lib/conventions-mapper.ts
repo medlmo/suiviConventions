@@ -42,8 +42,9 @@ export function versApi(ligne: LigneConvention) {
     frequenceReunions: ligne.frequenceReunions,
     enveloppeBudgetaire: nombreOuNull(ligne.enveloppeBudgetaire),
     contributionRegion: nombreOuNull(ligne.contributionRegion),
-    maitriseOuvrage: ligne.maitriseOuvrage,
-    maitriseOuvrageDeleguee: ligne.maitriseOuvrageDeleguee,
+    maitriseOuvrage: ligne.maitrisesOuvrage ?? (ligne.maitriseOuvrage ? [ligne.maitriseOuvrage] : []),
+    maitriseOuvrageDeleguee: ligne.maitrisesOuvrageDeleguees ??
+      (ligne.maitriseOuvrageDeleguee ? [ligne.maitriseOuvrageDeleguee] : []),
     prochainComite: ligne.prochainComite,
     dernierComite: ligne.dernierComite,
     dernierComiteNote: ligne.dernierComiteNote,
@@ -76,8 +77,6 @@ const CHAMPS_TEXTE = [
   "presidenceComite",
   "membresComite",
   "frequenceReunions",
-  "maitriseOuvrage",
-  "maitriseOuvrageDeleguee",
   "dernierComiteNote",
   "pv",
   "decision",
@@ -91,6 +90,8 @@ const CHAMPS_TEXTE = [
   "commentaires",
 ] as const;
 
+const CHAMPS_LISTE_TEXTE = ["maitriseOuvrage", "maitriseOuvrageDeleguee"] as const;
+
 const CHAMPS_DATE = [
   "session",
   "dateVisa",
@@ -103,6 +104,7 @@ const CHAMPS_MONTANT = ["enveloppeBudgetaire", "contributionRegion"] as const;
 
 type ChampsEcrivables = Partial<
   Record<(typeof CHAMPS_TEXTE)[number], string | null> &
+    Record<(typeof CHAMPS_LISTE_TEXTE)[number], string[] | null | undefined> &
     Record<(typeof CHAMPS_DATE)[number], string | Date | null> &
     Record<(typeof CHAMPS_MONTANT)[number], number | null>
 >;
@@ -137,6 +139,13 @@ export function versColonnes(corps: ChampsEcrivables): Record<string, unknown> {
     const brut = corps[champ];
     const nettoye = typeof brut === "string" ? brut.trim() : brut;
     valeurs[champ] = nettoye === "" ? null : (nettoye ?? null);
+  }
+
+  for (const champ of CHAMPS_LISTE_TEXTE) {
+    if (!(champ in corps)) continue;
+    const colonne = champ === "maitriseOuvrage" ? "maitrisesOuvrage" : "maitrisesOuvrageDeleguees";
+    const brut = corps[champ];
+    valeurs[colonne] = brut == null ? [] : [...new Set(brut.map((nom) => nom.trim()).filter(Boolean))];
   }
 
   for (const champ of CHAMPS_DATE) {

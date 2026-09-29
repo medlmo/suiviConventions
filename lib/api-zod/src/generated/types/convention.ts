@@ -40,10 +40,8 @@ export interface Convention {
      * @nullable
      */
   contributionRegion?: number | null;
-  /** @nullable */
-  maitriseOuvrage?: string | null;
-  /** @nullable */
-  maitriseOuvrageDeleguee?: string | null;
+  maitriseOuvrage: string[];
+  maitriseOuvrageDeleguee: string[];
   /** @nullable */
   prochainComite?: Date | null;
   /** @nullable */

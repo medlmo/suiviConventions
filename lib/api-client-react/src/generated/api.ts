@@ -39,6 +39,10 @@ import type {
   MoisAgenda,
   OptionsFiltres,
   PasswordInput,
+  ReferenceData,
+  ReferenceDataInput,
+  ReferenceDataKind,
+  ReferenceDataRename,
   ResumeAlertes,
   StoredDocument,
   UploadUrl,
@@ -812,6 +816,263 @@ export const useCreateUser = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getCreateUserMutationOptions(options));
+    }
+
+export const getGetReferenceDataUrl = () => {
+
+
+
+
+  return `/api/reference-data`
+}
+
+/**
+ * @summary Référentiel courant de l'organigramme et des maîtrises d'ouvrage
+ */
+export const getReferenceData = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReferenceData> => {
+
+  return customFetch<ReferenceData>(getGetReferenceDataUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReferenceDataQueryKey = () => {
+    return [
+    `/api/reference-data`
+    ] as const;
+    }
+
+
+export const getGetReferenceDataQueryOptions = <TData = Awaited<ReturnType<typeof getReferenceData>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReferenceData>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReferenceDataQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReferenceData>>> = ({ signal }) => getReferenceData({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReferenceData>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReferenceDataQueryResult = NonNullable<Awaited<ReturnType<typeof getReferenceData>>>
+export type GetReferenceDataQueryError = ErrorType<void>
+
+
+/**
+ * @summary Référentiel courant de l'organigramme et des maîtrises d'ouvrage
+ */
+
+export function useGetReferenceData<TData = Awaited<ReturnType<typeof getReferenceData>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReferenceData>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReferenceDataQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateReferenceDataEntryUrl = (kind: ReferenceDataKind,) => {
+
+
+
+
+  return `/api/admin/reference-data/${kind}`
+}
+
+/**
+ * @summary Ajouter une entrée au référentiel (administrateur uniquement)
+ */
+export const createReferenceDataEntry = async (kind: ReferenceDataKind,
+    referenceDataInput: ReferenceDataInput, options?: Parameters<typeof customFetch>[1]): Promise<ReferenceData> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ReferenceData>(getCreateReferenceDataEntryUrl(kind),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(referenceDataInput)
+  }
+);}
+
+
+
+
+
+export const getCreateReferenceDataEntryMutationKey = () => ['createReferenceDataEntry'] as const;
+
+export const getCreateReferenceDataEntryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReferenceDataEntry>>, TError,CreateReferenceDataEntryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createReferenceDataEntry>>, TError,CreateReferenceDataEntryMutationVariables, TContext> => {
+
+const mutationKey = getCreateReferenceDataEntryMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createReferenceDataEntry>>, CreateReferenceDataEntryMutationVariables> = (props) => {
+          const {kind,data} = props ?? {};
+
+          return  createReferenceDataEntry(kind,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateReferenceDataEntryMutationResult = NonNullable<Awaited<ReturnType<typeof createReferenceDataEntry>>>
+    export type CreateReferenceDataEntryMutationBody = BodyType<ReferenceDataInput>
+    export type CreateReferenceDataEntryMutationError = ErrorType<void>
+    export type CreateReferenceDataEntryMutationVariables = {kind: ReferenceDataKind;data: BodyType<ReferenceDataInput>}
+
+    /**
+ * @summary Ajouter une entrée au référentiel (administrateur uniquement)
+ */
+export const useCreateReferenceDataEntry = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReferenceDataEntry>>, TError,CreateReferenceDataEntryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createReferenceDataEntry>>,
+        TError,
+        CreateReferenceDataEntryMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateReferenceDataEntryMutationOptions(options));
+    }
+
+export const getRenameReferenceDataEntryUrl = (kind: ReferenceDataKind,
+    id: number,) => {
+
+
+
+
+  return `/api/admin/reference-data/${kind}/${id}`
+}
+
+/**
+ * @summary Renommer une entrée sans la supprimer (administrateur uniquement)
+ */
+export const renameReferenceDataEntry = async (kind: ReferenceDataKind,
+    id: number,
+    referenceDataRename: ReferenceDataRename, options?: Parameters<typeof customFetch>[1]): Promise<ReferenceData> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ReferenceData>(getRenameReferenceDataEntryUrl(kind,id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(referenceDataRename)
+  }
+);}
+
+
+
+
+
+export const getRenameReferenceDataEntryMutationKey = () => ['renameReferenceDataEntry'] as const;
+
+export const getRenameReferenceDataEntryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameReferenceDataEntry>>, TError,RenameReferenceDataEntryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof renameReferenceDataEntry>>, TError,RenameReferenceDataEntryMutationVariables, TContext> => {
+
+const mutationKey = getRenameReferenceDataEntryMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof renameReferenceDataEntry>>, RenameReferenceDataEntryMutationVariables> = (props) => {
+          const {kind,id,data} = props ?? {};
+
+          return  renameReferenceDataEntry(kind,id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RenameReferenceDataEntryMutationResult = NonNullable<Awaited<ReturnType<typeof renameReferenceDataEntry>>>
+    export type RenameReferenceDataEntryMutationBody = BodyType<ReferenceDataRename>
+    export type RenameReferenceDataEntryMutationError = ErrorType<void>
+    export type RenameReferenceDataEntryMutationVariables = {kind: ReferenceDataKind;id: number;data: BodyType<ReferenceDataRename>}
+
+    /**
+ * @summary Renommer une entrée sans la supprimer (administrateur uniquement)
+ */
+export const useRenameReferenceDataEntry = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameReferenceDataEntry>>, TError,RenameReferenceDataEntryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof renameReferenceDataEntry>>,
+        TError,
+        RenameReferenceDataEntryMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRenameReferenceDataEntryMutationOptions(options));
     }
 
 export const getUpdateUserUrl = (id: number,) => {

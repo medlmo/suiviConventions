@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RattachementSelect, ServiceSelect } from "@/components/organisation-selects";
+import { MaitriseOuvrageSelect } from "@/components/maitrise-ouvrage-select";
+import { useReferenceData } from "@/hooks/use-reference-data";
 import { ArrowLeft, Save, CalendarIcon, FileText, Info, Wallet } from "lucide-react";
 
 // Un champ montant vidé doit repartir à NULL, pas à 0 : z.coerce.number()
@@ -62,8 +64,8 @@ const conventionSchema = z.object({
   enveloppeBudgetaire: montantOptionnel,
   contributionRegion: montantOptionnel,
   natureFonds: z.string().nullable().optional(),
-  maitriseOuvrage: z.string().nullable().optional(),
-  maitriseOuvrageDeleguee: z.string().nullable().optional(),
+  maitriseOuvrage: z.array(z.string()).nullable().optional(),
+  maitriseOuvrageDeleguee: z.array(z.string()).nullable().optional(),
   documentConvention: z.string().nullable().optional(),
   commentaires: z.string().nullable().optional(),
 }).superRefine((valeurs, contexte) => {
@@ -84,6 +86,7 @@ export default function ConventionCreate() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const reference = useReferenceData();
 
   const createMutation = useCreateConvention();
 
@@ -93,6 +96,8 @@ export default function ConventionCreate() {
       nomConvention: "",
       statutConvention: "En cours",
       natureFonds: "Propres",
+      maitriseOuvrage: [],
+      maitriseOuvrageDeleguee: [],
       rattachement: user?.role === "chef_division" || user?.role === "chef_service" ? user.division : null,
       responsableProjet: user?.role === "chef_service" ? user.service : null,
     }
@@ -101,6 +106,9 @@ export default function ConventionCreate() {
 
   const onSubmit = (data: FormValues) => {
     if (!user || user.role === "directeur") return;
+    if (!reference.data) {
+      toast({ variant: "destructive", title: "Référentiel indisponible", description: "Réessayez avant d’enregistrer la convention." }); return;
+    }
     if ((user.role === "chef_division" || user.role === "chef_service") && data.rattachement !== user.division) {
       toast({ variant: "destructive", title: "Rattachement non autorisé", description: "Choisissez votre division." }); return;
     }
@@ -362,13 +370,13 @@ export default function ConventionCreate() {
                 <FormField control={form.control} name="maitriseOuvrage" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Maîtrise d'ouvrage</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                     <MaitriseOuvrageSelect label="maitrise-ouvrage" value={field.value} onChange={field.onChange} />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="maitriseOuvrageDeleguee" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Maîtrise d'ouvrage déléguée</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                     <MaitriseOuvrageSelect label="maitrise-ouvrage-deleguee" value={field.value} onChange={field.onChange} />
                   </FormItem>
                 )} />
               </div>
@@ -490,7 +498,7 @@ export default function ConventionCreate() {
             <Button type="button" variant="outline" onClick={() => setLocation("/conventions")}>
               Annuler
             </Button>
-            <Button type="submit" size="lg" disabled={createMutation.isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
+             <Button type="submit" size="lg" disabled={createMutation.isPending || !reference.data} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
               <Save className="w-5 h-5 mr-2" />
               {createMutation.isPending ? "Création..." : "Créer la convention"}
             </Button>
