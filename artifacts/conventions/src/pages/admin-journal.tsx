@@ -12,6 +12,52 @@ type Audit = { id: number; conventionId: number; action: "create" | "update" | "
 const labels = { create: "Création", update: "Modification", delete: "Suppression" };
 const colors = { create: "bg-emerald-50 text-emerald-800", update: "bg-blue-50 text-blue-800", delete: "bg-red-50 text-red-800" };
 const pageSize = 20;
+const automaticAuditFields = new Set(["updatedAt", "version"]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function sameJsonValue(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return Array.isArray(left) && Array.isArray(right) &&
+      left.length === right.length && left.every((value, index) => sameJsonValue(value, right[index]));
+  }
+  if (!isRecord(left) || !isRecord(right)) return false;
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  return leftKeys.length === rightKeys.length &&
+    leftKeys.every(key => Object.prototype.hasOwnProperty.call(right, key) && sameJsonValue(left[key], right[key]));
+}
+
+function AuditSnapshot({ value, compare, highlightChanges }: {
+  value: unknown;
+  compare: unknown;
+  highlightChanges: boolean;
+}) {
+  const current = isRecord(value) ? value : { valeur: value };
+  const other = isRecord(compare) ? compare : compare == null ? {} : { valeur: compare };
+  const keys = [...new Set([...Object.keys(current), ...Object.keys(other)])];
+
+  return <pre className="text-xs whitespace-pre-wrap break-all bg-muted/50 rounded p-3 max-h-72 overflow-auto">{"{\n"}
+    {keys.map((key, index) => {
+      const hasValue = Object.prototype.hasOwnProperty.call(current, key);
+      const hasOther = Object.prototype.hasOwnProperty.call(other, key);
+      const changed = highlightChanges && !automaticAuditFields.has(key) &&
+        (hasValue !== hasOther || (hasValue && hasOther && !sameJsonValue(current[key], other[key])));
+      const serialized = hasValue ? JSON.stringify(current[key], null, 2) : "—";
+      return <span key={key}>{"  "}
+        {changed
+          ? <strong className="font-bold text-foreground">{JSON.stringify(key)}: {serialized}</strong>
+          : <>{JSON.stringify(key)}: {serialized}</>}
+        {index < keys.length - 1 ? "," : ""}{"\n"}
+      </span>;
+    })}
+    {"}"}
+  </pre>;
+}
+
 export default function AdminJournal() {
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState("");
@@ -31,7 +77,7 @@ export default function AdminJournal() {
       : <div className="border rounded-xl bg-card overflow-hidden divide-y">{query.data.items.map(entry => <article key={entry.id} className="p-4 sm:p-5 flex gap-4">
         <div className="w-10 h-10 shrink-0 rounded-lg bg-accent text-primary grid place-items-center"><History className="w-5 h-5" /></div>
         <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${colors[entry.action]}`}>{labels[entry.action]}</span><span className="text-sm font-semibold">Convention #{entry.conventionId}</span></div><p className="text-sm text-muted-foreground mt-2">Par <strong className="text-foreground">{entry.actorUsername}</strong> · <time dateTime={entry.createdAt}>{new Date(entry.createdAt).toLocaleString("fr-MA", { dateStyle: "medium", timeStyle: "short" })}</time></p>
-          <div className="flex flex-wrap gap-4 mt-2">{entry.action !== "delete" && <Link href={`/conventions/${entry.conventionId}`} className="text-sm font-medium text-primary underline">Voir la convention</Link>}{(entry.before != null || entry.after != null) && <details className="text-sm text-muted-foreground"><summary className="cursor-pointer hover:text-foreground">Voir les données de l'opération</summary><div className="mt-3 grid md:grid-cols-2 gap-3">{entry.before != null && <div><div className="font-semibold mb-1">Avant</div><pre className="text-xs whitespace-pre-wrap break-all bg-muted/50 rounded p-3 max-h-72 overflow-auto">{JSON.stringify(entry.before, null, 2)}</pre></div>}{entry.after != null && <div><div className="font-semibold mb-1">Après</div><pre className="text-xs whitespace-pre-wrap break-all bg-muted/50 rounded p-3 max-h-72 overflow-auto">{JSON.stringify(entry.after, null, 2)}</pre></div>}</div></details>}</div>
+          <div className="flex flex-wrap gap-4 mt-2">{entry.action !== "delete" && <Link href={`/conventions/${entry.conventionId}`} className="text-sm font-medium text-primary underline">Voir la convention</Link>}{(entry.before != null || entry.after != null) && <details className="text-sm text-muted-foreground"><summary className="cursor-pointer hover:text-foreground">Voir les données de l'opération</summary>{entry.action === "update" && <p className="mt-2 text-xs">Les champs modifiés apparaissent en gras.</p>}<div className="mt-3 grid md:grid-cols-2 gap-3">{entry.before != null && <div><div className="font-semibold mb-1">Avant</div><AuditSnapshot value={entry.before} compare={entry.after} highlightChanges={entry.action === "update"} /></div>}{entry.after != null && <div><div className="font-semibold mb-1">Après</div><AuditSnapshot value={entry.after} compare={entry.before} highlightChanges={entry.action === "update"} /></div>}</div></details>}</div>
         </div>
       </article>)}</div>}
     {!!query.data?.total && <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground"><span>{page * pageSize + 1}–{Math.min((page + 1) * pageSize, query.data.total)} sur {query.data.total}</span><div className="flex gap-2"><Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)} aria-label="Page précédente"><ChevronLeft className="w-4 h-4" /></Button><Button variant="outline" size="sm" disabled={(page + 1) * pageSize >= query.data.total} onClick={() => setPage(page + 1)} aria-label="Page suivante"><ChevronRight className="w-4 h-4" /></Button></div></div>}
