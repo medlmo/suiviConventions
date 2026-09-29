@@ -155,10 +155,8 @@ export interface Convention {
      * @nullable
      */
   contributionRegion?: number | null;
-  /** @nullable */
-  maitriseOuvrage?: string | null;
-  /** @nullable */
-  maitriseOuvrageDeleguee?: string | null;
+  maitriseOuvrage: string[];
+  maitriseOuvrageDeleguee: string[];
   /** @nullable */
   prochainComite?: string | null;
   /** @nullable */
@@ -239,9 +237,9 @@ export interface ConventionInput {
   /** @nullable */
   contributionRegion?: number | null;
   /** @nullable */
-  maitriseOuvrage?: string | null;
+  maitriseOuvrage?: string[] | null;
   /** @nullable */
-  maitriseOuvrageDeleguee?: string | null;
+  maitriseOuvrageDeleguee?: string[] | null;
   /** @nullable */
   prochainComite?: string | null;
   /** @nullable */
@@ -309,9 +307,9 @@ export interface ConventionUpdate {
   /** @nullable */
   contributionRegion?: number | null;
   /** @nullable */
-  maitriseOuvrage?: string | null;
+  maitriseOuvrage?: string[] | null;
   /** @nullable */
-  maitriseOuvrageDeleguee?: string | null;
+  maitriseOuvrageDeleguee?: string[] | null;
   /** @nullable */
   prochainComite?: string | null;
   /** @nullable */
@@ -401,6 +399,59 @@ export interface OptionsFiltres {
   statuts: string[];
   naturesFonds: string[];
   decisions: string[];
+}
+
+export type ReferenceDataKind = typeof ReferenceDataKind[keyof typeof ReferenceDataKind];
+
+
+export const ReferenceDataKind = {
+  directions: 'directions',
+  divisions: 'divisions',
+  services: 'services',
+  'maitrises-ouvrage': 'maitrises-ouvrage',
+} as const;
+
+export interface ReferenceService {
+  id: number;
+  nom: string;
+}
+
+export interface ReferenceDivision {
+  id: number;
+  nom: string;
+  services: ReferenceService[];
+}
+
+export interface ReferenceDirection {
+  id: number;
+  direction: string;
+  divisions: ReferenceDivision[];
+}
+
+export interface ReferenceData {
+  organisation: ReferenceDirection[];
+  maitrisesOuvrage: ReferenceService[];
+}
+
+export interface ReferenceDataInput {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  nom: string;
+  /**
+     * ID de direction pour une division ou de division pour un service; interdit pour les directions et maîtrises d'ouvrage.
+     * @minimum 1
+     */
+  parentId?: number;
+}
+
+export interface ReferenceDataRename {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  nom: string;
 }
 
 export type Role = typeof Role[keyof typeof Role];

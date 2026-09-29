@@ -7,6 +7,7 @@ import {
   Menu,
   Users,
   History,
+  FolderTree,
 } from "lucide-react";
 import { useAuth, roleLabels } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   };
   const items = navigation.filter(item => item.href !== "/conventions/nouvelle" || user?.role !== "directeur");
   const adminItems = user?.role === "admin" ? [
+    { name: "Référentiel", href: "/admin/referentiel", icon: FolderTree },
     { name: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
     { name: "Journal des modifications", href: "/admin/journal", icon: History },
   ] : [];

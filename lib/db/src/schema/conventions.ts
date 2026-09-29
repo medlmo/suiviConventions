@@ -52,6 +52,8 @@ export const conventionsTable = pgTable(
     natureFonds: text("nature_fonds"),
     maitriseOuvrage: text("maitrise_ouvrage"),
     maitriseOuvrageDeleguee: text("maitrise_ouvrage_deleguee"),
+    maitrisesOuvrage: text("maitrises_ouvrage").array(),
+    maitrisesOuvrageDeleguees: text("maitrises_ouvrage_deleguees").array(),
 
     // Documents
     documentConvention: text("document_convention"),

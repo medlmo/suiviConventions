@@ -173,6 +173,105 @@ export const CreateUserResponse = zod.object({
 
 
 /**
+ * @summary Référentiel courant de l'organigramme et des maîtrises d'ouvrage
+ */
+export const GetReferenceDataResponse = zod.object({
+  "organisation": zod.array(zod.object({
+  "id": zod.number().int(),
+  "direction": zod.string(),
+  "divisions": zod.array(zod.object({
+  "id": zod.number().int(),
+  "nom": zod.string(),
+  "services": zod.array(zod.object({
+  "id": zod.number().int(),
+  "nom": zod.string()
+}))
+}))
+})),
+  "maitrisesOuvrage": zod.array(zod.object({
+  "id": zod.number().int(),
+  "nom": zod.string()
+}))
+})
+
+
+/**
+ * @summary Ajouter une entrée au référentiel (administrateur uniquement)
+ */
+export const CreateReferenceDataEntryParams = zod.object({
+  "kind": zod.enum(['directions', 'divisions', 'services', 'maitrises-ouvrage'])
+})
+
+export const createReferenceDataEntryBodyNomMax = 255;
+
+
+
+
+export const CreateReferenceDataEntryBody = zod.object({
+  "nom": zod.string().min(1).max(createReferenceDataEntryBodyNomMax),
+  "parentId": zod.number().int().min(1).optional().describe('ID de direction pour une division ou de division pour un service; interdit pour les directions et maîtrises d\'ouvrage.')
+})
+
+export const CreateReferenceDataEntryResponse = zod.object({
+  "organisation": zod.array(zod.object({
+  "id": zod.number().int(),
+  "direction": zod.string(),
+  "divisions": zod.array(zod.object({
+  "id": zod.number().int(),
+  "nom": zod.string(),
+  "services": zod.array(zod.object({
+  "id": zod.number().int(),
+  "nom": zod.string()
+}))
+}))
+})),
+  "maitrisesOuvrage": zod.array(zod.object({
+  "id": zod.number().int(),
+  "nom": zod.string()
+}))
+})
+
+
+/**
+ * @summary Renommer une entrée sans la supprimer (administrateur uniquement)
+ */
+
+
+
+export const RenameReferenceDataEntryParams = zod.object({
+  "kind": zod.enum(['directions', 'divisions', 'services', 'maitrises-ouvrage']),
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const renameReferenceDataEntryBodyNomMax = 255;
+
+
+
+export const RenameReferenceDataEntryBody = zod.object({
+  "nom": zod.string().min(1).max(renameReferenceDataEntryBodyNomMax)
+})
+
+export const RenameReferenceDataEntryResponse = zod.object({
+  "organisation": zod.array(zod.object({
+  "id": zod.number().int(),
+  "direction": zod.string(),
+  "divisions": zod.array(zod.object({
+  "id": zod.number().int(),
+  "nom": zod.string(),
+  "services": zod.array(zod.object({
+  "id": zod.number().int(),
+  "nom": zod.string()
+}))
+}))
+})),
+  "maitrisesOuvrage": zod.array(zod.object({
+  "id": zod.number().int(),
+  "nom": zod.string()
+}))
+})
+
+
+/**
  * @summary Modifier un compte (administrateur uniquement)
  */
 export const UpdateUserParams = zod.object({
@@ -310,8 +409,8 @@ export const ListConventionsResponse = zod.object({
   "frequenceReunions": zod.string().nullish(),
   "enveloppeBudgetaire": zod.number().nullish().describe('Montant en MAD'),
   "contributionRegion": zod.number().nullish().describe('Montant en MAD'),
-  "maitriseOuvrage": zod.string().nullish(),
-  "maitriseOuvrageDeleguee": zod.string().nullish(),
+  "maitriseOuvrage": zod.array(zod.string()),
+  "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
@@ -363,8 +462,8 @@ export const CreateConventionBody = zod.object({
   "frequenceReunions": zod.string().nullish(),
   "enveloppeBudgetaire": zod.number().nullish(),
   "contributionRegion": zod.number().nullish(),
-  "maitriseOuvrage": zod.string().nullish(),
-  "maitriseOuvrageDeleguee": zod.string().nullish(),
+  "maitriseOuvrage": zod.array(zod.string()).nullish(),
+  "maitriseOuvrageDeleguee": zod.array(zod.string()).nullish(),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish(),
@@ -395,8 +494,8 @@ export const CreateConventionResponse = zod.object({
   "frequenceReunions": zod.string().nullish(),
   "enveloppeBudgetaire": zod.number().nullish().describe('Montant en MAD'),
   "contributionRegion": zod.number().nullish().describe('Montant en MAD'),
-  "maitriseOuvrage": zod.string().nullish(),
-  "maitriseOuvrageDeleguee": zod.string().nullish(),
+  "maitriseOuvrage": zod.array(zod.string()),
+  "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
@@ -474,8 +573,8 @@ export const ListAlertesResponseItem = zod.object({
   "frequenceReunions": zod.string().nullish(),
   "enveloppeBudgetaire": zod.number().nullish().describe('Montant en MAD'),
   "contributionRegion": zod.number().nullish().describe('Montant en MAD'),
-  "maitriseOuvrage": zod.string().nullish(),
-  "maitriseOuvrageDeleguee": zod.string().nullish(),
+  "maitriseOuvrage": zod.array(zod.string()),
+  "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
@@ -535,8 +634,8 @@ export const GetAgendaResponseItem = zod.object({
   "frequenceReunions": zod.string().nullish(),
   "enveloppeBudgetaire": zod.number().nullish().describe('Montant en MAD'),
   "contributionRegion": zod.number().nullish().describe('Montant en MAD'),
-  "maitriseOuvrage": zod.string().nullish(),
-  "maitriseOuvrageDeleguee": zod.string().nullish(),
+  "maitriseOuvrage": zod.array(zod.string()),
+  "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
@@ -600,8 +699,8 @@ export const GetConventionResponse = zod.object({
   "frequenceReunions": zod.string().nullish(),
   "enveloppeBudgetaire": zod.number().nullish().describe('Montant en MAD'),
   "contributionRegion": zod.number().nullish().describe('Montant en MAD'),
-  "maitriseOuvrage": zod.string().nullish(),
-  "maitriseOuvrageDeleguee": zod.string().nullish(),
+  "maitriseOuvrage": zod.array(zod.string()),
+  "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
@@ -654,8 +753,8 @@ export const UpdateConventionBody = zod.object({
   "frequenceReunions": zod.string().nullish(),
   "enveloppeBudgetaire": zod.number().nullish(),
   "contributionRegion": zod.number().nullish(),
-  "maitriseOuvrage": zod.string().nullish(),
-  "maitriseOuvrageDeleguee": zod.string().nullish(),
+  "maitriseOuvrage": zod.array(zod.string()).nullish(),
+  "maitriseOuvrageDeleguee": zod.array(zod.string()).nullish(),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish(),
@@ -687,8 +786,8 @@ export const UpdateConventionResponse = zod.object({
   "frequenceReunions": zod.string().nullish(),
   "enveloppeBudgetaire": zod.number().nullish().describe('Montant en MAD'),
   "contributionRegion": zod.number().nullish().describe('Montant en MAD'),
-  "maitriseOuvrage": zod.string().nullish(),
-  "maitriseOuvrageDeleguee": zod.string().nullish(),
+  "maitriseOuvrage": zod.array(zod.string()),
+  "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),

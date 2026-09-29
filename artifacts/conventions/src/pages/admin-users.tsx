@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, KeyRound, UserRound, Shield, Search, Trash2 } from "lucide-react";
 import { api, errorMessage, roleLabels, type Role, type User, useAuth } from "@/hooks/use-auth";
-import { organisation } from "@/lib/organisation";
+import { useReferenceData } from "@/hooks/use-reference-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +28,7 @@ export default function AdminUsers() {
   const { user: current } = useAuth();
   const client = useQueryClient();
   const query = useQuery({ queryKey: ["admin", "users"], queryFn: () => api<User[]>("/admin/users"), staleTime: 15_000 });
+  const reference = useReferenceData();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
@@ -37,6 +38,7 @@ export default function AdminUsers() {
   const [form, setForm] = useState<FormData>(blank);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const organisation = reference.data?.organisation ?? [];
   const direction = organisation.find(item => item.direction === form.direction);
   const division = direction?.divisions.find(item => item.nom === form.division);
   const visible = query.data?.filter(item => `${item.username} ${roleLabels[item.role]} ${item.division ?? ""}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
@@ -46,7 +48,9 @@ export default function AdminUsers() {
     setError(""); setOpen(true);
   }
   async function save(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setError("");
+    event.preventDefault();
+    if (reference.isPending || reference.isError) { setError("L’organigramme est indisponible. Réessayez avant d’enregistrer."); return; }
+    setBusy(true); setError("");
     const scope = form.role === "admin" ? { direction: null, division: null, service: null }
       : form.role === "directeur" ? { direction: form.direction || null, division: null, service: null }
       : form.role === "chef_division" ? { direction: form.direction || null, division: form.division || null, service: null }
@@ -110,11 +114,13 @@ export default function AdminUsers() {
       <div className="space-y-1.5"><label htmlFor="account-name" className="text-sm font-medium">Nom d'utilisateur</label><Input id="account-name" autoComplete="off" required value={form.username} onChange={event => setForm({ ...form, username: event.target.value })} /></div>
       {!editing && <div className="space-y-1.5"><label htmlFor="account-password" className="text-sm font-medium">Mot de passe initial (8 caractères minimum)</label><Input id="account-password" type="password" autoComplete="new-password" minLength={8} required value={form.password} onChange={event => setForm({ ...form, password: event.target.value })} /></div>}
       <div className="space-y-1.5"><label htmlFor="account-role" className="text-sm font-medium">Rôle</label><select id="account-role" className={field} value={form.role} onChange={event => setForm({ ...form, role: event.target.value as Role })}>{roles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}</select></div>
-      {form.role !== "admin" && <div className="space-y-1.5"><label htmlFor="account-direction" className="text-sm font-medium">Direction</label><select id="account-direction" className={field} required value={form.direction} onChange={event => setForm({ ...form, direction: event.target.value, division: "", service: "" })}><option value="">Choisir une direction</option>{organisation.map(item => <option key={item.direction} value={item.direction}>{item.direction}</option>)}</select></div>}
-      {(form.role === "chef_division" || form.role === "chef_service") && <div className="space-y-1.5"><label htmlFor="account-division" className="text-sm font-medium">Division</label><select id="account-division" className={field} required value={form.division} onChange={event => setForm({ ...form, division: event.target.value, service: "" })}><option value="">Choisir une division</option>{direction?.divisions.map(item => <option key={item.nom} value={item.nom}>{item.nom}</option>)}</select></div>}
-      {form.role === "chef_service" && <div className="space-y-1.5"><label htmlFor="account-service" className="text-sm font-medium">Service</label><select id="account-service" className={field} required value={form.service} onChange={event => setForm({ ...form, service: event.target.value })}><option value="">Choisir un service</option>{division?.services.map(item => <option key={item} value={item}>{item}</option>)}</select></div>}
+       {reference.isPending && <p className="text-sm text-muted-foreground">Chargement de l’organigramme…</p>}
+       {reference.isError && <p role="alert" className="text-sm text-destructive">Organigramme indisponible : {errorMessage(reference.error)} <button type="button" className="underline" onClick={() => void reference.refetch()}>Réessayer</button></p>}
+       {form.role !== "admin" && <div className="space-y-1.5"><label htmlFor="account-direction" className="text-sm font-medium">Direction</label><select id="account-direction" className={field} disabled={!reference.data} required value={form.direction} onChange={event => setForm({ ...form, direction: event.target.value, division: "", service: "" })}><option value="">Choisir une direction</option>{form.direction && !organisation.some(item => item.direction === form.direction) && <option value={form.direction}>{form.direction} (historique)</option>}{organisation.map(item => <option key={item.id} value={item.direction}>{item.direction}</option>)}</select></div>}
+       {(form.role === "chef_division" || form.role === "chef_service") && <div className="space-y-1.5"><label htmlFor="account-division" className="text-sm font-medium">Division</label><select id="account-division" className={field} disabled={!reference.data} required value={form.division} onChange={event => setForm({ ...form, division: event.target.value, service: "" })}><option value="">Choisir une division</option>{form.division && !direction?.divisions.some(item => item.nom === form.division) && <option value={form.division}>{form.division} (historique)</option>}{direction?.divisions.map(item => <option key={item.id} value={item.nom}>{item.nom}</option>)}</select></div>}
+       {form.role === "chef_service" && <div className="space-y-1.5"><label htmlFor="account-service" className="text-sm font-medium">Service</label><select id="account-service" className={field} disabled={!reference.data} required value={form.service} onChange={event => setForm({ ...form, service: event.target.value })}><option value="">Choisir un service</option>{form.service && !division?.services.some(item => item.nom === form.service) && <option value={form.service}>{form.service} (historique)</option>}{division?.services.map(item => <option key={item.id} value={item.nom}>{item.nom}</option>)}</select></div>}
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <div className="flex justify-end gap-2 pt-3"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Annuler</Button><Button disabled={busy} type="submit">{busy ? "Enregistrement…" : "Enregistrer"}</Button></div>
+       <div className="flex justify-end gap-2 pt-3"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Annuler</Button><Button disabled={busy || !reference.data} type="submit">{busy ? "Enregistrement…" : "Enregistrer"}</Button></div>
     </form></DialogContent></Dialog>
     <Dialog open={!!passwordFor} onOpenChange={open => { if (!open) setPasswordFor(null); }}><DialogContent><DialogHeader><DialogTitle>Changer le mot de passe</DialogTitle><DialogDescription>Nouveau mot de passe pour {passwordFor?.username}.</DialogDescription></DialogHeader><form onSubmit={changePassword} className="space-y-4"><label htmlFor="new-password" className="text-sm font-medium">Nouveau mot de passe (8 caractères minimum)</label><Input id="new-password" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={event => setPassword(event.target.value)} />{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setPasswordFor(null)}>Annuler</Button><Button disabled={busy} type="submit">Mettre à jour</Button></div></form></DialogContent></Dialog>
     <AlertDialog

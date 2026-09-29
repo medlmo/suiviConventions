@@ -1,11 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
-import {
-  divisionDeDirection,
-  serviceDansDivision,
-  servicesDeDivision,
-} from "@workspace/organisation";
 import type { SessionUser } from "../lib/auth";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
@@ -44,6 +39,15 @@ import {
   versApi,
   versColonnes,
 } from "../lib/conventions-mapper";
+import {
+  chargerReferentiel,
+  chargerReferentielDepuis,
+  divisionDeDirection,
+  maitriseOuvrageConnue,
+  serviceDansDivision,
+  servicesDeDivision,
+  type ReferenceData,
+} from "../lib/reference-data";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -162,8 +166,10 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
       conventionsTable.nomConvention,
       conventionsTable.objetConventionFr,
       conventionsTable.responsableProjet,
-      conventionsTable.maitriseOuvrage,
-      conventionsTable.maitriseOuvrageDeleguee,
+      sql`CASE WHEN ${conventionsTable.maitrisesOuvrage} IS NULL THEN COALESCE(${conventionsTable.maitriseOuvrage}, '') ELSE '' END`,
+      sql`CASE WHEN ${conventionsTable.maitrisesOuvrageDeleguees} IS NULL THEN COALESCE(${conventionsTable.maitriseOuvrageDeleguee}, '') ELSE '' END`,
+      sql`array_to_string(${conventionsTable.maitrisesOuvrage}, ' ')`,
+      sql`array_to_string(${conventionsTable.maitrisesOuvrageDeleguees}, ' ')`,
       conventionsTable.presidenceComite,
       conventionsTable.membresComite,
       conventionsTable.frequenceReunions,
@@ -202,7 +208,7 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
   return conditions.length > 0 ? and(...conditions) : undefined;
 }
 
-function filtrePerimetre(user: SessionUser): SQL | undefined {
+function filtrePerimetre(user: SessionUser, reference: ReferenceData): SQL | undefined {
   if (user.role === "admin" || user.role === "directeur") {
     // Directors intentionally retain read access to every convention.
     return undefined;
@@ -211,13 +217,18 @@ function filtrePerimetre(user: SessionUser): SQL | undefined {
     user.role === "chef_division" &&
     user.direction &&
     user.division &&
-    divisionDeDirection(user.direction, user.division)
+    divisionDeDirection(reference, user.direction, user.division)
   ) {
-    const services = servicesDeDivision(user.division);
-    if (services.length === 0) return sql`FALSE`;
+    const services = servicesDeDivision(reference, user.division);
+    const responsableDansPerimetre = services.length === 0
+      ? isNull(conventionsTable.responsableProjet)
+      : or(
+        isNull(conventionsTable.responsableProjet),
+        inArray(conventionsTable.responsableProjet, [...services]),
+      );
     return and(
       eq(conventionsTable.rattachement, user.division),
-      or(isNull(conventionsTable.responsableProjet), inArray(conventionsTable.responsableProjet, [...services])),
+      responsableDansPerimetre,
     );
   }
   if (
@@ -225,8 +236,8 @@ function filtrePerimetre(user: SessionUser): SQL | undefined {
     user.direction &&
     user.division &&
     user.service &&
-    divisionDeDirection(user.direction, user.division) &&
-    serviceDansDivision(user.division, user.service)
+    divisionDeDirection(reference, user.direction, user.division) &&
+    serviceDansDivision(reference, user.division, user.service)
   ) {
     return and(
       eq(conventionsTable.rattachement, user.division),
@@ -236,18 +247,18 @@ function filtrePerimetre(user: SessionUser): SQL | undefined {
   return sql`FALSE`;
 }
 
-function accessible(row: typeof conventionsTable.$inferSelect, user: SessionUser): boolean {
+function accessible(row: typeof conventionsTable.$inferSelect, user: SessionUser, reference: ReferenceData): boolean {
   if (user.role === "admin" || user.role === "directeur") return true;
   if (user.role === "chef_division") {
     return !!user.direction && !!user.division &&
-      divisionDeDirection(user.direction, user.division) &&
+      divisionDeDirection(reference, user.direction, user.division) &&
       row.rattachement === user.division &&
-      (!row.responsableProjet || serviceDansDivision(user.division, row.responsableProjet));
+      (!row.responsableProjet || serviceDansDivision(reference, user.division, row.responsableProjet));
   }
   if (user.role === "chef_service") {
     return !!user.direction && !!user.division && !!user.service &&
-      divisionDeDirection(user.direction, user.division) &&
-      serviceDansDivision(user.division, user.service) &&
+      divisionDeDirection(reference, user.direction, user.division) &&
+      serviceDansDivision(reference, user.division, user.service) &&
       row.rattachement === user.division && row.responsableProjet === user.service;
   }
   return false;
@@ -261,24 +272,40 @@ function affectationsValides(
   rattachement: string | null | undefined,
   responsableProjet: string | null | undefined,
   user: SessionUser,
+  reference: ReferenceData,
 ): boolean {
   if (user.role === "chef_division") {
-    return !!user.division && rattachement === user.division &&
-      (!responsableProjet || serviceDansDivision(user.division, responsableProjet));
+    return !!user.direction && !!user.division &&
+      divisionDeDirection(reference, user.direction, user.division) &&
+      rattachement === user.division &&
+      (!responsableProjet || serviceDansDivision(reference, user.division, responsableProjet));
   }
   if (user.role === "chef_service") {
-    return !!user.division && !!user.service &&
+    return !!user.direction && !!user.division && !!user.service &&
+      divisionDeDirection(reference, user.direction, user.division) &&
+      serviceDansDivision(reference, user.division, user.service) &&
       rattachement === user.division && responsableProjet === user.service;
   }
   if (user.role === "admin") {
-    return (!rattachement || !responsableProjet || serviceDansDivision(rattachement, responsableProjet)) &&
-      (!responsableProjet || (!!rattachement && serviceDansDivision(rattachement, responsableProjet)));
+    return (!rattachement || !responsableProjet || serviceDansDivision(reference, rattachement, responsableProjet)) &&
+      (!responsableProjet || (!!rattachement && serviceDansDivision(reference, rattachement, responsableProjet)));
   }
   return false;
 }
 
-function conditionsVisibles(user: SessionUser, filtre?: SQL): SQL {
-  return and(isNull(conventionsTable.deletedAt), filtrePerimetre(user), filtre)!;
+function conditionsVisibles(user: SessionUser, reference: ReferenceData, filtre?: SQL): SQL {
+  return and(isNull(conventionsTable.deletedAt), filtrePerimetre(user, reference), filtre)!;
+}
+
+function listeMoValide(
+  valeurs: string[] | null | undefined,
+  reference: ReferenceData,
+  historique: string[] = [],
+): boolean {
+  return valeurs == null || valeurs.every((valeur) => {
+    const nom = valeur.trim();
+    return !nom || maitriseOuvrageConnue(reference, nom) || historique.includes(nom);
+  });
 }
 
 function snapshot(row: typeof conventionsTable.$inferSelect): Record<string, unknown> {
@@ -328,7 +355,8 @@ router.get("/conventions", async (req, res): Promise<void> => {
   }
 
   const { page = 1, pageSize = 25, tri = "urgence", ordre = "asc", ...filtres } = query.data;
-  const where = conditionsVisibles(req.user!, construireFiltres(filtres));
+  const reference = await chargerReferentiel();
+  const where = conditionsVisibles(req.user!, reference, construireFiltres(filtres));
 
   const [lignes, [total]] = await Promise.all([
     db
@@ -355,7 +383,8 @@ router.get("/conventions", async (req, res): Promise<void> => {
 });
 
 router.get("/conventions/resume", async (req, res): Promise<void> => {
-  const visible = conditionsVisibles(req.user!);
+  const reference = await chargerReferentiel();
+  const visible = conditionsVisibles(req.user!, reference);
   const [repartition, [prochaine], jourCourant] = await Promise.all([
     db
       .select({ niveau: niveauAlerteSql, nombre: count() })
@@ -411,13 +440,14 @@ router.get("/conventions/alertes", async (req, res): Promise<void> => {
   }
 
   const { horizonJours = 60, limit = 50 } = query.data;
+  const reference = await chargerReferentiel();
 
   const lignes = await db
     .select(colonnesConvention)
     .from(conventionsTable)
     .where(
       and(
-        conditionsVisibles(req.user!),
+        conditionsVisibles(req.user!, reference),
         isNotNull(conventionsTable.prochaineEcheance),
         lte(
           conventionsTable.prochaineEcheance,
@@ -441,13 +471,14 @@ router.get("/conventions/agenda", async (req, res): Promise<void> => {
   }
 
   const { mois = 6 } = query.data;
+  const reference = await chargerReferentiel();
 
   const lignes = await db
     .select(colonnesConvention)
     .from(conventionsTable)
     .where(
       and(
-        conditionsVisibles(req.user!),
+        conditionsVisibles(req.user!, reference),
         gte(conventionsTable.prochaineEcheance, sql`CURRENT_DATE`),
         lte(
           conventionsTable.prochaineEcheance,
@@ -487,11 +518,12 @@ router.get("/conventions/agenda", async (req, res): Promise<void> => {
 });
 
 router.get("/conventions/options-filtres", async (req, res): Promise<void> => {
+  const reference = await chargerReferentiel();
   async function valeursDistinctes(colonne: AnyPgColumn) {
     const lignes = await db
       .selectDistinct({ valeur: colonne })
       .from(conventionsTable)
-      .where(and(conditionsVisibles(req.user!), isNotNull(colonne), sql`btrim(${colonne}) <> ''`))
+      .where(and(conditionsVisibles(req.user!, reference), isNotNull(colonne), sql`btrim(${colonne}) <> ''`))
       .orderBy(asc(colonne));
     return lignes
       .map((ligne) => ligne.valeur as string | null)
@@ -531,11 +563,12 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
   }
 
   const { tri = "urgence", ordre = "asc", ...filtres } = query.data;
+  const reference = await chargerReferentiel();
 
   const lignes = await db
     .select(colonnesConvention)
     .from(conventionsTable)
-    .where(conditionsVisibles(req.user!, construireFiltres(filtres)))
+    .where(conditionsVisibles(req.user!, reference, construireFiltres(filtres)))
     .orderBy(...construireTri(tri, ordre));
 
   const colonnes: [string, (c: ReturnType<typeof versApi>) => unknown][] = [
@@ -557,8 +590,8 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
     ["Enveloppe budgétaire (MAD)", (c) => c.enveloppeBudgetaire],
     ["Contribution de la Région (MAD)", (c) => c.contributionRegion],
     ["Nature des fonds", (c) => c.natureFonds],
-    ["Maîtrise d'ouvrage", (c) => c.maitriseOuvrage],
-    ["Maîtrise d'ouvrage déléguée", (c) => c.maitriseOuvrageDeleguee],
+    ["Maîtrise d'ouvrage", (c) => c.maitriseOuvrage.join("; ")],
+    ["Maîtrise d'ouvrage déléguée", (c) => c.maitriseOuvrageDeleguee.join("; ")],
     ["Dernier comité", (c) => c.dernierComite],
     ["Dernier comité (mention)", (c) => c.dernierComiteNote],
     ["Prochain comité", (c) => c.prochainComite],
@@ -633,43 +666,46 @@ router.post("/conventions", async (req, res): Promise<void> => {
     }
   }
 
-  const valeurs = versColonnes(parsed.data);
-  if (typeof valeurs.nomConvention !== "string" || valeurs.nomConvention === "") {
-    res.status(400).json({ error: "Le nom de la convention est obligatoire." });
-    return;
-  }
-
   const user = req.user!;
-  if (user.role === "chef_division") {
-    if (valeurs.rattachement !== undefined && valeurs.rattachement !== user.division) {
-      res.status(403).json({ error: "La convention doit rester dans votre division." });
-      return;
-    }
-    valeurs.rattachement = user.division;
-  }
-  if (user.role === "chef_service") {
-    if (
-      (valeurs.rattachement !== undefined && valeurs.rattachement !== user.division) ||
-      (valeurs.responsableProjet !== undefined && valeurs.responsableProjet !== user.service)
-    ) {
-      res.status(403).json({ error: "La convention doit rester dans votre service." });
-      return;
-    }
-    valeurs.rattachement = user.division;
-    valeurs.responsableProjet = user.service;
-  }
-  const rattachement = valeurs.rattachement as string | null | undefined;
-  const responsable = valeurs.responsableProjet as string | null | undefined;
-  if (!affectationsValides(rattachement, responsable, user)) {
-    res.status(400).json({ error: "Le rattachement et le service doivent correspondre à l'organigramme officiel." });
-    return;
-  }
-
+  await chargerReferentiel();
   const result = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
+    const reference = await chargerReferentielDepuis(tx);
+    const valeurs = versColonnes(parsed.data);
+    if (
+      !listeMoValide(parsed.data.maitriseOuvrage, reference) ||
+      !listeMoValide(parsed.data.maitriseOuvrageDeleguee, reference)
+    ) {
+      return { status: 400 as const, error: "Les maîtrises d'ouvrage doivent appartenir au référentiel courant." };
+    }
+    if (typeof valeurs.nomConvention !== "string" || valeurs.nomConvention === "") {
+      return { status: 400 as const, error: "Le nom de la convention est obligatoire." };
+    }
+    if (user.role === "chef_division") {
+      if (valeurs.rattachement !== undefined && valeurs.rattachement !== user.division) {
+        return { status: 403 as const, error: "La convention doit rester dans votre division." };
+      }
+      valeurs.rattachement = user.division;
+    }
+    if (user.role === "chef_service") {
+      if (
+        (valeurs.rattachement !== undefined && valeurs.rattachement !== user.division) ||
+        (valeurs.responsableProjet !== undefined && valeurs.responsableProjet !== user.service)
+      ) {
+        return { status: 403 as const, error: "La convention doit rester dans votre service." };
+      }
+      valeurs.rattachement = user.division;
+      valeurs.responsableProjet = user.service;
+    }
+    const rattachement = valeurs.rattachement as string | null | undefined;
+    const responsable = valeurs.responsableProjet as string | null | undefined;
+    if (!affectationsValides(rattachement, responsable, user, reference)) {
+      return { status: 400 as const, error: "Le rattachement et le service doivent correspondre à l'organigramme officiel." };
+    }
     const [created] = await tx.insert(conventionsTable)
       .values({ ...valeurs, nomConvention: valeurs.nomConvention as string })
       .returning();
-    if (!created) return undefined;
+    if (!created) return { status: 400 as const, error: "La convention n'a pas pu être créée." };
     await tx.insert(conventionAuditTable).values({
       conventionId: created.id,
       action: "create",
@@ -680,13 +716,15 @@ router.post("/conventions", async (req, res): Promise<void> => {
     const [line] = await tx.select(colonnesConvention)
       .from(conventionsTable)
       .where(eq(conventionsTable.id, created.id));
-    return line;
+    return line
+      ? { status: 201 as const, line }
+      : { status: 400 as const, error: "La convention n'a pas pu être créée." };
   });
-  if (!result) {
-    res.status(400).json({ error: "La convention n'a pas pu être créée." });
+  if (result.status !== 201) {
+    res.status(result.status).json({ error: result.error });
     return;
   }
-  res.status(201).json(valide(CreateConventionResponse, versApi(result)));
+  res.status(201).json(valide(CreateConventionResponse, versApi(result.line)));
 });
 
 router.get("/conventions/:id", async (req, res): Promise<void> => {
@@ -696,12 +734,13 @@ router.get("/conventions/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const reference = await chargerReferentiel();
   const [ligne] = await db
     .select(colonnesConvention)
     .from(conventionsTable)
     .where(and(
       eq(conventionsTable.id, params.data.id),
-      conditionsVisibles(req.user!),
+      conditionsVisibles(req.user!, reference),
     ));
 
   if (!ligne) {
@@ -723,10 +762,11 @@ router.get("/conventions/:id/documents/:field", async (req, res): Promise<void> 
     return;
   }
 
+  const reference = await chargerReferentiel();
   const [ligne] = await db.select().from(conventionsTable).where(and(
     eq(conventionsTable.id, params.data.id),
     isNull(conventionsTable.deletedAt),
-    conditionsVisibles(req.user!),
+    conditionsVisibles(req.user!, reference),
   ));
   if (!ligne) {
     res.status(404).json({ error: "Convention ou document introuvable." });
@@ -796,12 +836,25 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
   }
 
   const user = req.user!;
+  await chargerReferentiel();
   const result = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
+    const reference = await chargerReferentielDepuis(tx);
     const [current] = await tx.select().from(conventionsTable)
       .where(and(eq(conventionsTable.id, params.data.id), isNull(conventionsTable.deletedAt)))
       .for("update");
-    if (!current || !accessible(current, user)) return { status: 404 as const };
+    if (!current || !accessible(current, user, reference)) return { status: 404 as const };
     if (current.version !== parsed.data.version) return { status: 409 as const };
+
+    const anciennesMo = current.maitrisesOuvrage ?? (current.maitriseOuvrage ? [current.maitriseOuvrage] : []);
+    const anciennesMoDeleguees = current.maitrisesOuvrageDeleguees ??
+      (current.maitriseOuvrageDeleguee ? [current.maitriseOuvrageDeleguee] : []);
+    if (
+      !listeMoValide(parsed.data.maitriseOuvrage, reference, anciennesMo) ||
+      !listeMoValide(parsed.data.maitriseOuvrageDeleguee, reference, anciennesMoDeleguees)
+    ) {
+      return { status: 400 as const, error: "Les maîtrises d'ouvrage doivent appartenir au référentiel courant." };
+    }
 
     for (const champ of CHAMPS_DOCUMENTS) {
       if (!Object.hasOwn(parsed.data, champ)) continue;
@@ -828,8 +881,8 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     ) as string | null;
     if (
       (user.role === "admin" && ("rattachement" in valeurs || "responsableProjet" in valeurs) &&
-        !affectationsValides(rattachementFinal, responsableFinal, user)) ||
-      (user.role !== "admin" && !affectationsValides(rattachementFinal, responsableFinal, user))
+        !affectationsValides(rattachementFinal, responsableFinal, user, reference)) ||
+      (user.role !== "admin" && !affectationsValides(rattachementFinal, responsableFinal, user, reference))
     ) {
       return { status: 403 as const };
     }
@@ -888,11 +941,14 @@ router.delete("/conventions/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Le paramètre version est obligatoire." });
     return;
   }
+  await chargerReferentiel();
   const result = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
+    const reference = await chargerReferentielDepuis(tx);
     const [current] = await tx.select().from(conventionsTable)
       .where(and(eq(conventionsTable.id, params.data.id), isNull(conventionsTable.deletedAt)))
       .for("update");
-    if (!current || !accessible(current, req.user!)) return "missing" as const;
+    if (!current || !accessible(current, req.user!, reference)) return "missing" as const;
     if (current.version !== version) return "stale" as const;
     const [removed] = await tx.update(conventionsTable).set({
       deletedAt: new Date(),

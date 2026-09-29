@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RattachementSelect, ServiceSelect } from "@/components/organisation-selects";
+import { MaitriseOuvrageSelect } from "@/components/maitrise-ouvrage-select";
+import { useReferenceData } from "@/hooks/use-reference-data";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { ArrowLeft, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,8 +80,8 @@ const conventionSchema = z.object({
   enveloppeBudgetaire: montantOptionnel,
   contributionRegion: montantOptionnel,
   natureFonds: z.string().nullable().optional(),
-  maitriseOuvrage: z.string().nullable().optional(),
-  maitriseOuvrageDeleguee: z.string().nullable().optional(),
+  maitriseOuvrage: z.array(z.string()).nullable().optional(),
+  maitriseOuvrageDeleguee: z.array(z.string()).nullable().optional(),
   documentConvention: z.string().nullable().optional(),
   commentaires: z.string().nullable().optional(),
 }).superRefine((valeurs, contexte) => {
@@ -95,6 +97,13 @@ const conventionSchema = z.object({
 
 type FormValues = z.infer<typeof conventionSchema>;
 
+// Les anciennes réponses peuvent encore contenir une chaîne libre. Ne jamais la
+// découper : elle doit rester une valeur historique unique jusqu'à retrait explicite.
+function valeursMO(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
+  return typeof value === "string" && value.length ? [value] : [];
+}
+
 export default function ConventionDetail() {
   const params = useParams();
   const id = parseInt(params.id || "0", 10);
@@ -106,8 +115,9 @@ export default function ConventionDetail() {
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState("");
   const { user } = useAuth();
+  const reference = useReferenceData();
 
-  const { data: convention, isLoading, isError, error, refetch } = useGetConvention(id, {
+  const { data: convention, isLoading, isFetching, isError, error, refetch } = useGetConvention(id, {
     query: {
       enabled: !!id,
       queryKey: getGetConventionQueryKey(id)
@@ -124,11 +134,15 @@ export default function ConventionDetail() {
     }
   });
   const rattachementChoisi = form.watch("rattachement");
+  // React Hook Form doit observer dirtyFields pour que keepDirtyValues fonctionne.
+  void form.formState.dirtyFields;
 
-  // Watch pour init les valeurs
+  // Chaque nouvelle version serveur actualise les champs non modifiés, mais
+  // conserve les saisies en cours lors d'un renommage du référentiel.
   const initializedId = useRef<number | null>(null);
   useEffect(() => {
-    if (convention && initializedId.current !== id) {
+    if (convention) {
+      const sameRecord = initializedId.current === id;
       initializedId.current = id;
       form.reset({
         nomConvention: convention.nomConvention,
@@ -154,16 +168,20 @@ export default function ConventionDetail() {
         enveloppeBudgetaire: convention.enveloppeBudgetaire,
         contributionRegion: convention.contributionRegion,
         natureFonds: convention.natureFonds || "Propres",
-        maitriseOuvrage: convention.maitriseOuvrage,
-        maitriseOuvrageDeleguee: convention.maitriseOuvrageDeleguee,
+        maitriseOuvrage: valeursMO(convention.maitriseOuvrage),
+        maitriseOuvrageDeleguee: valeursMO(convention.maitriseOuvrageDeleguee),
         documentConvention: convention.documentConvention,
         commentaires: convention.commentaires,
-      });
+      }, { keepDirtyValues: sameRecord });
     }
   }, [convention, id, form]);
 
   const onSubmit = async (data: FormValues) => {
     if (!canEdit || !convention) return;
+    if (isFetching) return; // attendre la version actualisée après invalidation
+    if (!reference.data) {
+      toast({ variant: "destructive", title: "Référentiel indisponible", description: "Réessayez avant d’enregistrer." }); return;
+    }
     // Nettoyer les chaines vides en null pour l'API
     const cleanData = Object.fromEntries(
       Object.entries(data).map(([k, v]) => [k, v === "" ? null : v])
@@ -171,7 +189,9 @@ export default function ConventionDetail() {
 
     setSaving(true); setConflict("");
     try {
-        const updatedConvention = await api<typeof convention>(`/conventions/${id}`, { method: "PATCH", body: JSON.stringify({ ...cleanData, version: (convention as typeof convention & { version: number }).version }) });
+        const latest = queryClient.getQueryData<typeof convention>(getGetConventionQueryKey(id)) ?? convention;
+        const updatedConvention = await api<typeof convention>(`/conventions/${id}`, { method: "PATCH", body: JSON.stringify({ ...cleanData, version: (latest as typeof convention & { version: number }).version }) });
+        form.reset(data);
         toast({
           title: "Convention mise à jour",
           description: "Les modifications ont été enregistrées avec succès.",
@@ -292,7 +312,7 @@ export default function ConventionDetail() {
             <Trash2 className="w-4 h-4 mr-2" />
             Supprimer
           </Button>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={saving}>
+           <Button onClick={form.handleSubmit(onSubmit)} disabled={saving || isFetching || !reference.data}>
             <Save className="w-4 h-4 mr-2" />
             {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
@@ -300,7 +320,7 @@ export default function ConventionDetail() {
         </div>
       </div>
       {!canEdit && <div className="rounded-lg border border-primary/20 bg-accent/50 p-4 text-sm text-primary">Consultation uniquement : cette convention est hors de votre périmètre de modification.</div>}
-      {conflict && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex flex-wrap items-center justify-between gap-3"><span className="text-sm text-destructive">{conflict}</span><Button variant="outline" size="sm" onClick={async () => { const result = await refetch(); if (result.data) { initializedId.current = null; form.reset(result.data as unknown as FormValues); setConflict(""); } }}>Actualiser la fiche</Button></div>}
+       {conflict && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex flex-wrap items-center justify-between gap-3"><span className="text-sm text-destructive">{conflict}</span><Button variant="outline" size="sm" disabled={isFetching} onClick={async () => { const result = await refetch(); if (result.data) setConflict(""); }}>Actualiser la fiche</Button></div>}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -554,13 +574,13 @@ export default function ConventionDetail() {
                     <FormField control={form.control} name="maitriseOuvrage" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Maîtrise d'ouvrage</FormLabel>
-                        <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                         <MaitriseOuvrageSelect label="maitrise-ouvrage" value={field.value} onChange={field.onChange} />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="maitriseOuvrageDeleguee" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Maîtrise d'ouv. Déléguée</FormLabel>
-                        <FormControl><Input {...field} value={field.value || ""} dir="auto" /></FormControl>
+                         <MaitriseOuvrageSelect label="maitrise-ouvrage-deleguee" value={field.value} onChange={field.onChange} />
                       </FormItem>
                     )} />
                   </div>
