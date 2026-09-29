@@ -194,6 +194,39 @@ router.patch("/admin/users/:id", adminRequired, async (req, res): Promise<void> 
   }
 });
 
+router.delete("/admin/users/:id", adminRequired, async (req, res): Promise<void> => {
+  const id = idFrom(req.params.id);
+  if (!id) {
+    res.status(400).json({ error: "Identifiant de compte invalide." });
+    return;
+  }
+
+  const outcome = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(741023, 1)`);
+    const [user] = await tx.select().from(usersTable)
+      .where(eq(usersTable.id, id))
+      .for("update");
+    if (!user) return "missing" as const;
+    if (user.role === "admin") return "admin" as const;
+
+    await tx.delete(sessionsTable).where(eq(sessionsTable.userId, id));
+    const [deleted] = await tx.delete(usersTable)
+      .where(eq(usersTable.id, id))
+      .returning({ id: usersTable.id });
+    return deleted ? "deleted" as const : "missing" as const;
+  });
+
+  if (outcome === "missing") {
+    res.status(404).json({ error: "Compte introuvable." });
+    return;
+  }
+  if (outcome === "admin") {
+    res.status(403).json({ error: "Un compte administrateur ne peut pas être supprimé." });
+    return;
+  }
+  res.sendStatus(204);
+});
+
 router.post("/admin/users/:id/password", adminRequired, async (req, res): Promise<void> => {
   const id = idFrom(req.params.id);
   const password = (req.body as { password?: unknown } | null)?.password;

@@ -220,6 +220,20 @@ paths:
               schema: { $ref: "#/components/schemas/AdminUser" }
         "400": { description: Données invalides }
         "404": { description: Compte introuvable }
+    delete:
+      operationId: deleteUser
+      tags: [admin]
+      summary: Supprimer définitivement un compte non administrateur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "204": { description: Compte supprimé et sessions révoquées }
+        "400": { description: Identifiant invalide }
+        "403": { description: Les comptes administrateurs ne peuvent pas être supprimés }
+        "404": { description: Compte introuvable }
   /admin/users/{id}/password:
     post:
       operationId: resetUserPassword
