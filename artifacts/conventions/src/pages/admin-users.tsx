@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, KeyRound, UserRound, Shield, Search } from "lucide-react";
+import { Plus, Pencil, KeyRound, UserRound, Shield, Search, Trash2 } from "lucide-react";
 import { api, errorMessage, roleLabels, type Role, type User, useAuth } from "@/hooks/use-auth";
 import { organisation } from "@/lib/organisation";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type FormData = { username: string; password: string; role: Role; direction: string; division: string; service: string };
+type Confirmation = { kind: "toggle" | "delete"; user: User };
 const blank: FormData = { username: "", password: "", role: "chef_service", direction: "", division: "", service: "" };
 const roles: Role[] = ["admin", "directeur", "chef_division", "chef_service"];
 const field = "w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -22,6 +32,7 @@ export default function AdminUsers() {
   const [editing, setEditing] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const [passwordFor, setPasswordFor] = useState<User | null>(null);
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [password, setPassword] = useState("");
   const [form, setForm] = useState<FormData>(blank);
   const [error, setError] = useState("");
@@ -47,12 +58,35 @@ export default function AdminUsers() {
     } catch (cause) { setError(errorMessage(cause)); }
     finally { setBusy(false); }
   }
-  async function toggle(user: User) {
-    if (user.id === current?.id || !window.confirm(`${user.active ? "Désactiver" : "Réactiver"} le compte ${user.username} ?`)) return;
+  function askToggle(user: User) {
+    if (user.id === current?.id) return;
+    setError("");
+    setConfirmation({ kind: "toggle", user });
+  }
+  function askDelete(user: User) {
+    if (user.role === "admin" || user.id === current?.id) return;
+    setError("");
+    setConfirmation({ kind: "delete", user });
+  }
+  async function confirmAccountAction() {
+    if (!confirmation) return;
     setBusy(true); setError("");
-    try { await api<User>(`/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify({ active: !user.active }) }); await client.invalidateQueries({ queryKey: ["admin", "users"] }); }
-    catch (cause) { setError(errorMessage(cause)); }
+    try {
+      if (confirmation.kind === "delete") {
+        await api<void>(`/admin/users/${confirmation.user.id}`, { method: "DELETE" });
+      } else {
+        await api<User>(`/admin/users/${confirmation.user.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ active: !confirmation.user.active }),
+        });
+      }
+      setConfirmation(null);
+    } catch (cause) {
+      setError(errorMessage(cause));
+      return;
+    }
     finally { setBusy(false); }
+    await client.invalidateQueries({ queryKey: ["admin", "users"] });
   }
   async function changePassword(event: FormEvent) {
     event.preventDefault(); if (!passwordFor) return;
@@ -64,13 +98,13 @@ export default function AdminUsers() {
   return <div className="space-y-6 pb-12">
     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><span className="text-xs font-bold uppercase tracking-widest text-secondary">Administration / accès</span><h1 className="text-3xl font-semibold mt-2">Utilisateurs</h1><p className="text-muted-foreground mt-1">Gérez les comptes et leurs périmètres de travail.</p></div><Button onClick={() => begin()}><Plus className="w-4 h-4 mr-2" /> Nouveau compte</Button></div>
     <div className="relative max-w-sm"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Rechercher un utilisateur" placeholder="Rechercher un compte…" className="pl-9 bg-card" value={search} onChange={event => setSearch(event.target.value)} /></div>
-    {error && !open && !passwordFor && <p role="alert" className="text-destructive bg-destructive/5 border border-destructive/20 rounded-lg p-3">{error}</p>}
+    {error && !open && !passwordFor && !confirmation && <p role="alert" className="text-destructive bg-destructive/5 border border-destructive/20 rounded-lg p-3">{error}</p>}
     {query.isPending ? <div className="space-y-3">{[1,2,3,4].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
       : query.isError ? <Card><CardContent className="py-10 text-center"><p role="alert">{errorMessage(query.error)}</p><Button variant="outline" className="mt-4" onClick={() => void query.refetch()}>Réessayer</Button></CardContent></Card>
       : visible?.length === 0 ? <Card><CardContent className="py-16 text-center text-muted-foreground"><UserRound className="mx-auto mb-4 w-9 h-9 text-secondary" />{search ? "Aucun compte ne correspond à votre recherche." : "Aucun compte pour le moment."}</CardContent></Card>
       : <div className="border rounded-xl bg-card divide-y overflow-hidden">{visible?.map(user => <div key={user.id} className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center gap-4">
         <div className="flex gap-4 flex-1 min-w-0"><div className="rounded-lg bg-accent text-primary w-11 h-11 shrink-0 grid place-items-center"><Shield className="w-5 h-5" /></div><div className="min-w-0"><div className="font-semibold flex flex-wrap items-center gap-2">{user.username}<span className={`text-xs rounded-full px-2 py-0.5 ${user.active ? "bg-emerald-50 text-emerald-800" : "bg-muted text-muted-foreground"}`}>{user.active ? "Actif" : "Inactif"}</span></div><div className="text-sm text-muted-foreground">{roleLabels[user.role]}{user.division ? ` · ${user.division}` : user.direction ? ` · ${user.direction}` : ""}{user.service ? ` · ${user.service}` : ""}</div></div></div>
-        <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => begin(user)}><Pencil className="w-3.5 h-3.5 mr-2" /> Modifier</Button><Button size="sm" variant="outline" onClick={() => { setError(""); setPassword(""); setPasswordFor(user); }}><KeyRound className="w-3.5 h-3.5 mr-2" /> Mot de passe</Button><Button size="sm" variant="ghost" disabled={busy || user.id === current?.id} onClick={() => void toggle(user)}>{user.active ? "Désactiver" : "Réactiver"}</Button></div>
+        <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => begin(user)}><Pencil className="w-3.5 h-3.5 mr-2" /> Modifier</Button><Button size="sm" variant="outline" onClick={() => { setError(""); setPassword(""); setPasswordFor(user); }}><KeyRound className="w-3.5 h-3.5 mr-2" /> Mot de passe</Button><Button size="sm" variant="ghost" disabled={busy || user.id === current?.id} onClick={() => askToggle(user)}>{user.active ? "Désactiver" : "Réactiver"}</Button>{user.role !== "admin" && <Button size="sm" variant="destructive" disabled={busy || user.id === current?.id} onClick={() => askDelete(user)}><Trash2 className="w-3.5 h-3.5 mr-2" /> Supprimer</Button>}</div>
       </div>)}</div>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl"><DialogHeader><DialogTitle>{editing ? "Modifier le compte" : "Nouveau compte"}</DialogTitle><DialogDescription>Définissez le rôle et le périmètre de l'utilisateur.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4">
       <div className="space-y-1.5"><label htmlFor="account-name" className="text-sm font-medium">Nom d'utilisateur</label><Input id="account-name" autoComplete="off" required value={form.username} onChange={event => setForm({ ...form, username: event.target.value })} /></div>
@@ -83,5 +117,46 @@ export default function AdminUsers() {
       <div className="flex justify-end gap-2 pt-3"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Annuler</Button><Button disabled={busy} type="submit">{busy ? "Enregistrement…" : "Enregistrer"}</Button></div>
     </form></DialogContent></Dialog>
     <Dialog open={!!passwordFor} onOpenChange={open => { if (!open) setPasswordFor(null); }}><DialogContent><DialogHeader><DialogTitle>Changer le mot de passe</DialogTitle><DialogDescription>Nouveau mot de passe pour {passwordFor?.username}.</DialogDescription></DialogHeader><form onSubmit={changePassword} className="space-y-4"><label htmlFor="new-password" className="text-sm font-medium">Nouveau mot de passe (8 caractères minimum)</label><Input id="new-password" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={event => setPassword(event.target.value)} />{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setPasswordFor(null)}>Annuler</Button><Button disabled={busy} type="submit">Mettre à jour</Button></div></form></DialogContent></Dialog>
+    <AlertDialog
+      open={confirmation !== null}
+      onOpenChange={(isOpen) => {
+        if (!isOpen && !busy) {
+          setConfirmation(null);
+          setError("");
+        }
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {confirmation?.kind === "delete"
+              ? "Supprimer définitivement ce compte ?"
+              : confirmation?.user.active
+                ? "Désactiver ce compte ?"
+                : "Réactiver ce compte ?"}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {confirmation?.kind === "delete"
+              ? `Le compte « ${confirmation.user.username} » sera supprimé et ses sessions seront révoquées. Cette action est irréversible.`
+              : confirmation?.user.active
+                ? `Le compte « ${confirmation.user.username} » ne pourra plus se connecter. Ses sessions en cours seront révoquées.`
+                : `Le compte « ${confirmation?.user.username} » pourra de nouveau se connecter.`}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>Annuler</AlertDialogCancel>
+          <Button
+            type="button"
+            variant={confirmation?.kind === "delete" || confirmation?.user.active ? "destructive" : "default"}
+            disabled={busy}
+            onClick={() => void confirmAccountAction()}
+          >
+            {busy ? "Traitement…" : confirmation?.kind === "delete" ? "Supprimer le compte" :
+              confirmation?.user.active ? "Désactiver" : "Réactiver"}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>;
 }
