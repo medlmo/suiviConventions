@@ -57,7 +57,6 @@ const conventionSchema = z.object({
   frequenceReunions: z.string().nullable().optional(),
   dernierComite: z.string().nullable().optional(),
   dernierComiteNote: z.string().nullable().optional(),
-  prochainComite: z.string().nullable().optional(),
   prochaineEcheance: z.string().nullable().optional(),
   prochaineEcheanceNote: z.string().nullable().optional(),
   pv: z.string().nullable().optional(),
@@ -428,12 +427,6 @@ export default function ConventionCreate() {
                   <FormItem>
                     <FormLabel>Mention (si aucune date)</FormLabel>
                     <FormControl><Input {...field} value={field.value || ""} dir="auto" placeholder="Ex : لم يعقد اي اجتماع" /></FormControl>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="prochainComite" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prochain comité programmé</FormLabel>
-                    <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="presidenceComite" render={({ field }) => (
