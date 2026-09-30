@@ -3,6 +3,7 @@
 - [Cache HTTP de l'API](cache-http-api.md) — aucune réponse API n'est cacheable (alertes liées à CURRENT_DATE, 304 traité comme un échec) ; un échec ne doit jamais s'afficher comme une section vide.
 - [Contrat OpenAPI et coercition Zod](contrat-zod-coercition.md) — pourquoi les dates sont validées avant Zod et pourquoi les réponses ne sont jamais réécrites par `.parse()`.
 - [Valeurs historiques des conventions](valeurs-historiques-conventions.md) — les nouvelles listes guidées ne doivent pas effacer les anciennes valeurs libres sans action de l'utilisateur.
+- [Calcul des échéances](calcul-echeances-conventions.md) — avant le premier comité, le visa fixe la date même avec fréquence inconnue ; préserver les dates manuelles historiques.
 - [Applicabilité des avenants](applicabilite-avenants.md) — l'application suit normalement des conventions visées ; ne pas appliquer un avenant avant son propre visa.
 - [Authentification interne](authentification-interne.md) — les comptes sont créés par l'administration avec un identifiant sans e-mail ; conserver ce choix et les droits de lecture globaux des directeurs.
 - [Remplacement d'un secret](remplacement-secret.md) — confirmer une entrée sécurisée existante peut laisser sa valeur inchangée ; valider le démarrage sans jamais lire la valeur.

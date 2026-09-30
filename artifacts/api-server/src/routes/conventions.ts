@@ -39,6 +39,7 @@ import {
   versApi,
   versColonnes,
 } from "../lib/conventions-mapper";
+import { calculerEcheance } from "../lib/echeances";
 import {
   chargerReferentiel,
   chargerReferentielDepuis,
@@ -672,6 +673,13 @@ router.post("/conventions", async (req, res): Promise<void> => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
     const reference = await chargerReferentielDepuis(tx);
     const valeurs = versColonnes(parsed.data);
+    const echeance = calculerEcheance({
+      nature: valeurs.nature as string | null | undefined,
+      dateVisa: valeurs.dateVisa as string | null | undefined,
+      dernierComite: valeurs.dernierComite as string | null | undefined,
+      frequenceReunions: valeurs.frequenceReunions as string | null | undefined,
+    });
+    if (echeance) valeurs.prochaineEcheance = echeance.date;
     if (
       !listeMoValide(parsed.data.maitriseOuvrage, reference) ||
       !listeMoValide(parsed.data.maitriseOuvrageDeleguee, reference)
@@ -885,6 +893,37 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       (user.role !== "admin" && !affectationsValides(rattachementFinal, responsableFinal, user, reference))
     ) {
       return { status: 403 as const };
+    }
+    const valeurFinale = (champ: "nature" | "dateVisa" | "dernierComite" | "frequenceReunions") =>
+      Object.hasOwn(valeurs, champ) ? valeurs[champ] as string | null : current[champ];
+    const echeanceAvant = calculerEcheance(current);
+    const echeance = calculerEcheance({
+      nature: valeurFinale("nature"),
+      dateVisa: valeurFinale("dateVisa"),
+      dernierComite: valeurFinale("dernierComite"),
+      frequenceReunions: valeurFinale("frequenceReunions"),
+    });
+    const champsDeterminants = valeurFinale("dernierComite")
+      ? (["dernierComite", "frequenceReunions"] as const)
+      : (["dernierComite", "nature", "dateVisa"] as const);
+    const sourcesChangees = champsDeterminants
+      .some((champ) => Object.hasOwn(valeurs, champ) && valeurs[champ] !== current[champ]);
+    if (
+      echeance &&
+      (sourcesChangees || !current.prochaineEcheance || current.prochaineEcheance === echeance.date)
+    ) {
+      // Une ancienne date manuelle différente du calcul est conservée tant que
+      // ni la date de base, ni la fréquence, ni la nature n'ont changé.
+      valeurs.prochaineEcheance = echeance.date;
+    } else if (
+      echeanceAvant &&
+      current.prochaineEcheance === echeanceAvant.date &&
+      !Object.hasOwn(valeurs, "prochaineEcheance") &&
+      sourcesChangees
+    ) {
+      // Si l'ancien calcul n'est plus possible, ne pas laisser une ancienne
+      // échéance automatique passer pour une date saisie manuellement.
+      valeurs.prochaineEcheance = null;
     }
     const [updated] = await tx.update(conventionsTable)
       .set({ ...valeurs, version: current.version + 1, updatedAt: new Date() })

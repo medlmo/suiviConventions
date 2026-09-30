@@ -42,6 +42,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RattachementSelect, ServiceSelect } from "@/components/organisation-selects";
 import { MaitriseOuvrageSelect } from "@/components/maitrise-ouvrage-select";
 import { useReferenceData } from "@/hooks/use-reference-data";
+import { calculerEcheance } from "@/lib/echeances";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { ArrowLeft, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -134,7 +135,28 @@ export default function ConventionDetail() {
   });
   const rattachementChoisi = form.watch("rattachement");
   // React Hook Form doit observer dirtyFields pour que keepDirtyValues fonctionne.
-  void form.formState.dirtyFields;
+  const champsModifies = form.formState.dirtyFields;
+  const [nature, dateVisa, dernierComite, frequenceReunions] =
+    form.watch(["nature", "dateVisa", "dernierComite", "frequenceReunions"]);
+  const calculTheorique = canEdit
+    ? calculerEcheance({ nature, dateVisa, dernierComite, frequenceReunions })
+    : null;
+  const sourcesModifiees = !!(
+    champsModifies.dernierComite ||
+    (dernierComite
+      ? champsModifies.frequenceReunions
+      : champsModifies.nature || champsModifies.dateVisa)
+  );
+  const dateEnregistree = convention?.prochaineEcheance?.split("T")[0] ?? null;
+  const dateHistoriqueManuelle = !!(
+    calculTheorique && dateEnregistree &&
+    dateEnregistree !== calculTheorique.date && !sourcesModifiees
+  );
+  const echeanceCalculee = dateHistoriqueManuelle ? null : calculTheorique;
+  const derniereEcheanceAutomatique = useRef<string | null>(null);
+  const brouillonEcheanceManuelle = useRef<string | null | undefined>(undefined);
+  const etaitHistorique = useRef(false);
+  const idEcheanceAutomatique = useRef<number | null>(null);
 
   // Chaque nouvelle version serveur actualise les champs non modifiés, mais
   // conserve les saisies en cours lors d'un renommage du référentiel.
@@ -174,6 +196,43 @@ export default function ConventionDetail() {
     }
   }, [convention, id, form]);
 
+  useEffect(() => {
+    if (idEcheanceAutomatique.current !== id) {
+      idEcheanceAutomatique.current = id;
+      derniereEcheanceAutomatique.current = null;
+      brouillonEcheanceManuelle.current = undefined;
+      etaitHistorique.current = false;
+    }
+    if (!canEdit || !convention) return;
+    const ancienneDateAutomatique = derniereEcheanceAutomatique.current;
+    if (dateHistoriqueManuelle) {
+      if (ancienneDateAutomatique && form.getValues("prochaineEcheance") === ancienneDateAutomatique) {
+        const dateARestaurer = brouillonEcheanceManuelle.current === undefined
+          ? dateEnregistree : brouillonEcheanceManuelle.current;
+        form.setValue("prochaineEcheance", dateARestaurer, { shouldDirty: true });
+      }
+      derniereEcheanceAutomatique.current = null;
+      brouillonEcheanceManuelle.current = undefined;
+      etaitHistorique.current = true;
+      return;
+    }
+    if (echeanceCalculee) {
+      if (etaitHistorique.current && brouillonEcheanceManuelle.current === undefined) {
+        brouillonEcheanceManuelle.current = form.getValues("prochaineEcheance") ?? null;
+      }
+      if (form.getValues("prochaineEcheance") !== echeanceCalculee.date) {
+        form.setValue("prochaineEcheance", echeanceCalculee.date, { shouldDirty: true });
+      }
+      derniereEcheanceAutomatique.current = echeanceCalculee.date;
+      etaitHistorique.current = false;
+    } else if (ancienneDateAutomatique && form.getValues("prochaineEcheance") === ancienneDateAutomatique) {
+      form.setValue("prochaineEcheance", brouillonEcheanceManuelle.current ?? null, { shouldDirty: true });
+      derniereEcheanceAutomatique.current = null;
+      brouillonEcheanceManuelle.current = undefined;
+      etaitHistorique.current = false;
+    }
+  }, [canEdit, convention?.id, dateEnregistree, dateHistoriqueManuelle, echeanceCalculee?.date, form, id]);
+
   const onSubmit = async (data: FormValues) => {
     if (!canEdit || !convention) return;
     if (isFetching) return; // attendre la version actualisée après invalidation
@@ -184,18 +243,22 @@ export default function ConventionDetail() {
     const cleanData = Object.fromEntries(
       Object.entries(data).map(([k, v]) => [k, v === "" ? null : v])
     );
+    if (echeanceCalculee) cleanData.prochaineEcheance = echeanceCalculee.date;
 
     setSaving(true); setConflict("");
     try {
         const latest = queryClient.getQueryData<typeof convention>(getGetConventionQueryKey(id)) ?? convention;
         const updatedConvention = await api<typeof convention>(`/conventions/${id}`, { method: "PATCH", body: JSON.stringify({ ...cleanData, version: (latest as typeof convention & { version: number }).version }) });
-        form.reset(data);
+        queryClient.setQueryData(getGetConventionQueryKey(id), updatedConvention);
+        form.reset({
+          ...data,
+          prochaineEcheance: updatedConvention.prochaineEcheance?.split("T")[0] ?? null,
+        });
         toast({
           title: "Convention mise à jour",
           description: "Les modifications ont été enregistrées avec succès.",
         });
         // On invalide les requetes du TDB car les dates de comites impactent les alertes
-        queryClient.setQueryData(getGetConventionQueryKey(id), updatedConvention);
         queryClient.invalidateQueries({ queryKey: getGetResumeAlertesQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListAlertesQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListConventionsQueryKey() });
@@ -603,8 +666,27 @@ export default function ConventionDetail() {
                     <FormField control={form.control} name="prochaineEcheance" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-bold text-red-900">Date Prochaine Échéance</FormLabel>
-                        <FormControl><Input type="date" {...field} value={field.value || ""} className="font-bold border-red-200 focus-visible:ring-red-500" /></FormControl>
-                        <p className="text-[11px] text-red-600/80">Pilote le calcul de l'alerte.</p>
+                        <FormControl><Input type="date" {...field} value={echeanceCalculee?.date ?? field.value ?? ""} readOnly={!!echeanceCalculee} data-testid="input-prochaine-echeance" className="font-bold border-red-200 focus-visible:ring-red-500" /></FormControl>
+                        <p data-testid="status-calcul-echeance" className="text-[11px] text-red-600/80">
+                          {dateHistoriqueManuelle && calculTheorique
+                            ? `Date enregistrée conservée. Calcul attendu : ${calculTheorique.date}.`
+                            : echeanceCalculee
+                            ? `Calcul automatique : ${echeanceCalculee.source === "visa" ? "date de visa" : "dernier comité tenu"} + ${echeanceCalculee.mois} mois. Cette date pilote l'alerte.`
+                            : dernierComite
+                              ? "Fréquence non chiffrée : saisissez l'échéance manuellement."
+                              : "Saisie manuelle tant que la nature du projet ou la date de visa manque."}
+                        </p>
+                        {dateHistoriqueManuelle && calculTheorique && (
+                          <Button
+                            type="button"
+                            variant="link"
+                            data-testid="button-appliquer-calcul-echeance"
+                            className="h-auto p-0 text-xs"
+                            onClick={() => form.setValue("prochaineEcheance", calculTheorique.date, { shouldDirty: true })}
+                          >
+                            Appliquer le calcul
+                          </Button>
+                        )}
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="prochaineEcheanceNote" render={({ field }) => (
@@ -634,7 +716,7 @@ export default function ConventionDetail() {
                     <FormItem>
                       <FormLabel>Fréquence prévue des réunions (mois)</FormLabel>
                       <FormControl><Input {...field} value={field.value || ""} dir="auto" placeholder="Ex. : 3" /></FormControl>
-                      <p className="text-xs text-muted-foreground">Indiquer le nombre de mois entre deux réunions.</p>
+                      <p className="text-xs text-muted-foreground">Indiquer un nombre de mois, ou la mention « كلما دعت الضرورة الى ذلك » si la fréquence est inconnue.</p>
                     </FormItem>
                   )} />
 

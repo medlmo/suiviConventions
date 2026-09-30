@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import { useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RattachementSelect, ServiceSelect } from "@/components/organisation-selects";
 import { MaitriseOuvrageSelect } from "@/components/maitrise-ouvrage-select";
 import { useReferenceData } from "@/hooks/use-reference-data";
+import { calculerEcheance } from "@/lib/echeances";
 import { ArrowLeft, Save, CalendarIcon, FileText, Info, Wallet } from "lucide-react";
 
 // Un champ montant vidé doit repartir à NULL, pas à 0 : z.coerce.number()
@@ -102,6 +104,23 @@ export default function ConventionCreate() {
     }
   });
   const rattachementChoisi = form.watch("rattachement");
+  const [nature, dateVisa, dernierComite, frequenceReunions] =
+    form.watch(["nature", "dateVisa", "dernierComite", "frequenceReunions"]);
+  const echeanceCalculee = calculerEcheance({ nature, dateVisa, dernierComite, frequenceReunions });
+  const derniereEcheanceAutomatique = useRef<string | null>(null);
+
+  useEffect(() => {
+    const ancienneDateAutomatique = derniereEcheanceAutomatique.current;
+    if (echeanceCalculee) {
+      if (form.getValues("prochaineEcheance") !== echeanceCalculee.date) {
+        form.setValue("prochaineEcheance", echeanceCalculee.date, { shouldDirty: true });
+      }
+      derniereEcheanceAutomatique.current = echeanceCalculee.date;
+    } else if (ancienneDateAutomatique && form.getValues("prochaineEcheance") === ancienneDateAutomatique) {
+      form.setValue("prochaineEcheance", null, { shouldDirty: true });
+      derniereEcheanceAutomatique.current = null;
+    }
+  }, [echeanceCalculee?.date, form]);
 
   const onSubmit = (data: FormValues) => {
     if (!user || user.role === "directeur") return;
@@ -117,6 +136,8 @@ export default function ConventionCreate() {
     const cleanData = Object.fromEntries(
       Object.entries(data).map(([k, v]) => [k, v === "" ? null : v])
     );
+    const calcul = calculerEcheance(data);
+    if (calcul) cleanData.prochaineEcheance = calcul.date;
     
     // Type casting pour l'input
     createMutation.mutate({ data: cleanData as any }, {
@@ -397,7 +418,14 @@ export default function ConventionCreate() {
                 <FormField control={form.control} name="prochaineEcheance" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-bold text-red-900">Date Prochaine Échéance</FormLabel>
-                    <FormControl><Input type="date" {...field} value={field.value || ""} className="border-red-200 focus-visible:ring-red-500" /></FormControl>
+                    <FormControl><Input type="date" {...field} value={echeanceCalculee?.date ?? field.value ?? ""} readOnly={!!echeanceCalculee} data-testid="input-prochaine-echeance" className="border-red-200 focus-visible:ring-red-500" /></FormControl>
+                    <p data-testid="status-calcul-echeance" className="text-xs text-muted-foreground">
+                      {echeanceCalculee
+                        ? `Calcul automatique : ${echeanceCalculee.source === "visa" ? "date de visa" : "dernier comité tenu"} + ${echeanceCalculee.mois} mois.`
+                        : dernierComite
+                          ? "Fréquence non chiffrée : saisissez l'échéance manuellement."
+                          : "Saisie manuelle tant que la nature du projet ou la date de visa manque."}
+                    </p>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="prochaineEcheanceNote" render={({ field }) => (
@@ -412,7 +440,7 @@ export default function ConventionCreate() {
                 <FormItem>
                   <FormLabel>Fréquence prévue des réunions (mois)</FormLabel>
                   <FormControl><Input {...field} value={field.value || ""} dir="auto" placeholder="Ex. : 3" /></FormControl>
-                  <p className="text-xs text-muted-foreground">Indiquer le nombre de mois entre deux réunions.</p>
+                    <p className="text-xs text-muted-foreground">Indiquer un nombre de mois, ou la mention « كلما دعت الضرورة الى ذلك » si la fréquence est inconnue.</p>
                 </FormItem>
               )} />
 
