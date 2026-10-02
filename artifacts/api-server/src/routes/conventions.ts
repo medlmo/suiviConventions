@@ -210,7 +210,7 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
 }
 
 function filtrePerimetre(user: SessionUser, reference: ReferenceData): SQL | undefined {
-  if (user.role === "admin" || user.role === "directeur") {
+  if (user.role === "admin" || user.role === "directeur" || user.role === "directeur_general_services") {
     // Directors intentionally retain read access to every convention.
     return undefined;
   }
@@ -249,7 +249,7 @@ function filtrePerimetre(user: SessionUser, reference: ReferenceData): SQL | und
 }
 
 function accessible(row: typeof conventionsTable.$inferSelect, user: SessionUser, reference: ReferenceData): boolean {
-  if (user.role === "admin" || user.role === "directeur") return true;
+  if (user.role === "admin" || user.role === "directeur" || user.role === "directeur_general_services") return true;
   if (user.role === "chef_division") {
     return !!user.direction && !!user.division &&
       divisionDeDirection(reference, user.direction, user.division) &&

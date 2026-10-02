@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-export type Role = "admin" | "directeur" | "chef_division" | "chef_service";
+export type Role = "admin" | "directeur" | "directeur_general_services" | "chef_division" | "chef_service";
 export type User = { id: number; username: string; role: Role; direction: string | null; division: string | null; service: string | null; active: boolean };
 export const roleLabels: Record<Role, string> = {
-  admin: "Administrateur", directeur: "Directeur", chef_division: "Chef de division", chef_service: "Chef de service",
+  admin: "Administrateur", directeur: "Directeur", directeur_general_services: "Directeur Général des Services",
+  chef_division: "Chef de division", chef_service: "Chef de service",
 };
 
 export class ApiError extends Error {
@@ -89,7 +90,7 @@ export function useAuth() {
 
 export function canEditConvention(user: User, convention?: { rattachement?: string | null; responsableProjet?: string | null }): boolean {
   if (user.role === "admin") return true;
-  if (user.role === "directeur") return false;
+  if (user.role === "directeur" || user.role === "directeur_general_services") return false;
   if (!convention) return true;
   if (user.role === "chef_division") return !!user.division && convention.rattachement === user.division;
   return !!user.division && !!user.service && convention.rattachement === user.division && convention.responsableProjet === user.service;

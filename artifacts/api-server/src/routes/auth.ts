@@ -5,6 +5,7 @@ import { LoginBody } from "@workspace/api-zod";
 import {
   authRequired,
   creerSession,
+  estRole,
   estRateLimited,
   hashPassword,
   reinitialiserTentatives,
@@ -30,7 +31,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
   const [user] = await db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1);
   const valide = user ? await verifyPassword(parsed.data.password, user.passwordHash) : false;
-  if (!user || !user.active || !valide || !["admin", "directeur", "chef_division", "chef_service"].includes(user.role)) {
+  if (!user || !user.active || !valide || !estRole(user.role)) {
     res.status(401).json({ error: "Identifiant ou mot de passe invalide." });
     return;
   }

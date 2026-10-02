@@ -19,7 +19,7 @@ const objectStorageService = new ObjectStorageService();
 const ERREUR_FORMAT = "Choisissez un fichier PDF ou Word (.doc, .docx) de 10 Mo maximum.";
 
 function peutTeleverser(role: string): boolean {
-  return role !== "directeur";
+  return role !== "directeur" && role !== "directeur_general_services";
 }
 
 router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {

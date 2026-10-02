@@ -34,7 +34,7 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
-const ROLES = ["admin", "directeur", "chef_division", "chef_service"] as const;
+const ROLES = ["admin", "directeur", "directeur_general_services", "chef_division", "chef_service"] as const;
 type Profile = Pick<typeof usersTable.$inferInsert, "role" | "direction" | "division" | "service">;
 
 function profileIsValid(profile: Profile, reference: ReferenceData): boolean {
@@ -45,6 +45,7 @@ function profileIsValid(profile: Profile, reference: ReferenceData): boolean {
   if (service !== null && service !== undefined && (!division || !serviceDansDivision(reference, division, service))) return false;
   if (role === "admin") return true;
   if (role === "directeur") return !!direction && directionConnue(reference, direction) && !division && !service;
+  if (role === "directeur_general_services") return !direction && !division && !service;
   if (role === "chef_division") return !!direction && !!division && divisionDeDirection(reference, direction, division) && !service;
   return !!direction && !!division && !!service && serviceDansDivision(reference, division, service);
 }

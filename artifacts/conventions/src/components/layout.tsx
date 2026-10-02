@@ -48,7 +48,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     await logout();
     setLocation("/sign-in");
   };
-  const items = navigation.filter(item => item.href !== "/conventions/nouvelle" || user?.role !== "directeur");
+  const items = navigation.filter(item => item.href !== "/conventions/nouvelle" || (user?.role !== "directeur" && user?.role !== "directeur_general_services"));
   const adminItems = user?.role === "admin" ? [
     { name: "Référentiel", href: "/admin/referentiel", icon: FolderTree },
     { name: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
