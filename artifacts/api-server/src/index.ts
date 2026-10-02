@@ -1,6 +1,8 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { bootstrapAdmin } from "./lib/auth";
+import { bootstrapAdmin, nettoyerSessionsExpirees } from "./lib/auth";
+
+const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 
 const rawPort = process.env["PORT"];
 
@@ -25,6 +27,21 @@ async function start(): Promise<void> {
     }
 
     logger.info({ port }, "Server listening");
+
+    const nettoyer = async (): Promise<void> => {
+      try {
+        const count = await nettoyerSessionsExpirees();
+        if (count > 0) {
+          logger.info({ count }, "Expired sessions cleaned");
+        }
+      } catch (cleanupError) {
+        logger.error({ err: cleanupError }, "Failed to clean expired sessions");
+      }
+    };
+
+    void nettoyer();
+    const cleanupTimer = setInterval(() => void nettoyer(), SESSION_CLEANUP_INTERVAL_MS);
+    cleanupTimer.unref();
   });
 }
 
