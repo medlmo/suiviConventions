@@ -23,7 +23,9 @@ Application interne de suivi des conventions de partenariat de la Région Souss-
 ## Where things live
 
 - Contrat d'API : `lib/api-spec/openapi.yaml` (source de vérité — toute modif d'endpoint passe par lui puis `codegen`)
-- Schéma base : `lib/db/src/schema/conventions.ts`
+- Schéma base : `lib/db/src/schema/` (`conventions.ts`, `auth.ts`)
+- Pool PostgreSQL et fuseau horaire des connexions : `lib/db/src/index.ts`
+- Authentification et sessions : `artifacts/api-server/src/lib/auth.ts`, routes dans `artifacts/api-server/src/routes/auth.ts`
 - Calcul d'alerte : `artifacts/api-server/src/lib/alertes.ts`
 - Mapping colonnes ↔ API et normalisation arabe : `artifacts/api-server/src/lib/conventions-mapper.ts`
 - Routes : `artifacts/api-server/src/routes/conventions.ts`
@@ -36,8 +38,10 @@ Application interne de suivi des conventions de partenariat de la Région Souss-
 - **Recherche insensible aux variantes arabes.** Les deux blocs du fichier Excel d'origine n'utilisaient pas les mêmes caractères ; `translate()` est appliqué à la colonne *et* au terme recherché (yeh farsi, keheh, alefs hamzés, ta marbouta, tatweel, diacritiques). Sans cela, une recherche correcte rate un tiers des résultats.
 - **Dates validées strictement avant Zod.** Les schémas générés utilisent `z.coerce.date()`, qui transformerait silencieusement « 2025-02-30 » en 2 mars. Les corps de requête passent d'abord par `normaliserCorps()` (format `AAAA-MM-JJ` + contrôle calendaire) ; une date fausse est refusée, pas corrigée.
 - **Les réponses sont validées sans être réécrites** (`valide()`) : renvoyer le résultat de `.parse()` convertirait les jours calendaires en horodatages UTC, avec risque de décalage d'un jour côté client.
-- **Export CSV hors contrat OpenAPI** (`GET /api/conventions/export`) : c'est un téléchargement, consommé par un lien direct. Séparateur `;`, BOM UTF-8 obligatoire (sans lui Excel rend l'arabe illisible), et neutralisation des préfixes de formule (`=`, `+`, `-`, `@`).
-- **Pas d'authentification pour l'instant** — décision explicite du commanditaire, à instaurer avant toute mise en ligne publique : toutes les routes, y compris la suppression, sont ouvertes.
+- **Export CSV hors contrat OpenAPI** (`GET /api/conventions/export`) : c'est un téléchargement, consommé par un lien direct. Séparateur `;`, BOM UTF-8 obligatoire (sans lui Excel rend l'arabe illisible), et neutralisation des préfixes de formule (`=`, `+`, `-`, `@`). Les colonnes « PV », « Convention (document) » et « Fiche technique » sont exclues ; « Porteur de projet » précède « Maîtrise d'ouvrage ».
+- **Authentification interne** : connexion par identifiant et mot de passe, sans inscription publique ; seuls les administrateurs créent les comptes. Les droits et périmètres sont contrôlés côté API. Les directeurs et le Directeur Général des Services ont un accès global en lecture seule ; les chefs de division et de service écrivent dans leur périmètre.
+- **Sessions** : les sessions sont conservées dans PostgreSQL, expirent après 14 jours et les expirées sont refusées par le middleware. L'API purge les lignes expirées au démarrage, puis toutes les heures.
+- **Fuseau PostgreSQL** : chaque connexion du pool est démarrée avec `Africa/Casablanca`. Configurer le fuseau dans le pool (`lib/db/src/index.ts`) afin qu'il s'applique aussi aux connexions ouvertes ultérieurement ou recréées.
 
 ## État des données importées
 
