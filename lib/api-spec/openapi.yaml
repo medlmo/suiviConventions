@@ -961,7 +961,7 @@ components:
 
     Role:
       type: string
-      enum: [admin, directeur, chef_division, chef_service]
+      enum: [admin, directeur, directeur_general_services, chef_division, chef_service]
     AuthUser:
       type: object
       required: [id, username, role, direction, division, service, active]

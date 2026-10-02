@@ -40,7 +40,7 @@ function Router() {
   if (location === '/sign-in') return null;
   const adminRoute = location.startsWith('/admin');
   if (adminRoute && user.role !== 'admin') return <div className="min-h-[100dvh] grid place-items-center bg-background"><div className="bg-card border rounded-xl p-8 text-center"><h1 className="text-xl font-bold">Accès réservé</h1><p className="text-muted-foreground mt-2">Cette section est réservée aux administrateurs.</p><Button className="mt-5" onClick={() => navigate('/')}>Retour au tableau de bord</Button></div></div>;
-  if (location === '/conventions/nouvelle' && user.role === 'directeur') return <div className="min-h-[100dvh] grid place-items-center bg-background"><div className="bg-card border rounded-xl p-8 text-center"><h1 className="text-xl font-bold">Consultation uniquement</h1><p className="text-muted-foreground mt-2">Votre compte ne peut pas créer de convention.</p><Button className="mt-5" onClick={() => navigate('/conventions')}>Voir les conventions</Button></div></div>;
+  if (location === '/conventions/nouvelle' && (user.role === 'directeur' || user.role === 'directeur_general_services')) return <div className="min-h-[100dvh] grid place-items-center bg-background"><div className="bg-card border rounded-xl p-8 text-center"><h1 className="text-xl font-bold">Consultation uniquement</h1><p className="text-muted-foreground mt-2">Votre compte ne peut pas créer de convention.</p><Button className="mt-5" onClick={() => navigate('/conventions')}>Voir les conventions</Button></div></div>;
   return (
     <AppLayout>
       <RoutedErrorBoundary>

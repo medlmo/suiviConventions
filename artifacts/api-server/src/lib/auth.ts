@@ -10,7 +10,7 @@ const SESSION_DAYS = 14;
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 8;
 
-export type Role = "admin" | "directeur" | "chef_division" | "chef_service";
+export type Role = "admin" | "directeur" | "directeur_general_services" | "chef_division" | "chef_service";
 export type SessionUser = Pick<AppUser, "id" | "username" | "role" | "direction" | "division" | "service" | "active">;
 
 declare global {
@@ -25,7 +25,7 @@ declare global {
 const attempts = new Map<string, { count: number; expires: number }>();
 
 export function estRole(role: string): role is Role {
-  return ["admin", "directeur", "chef_division", "chef_service"].includes(role);
+  return ["admin", "directeur", "directeur_general_services", "chef_division", "chef_service"].includes(role);
 }
 
 export function versUtilisateur(user: AppUser): SessionUser {

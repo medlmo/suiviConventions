@@ -123,7 +123,7 @@ export default function ConventionCreate() {
   }, [echeanceCalculee?.date, form]);
 
   const onSubmit = (data: FormValues) => {
-    if (!user || user.role === "directeur") return;
+    if (!user || user.role === "directeur" || user.role === "directeur_general_services") return;
     if (!reference.data) {
       toast({ variant: "destructive", title: "Référentiel indisponible", description: "Réessayez avant d’enregistrer la convention." }); return;
     }

@@ -21,7 +21,7 @@ import {
 type FormData = { username: string; password: string; role: Role; direction: string; division: string; service: string };
 type Confirmation = { kind: "toggle" | "delete"; user: User };
 const blank: FormData = { username: "", password: "", role: "chef_service", direction: "", division: "", service: "" };
-const roles: Role[] = ["admin", "directeur", "chef_division", "chef_service"];
+const roles: Role[] = ["admin", "directeur", "directeur_general_services", "chef_division", "chef_service"];
 const field = "w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export default function AdminUsers() {
@@ -51,7 +51,7 @@ export default function AdminUsers() {
     event.preventDefault();
     if (reference.isPending || reference.isError) { setError("L’organigramme est indisponible. Réessayez avant d’enregistrer."); return; }
     setBusy(true); setError("");
-    const scope = form.role === "admin" ? { direction: null, division: null, service: null }
+    const scope = form.role === "admin" || form.role === "directeur_general_services" ? { direction: null, division: null, service: null }
       : form.role === "directeur" ? { direction: form.direction || null, division: null, service: null }
       : form.role === "chef_division" ? { direction: form.direction || null, division: form.division || null, service: null }
       : { direction: form.direction || null, division: form.division || null, service: form.service || null };
@@ -116,7 +116,8 @@ export default function AdminUsers() {
       <div className="space-y-1.5"><label htmlFor="account-role" className="text-sm font-medium">Rôle</label><select id="account-role" className={field} value={form.role} onChange={event => setForm({ ...form, role: event.target.value as Role })}>{roles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}</select></div>
        {reference.isPending && <p className="text-sm text-muted-foreground">Chargement de l’organigramme…</p>}
        {reference.isError && <p role="alert" className="text-sm text-destructive">Organigramme indisponible : {errorMessage(reference.error)} <button type="button" className="underline" onClick={() => void reference.refetch()}>Réessayer</button></p>}
-       {form.role !== "admin" && <div className="space-y-1.5"><label htmlFor="account-direction" className="text-sm font-medium">Direction</label><select id="account-direction" className={field} disabled={!reference.data} required value={form.direction} onChange={event => setForm({ ...form, direction: event.target.value, division: "", service: "" })}><option value="">Choisir une direction</option>{form.direction && !organisation.some(item => item.direction === form.direction) && <option value={form.direction}>{form.direction} (historique)</option>}{organisation.map(item => <option key={item.id} value={item.direction}>{item.direction}</option>)}</select></div>}
+        {form.role === "directeur_general_services" && <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">Accès en lecture à l’ensemble des conventions des deux directions, sans rattachement à une direction particulière.</p>}
+        {form.role !== "admin" && form.role !== "directeur_general_services" && <div className="space-y-1.5"><label htmlFor="account-direction" className="text-sm font-medium">Direction</label><select id="account-direction" className={field} disabled={!reference.data} required value={form.direction} onChange={event => setForm({ ...form, direction: event.target.value, division: "", service: "" })}><option value="">Choisir une direction</option>{form.direction && !organisation.some(item => item.direction === form.direction) && <option value={form.direction}>{form.direction} (historique)</option>}{organisation.map(item => <option key={item.id} value={item.direction}>{item.direction}</option>)}</select></div>}
        {(form.role === "chef_division" || form.role === "chef_service") && <div className="space-y-1.5"><label htmlFor="account-division" className="text-sm font-medium">Division</label><select id="account-division" className={field} disabled={!reference.data} required value={form.division} onChange={event => setForm({ ...form, division: event.target.value, service: "" })}><option value="">Choisir une division</option>{form.division && !direction?.divisions.some(item => item.nom === form.division) && <option value={form.division}>{form.division} (historique)</option>}{direction?.divisions.map(item => <option key={item.id} value={item.nom}>{item.nom}</option>)}</select></div>}
        {form.role === "chef_service" && <div className="space-y-1.5"><label htmlFor="account-service" className="text-sm font-medium">Service</label><select id="account-service" className={field} disabled={!reference.data} required value={form.service} onChange={event => setForm({ ...form, service: event.target.value })}><option value="">Choisir un service</option>{form.service && !division?.services.some(item => item.nom === form.service) && <option value={form.service}>{form.service} (historique)</option>}{division?.services.map(item => <option key={item.id} value={item.nom}>{item.nom}</option>)}</select></div>}
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
