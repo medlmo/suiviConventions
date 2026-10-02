@@ -460,6 +460,7 @@ export type Role = typeof Role[keyof typeof Role];
 export const Role = {
   admin: 'admin',
   directeur: 'directeur',
+  directeur_general_services: 'directeur_general_services',
   chef_division: 'chef_division',
   chef_service: 'chef_service',
 } as const;

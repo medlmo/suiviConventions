@@ -83,7 +83,7 @@ export const DownloadConventionDocumentResponse = zod.unknown()
 export const GetCurrentUserResponse = zod.object({
   "id": zod.number().int(),
   "username": zod.string(),
-  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']),
   "direction": zod.string().nullable(),
   "division": zod.string().nullable(),
   "service": zod.string().nullable(),
@@ -108,7 +108,7 @@ export const LoginBody = zod.object({
 export const LoginResponse = zod.object({
   "id": zod.number().int(),
   "username": zod.string(),
-  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']),
   "direction": zod.string().nullable(),
   "division": zod.string().nullable(),
   "service": zod.string().nullable(),
@@ -128,7 +128,7 @@ export const LogoutResponse = zod.void()
 export const ListUsersResponseItem = zod.object({
   "id": zod.number().int(),
   "username": zod.string(),
-  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']),
   "direction": zod.string().nullable(),
   "division": zod.string().nullable(),
   "service": zod.string().nullable(),
@@ -152,7 +152,7 @@ export const createUserBodyActiveDefault = true;
 export const CreateUserBody = zod.object({
   "username": zod.string().min(1).max(createUserBodyUsernameMax),
   "password": zod.string().min(createUserBodyPasswordMin).max(createUserBodyPasswordMax),
-  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']),
   "direction": zod.string().nullish(),
   "division": zod.string().nullish(),
   "service": zod.string().nullish(),
@@ -162,7 +162,7 @@ export const CreateUserBody = zod.object({
 export const CreateUserResponse = zod.object({
   "id": zod.number().int(),
   "username": zod.string(),
-  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']),
   "direction": zod.string().nullable(),
   "division": zod.string().nullable(),
   "service": zod.string().nullable(),
@@ -284,7 +284,7 @@ export const updateUserBodyUsernameMax = 100;
 
 export const UpdateUserBody = zod.object({
   "username": zod.string().min(1).max(updateUserBodyUsernameMax).optional(),
-  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']).optional(),
+  "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']).optional(),
   "direction": zod.string().nullish(),
   "division": zod.string().nullish(),
   "service": zod.string().nullish(),
@@ -294,7 +294,7 @@ export const UpdateUserBody = zod.object({
 export const UpdateUserResponse = zod.object({
   "id": zod.number().int(),
   "username": zod.string(),
-  "role": zod.enum(['admin', 'directeur', 'chef_division', 'chef_service']),
+  "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']),
   "direction": zod.string().nullable(),
   "division": zod.string().nullable(),
   "service": zod.string().nullable(),
