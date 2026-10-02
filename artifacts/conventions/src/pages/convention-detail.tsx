@@ -634,18 +634,6 @@ export default function ConventionDetail() {
                     </FormItem>
                   )} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="maitriseOuvrage" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Maîtrise d'ouvrage</FormLabel>
-                         <MaitriseOuvrageSelect label="maitrise-ouvrage" value={field.value} onChange={field.onChange} />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="maitriseOuvrageDeleguee" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Maîtrise d'ouv. Déléguée</FormLabel>
-                         <MaitriseOuvrageSelect label="maitrise-ouvrage-deleguee" value={field.value} onChange={field.onChange} />
-                      </FormItem>
-                    )} />
                     <FormField control={form.control} name="porteurProjet" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Porteur de projet</FormLabel>
@@ -657,6 +645,18 @@ export default function ConventionDetail() {
                           onChange={field.onChange}
                         />
                         <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="maitriseOuvrage" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Maîtrise d'ouvrage</FormLabel>
+                         <MaitriseOuvrageSelect label="maitrise-ouvrage" value={field.value} onChange={field.onChange} />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="maitriseOuvrageDeleguee" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Maîtrise d'ouv. Déléguée</FormLabel>
+                         <MaitriseOuvrageSelect label="maitrise-ouvrage-deleguee" value={field.value} onChange={field.onChange} />
                       </FormItem>
                     )} />
                   </div>
