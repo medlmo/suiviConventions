@@ -11,7 +11,7 @@ import type { NiveauAlerte } from './niveauAlerte';
 
 export type ListConventionsParams = {
 /**
- * Recherche texte (nom de convention, responsable, maîtrise d'ouvrage). Supporte l'arabe.
+ * Recherche texte (nom de convention, responsable, porteur de projet, maîtrise d'ouvrage). Supporte l'arabe.
  */
 q?: string;
 /**

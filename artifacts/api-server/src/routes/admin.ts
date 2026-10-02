@@ -408,6 +408,7 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
         await tx.update(conventionsTable).set({
           maitriseOuvrage: sql`CASE WHEN ${conventionsTable.maitriseOuvrage} = ${current.nom} THEN ${nom} ELSE ${conventionsTable.maitriseOuvrage} END`,
           maitriseOuvrageDeleguee: sql`CASE WHEN ${conventionsTable.maitriseOuvrageDeleguee} = ${current.nom} THEN ${nom} ELSE ${conventionsTable.maitriseOuvrageDeleguee} END`,
+          porteurProjet: sql`CASE WHEN ${conventionsTable.porteurProjet} = ${current.nom} THEN ${nom} ELSE ${conventionsTable.porteurProjet} END`,
           maitrisesOuvrage: sql`CASE WHEN ${conventionsTable.maitrisesOuvrage} IS NULL THEN NULL ELSE array_replace(${conventionsTable.maitrisesOuvrage}, ${current.nom}, ${nom}) END`,
           maitrisesOuvrageDeleguees: sql`CASE WHEN ${conventionsTable.maitrisesOuvrageDeleguees} IS NULL THEN NULL ELSE array_replace(${conventionsTable.maitrisesOuvrageDeleguees}, ${current.nom}, ${nom}) END`,
           updatedAt: new Date(),
@@ -415,6 +416,7 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
         }).where(sql`
           ${conventionsTable.maitriseOuvrage} = ${current.nom}
           OR ${conventionsTable.maitriseOuvrageDeleguee} = ${current.nom}
+          OR ${conventionsTable.porteurProjet} = ${current.nom}
           OR ${conventionsTable.maitrisesOuvrage} @> ARRAY[${current.nom}]::text[]
           OR ${conventionsTable.maitrisesOuvrageDeleguees} @> ARRAY[${current.nom}]::text[]
         `);

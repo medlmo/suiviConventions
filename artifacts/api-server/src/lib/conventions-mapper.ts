@@ -42,6 +42,7 @@ export function versApi(ligne: LigneConvention) {
     frequenceReunions: ligne.frequenceReunions,
     enveloppeBudgetaire: nombreOuNull(ligne.enveloppeBudgetaire),
     contributionRegion: nombreOuNull(ligne.contributionRegion),
+    porteurProjet: ligne.porteurProjet,
     maitriseOuvrage: ligne.maitrisesOuvrage ?? (ligne.maitriseOuvrage ? [ligne.maitriseOuvrage] : []),
     maitriseOuvrageDeleguee: ligne.maitrisesOuvrageDeleguees ??
       (ligne.maitriseOuvrageDeleguee ? [ligne.maitriseOuvrageDeleguee] : []),
@@ -73,6 +74,7 @@ const CHAMPS_TEXTE = [
   "objetConventionFr",
   "rattachement",
   "responsableProjet",
+  "porteurProjet",
   "typeSession",
   "presidenceComite",
   "membresComite",
