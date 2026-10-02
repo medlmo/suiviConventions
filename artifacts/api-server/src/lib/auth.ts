@@ -1,7 +1,7 @@
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import type { NextFunction, Request, Response } from "express";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, lte } from "drizzle-orm";
 import { db, sessionsTable, usersTable, type AppUser } from "@workspace/db";
 
 const scrypt = promisify(scryptCallback);
@@ -97,6 +97,14 @@ export async function creerSession(userId: number, req: Request, res: Response):
     path: "/api",
     expires: expiresAt,
   });
+}
+
+export async function nettoyerSessionsExpirees(): Promise<number> {
+  const supprimees = await db
+    .delete(sessionsTable)
+    .where(lte(sessionsTable.expiresAt, new Date()))
+    .returning({ id: sessionsTable.id });
+  return supprimees.length;
 }
 
 export function supprimerCookie(req: Request, res: Response): void {
