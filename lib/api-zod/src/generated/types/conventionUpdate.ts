@@ -35,6 +35,8 @@ export interface ConventionUpdate {
   /** @nullable */
   contributionRegion?: number | null;
   /** @nullable */
+  porteurProjet?: string | null;
+  /** @nullable */
   maitriseOuvrage?: string[] | null;
   /** @nullable */
   maitriseOuvrageDeleguee?: string[] | null;

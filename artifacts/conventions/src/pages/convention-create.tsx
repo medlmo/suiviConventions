@@ -65,6 +65,7 @@ const conventionSchema = z.object({
   enveloppeBudgetaire: montantOptionnel,
   contributionRegion: montantOptionnel,
   natureFonds: z.string().nullable().optional(),
+  porteurProjet: z.string().nullable().optional(),
   maitriseOuvrage: z.array(z.string()).nullable().optional(),
   maitriseOuvrageDeleguee: z.array(z.string()).nullable().optional(),
   documentConvention: z.string().nullable().optional(),
@@ -97,6 +98,7 @@ export default function ConventionCreate() {
       nomConvention: "",
       statutConvention: "En cours",
       natureFonds: "Propres",
+      porteurProjet: null,
       maitriseOuvrage: [],
       maitriseOuvrageDeleguee: [],
       rattachement: user?.role === "chef_division" || user?.role === "chef_service" ? user.division : null,
@@ -397,6 +399,19 @@ export default function ConventionCreate() {
                   <FormItem>
                     <FormLabel>Maîtrise d'ouvrage déléguée</FormLabel>
                      <MaitriseOuvrageSelect label="maitrise-ouvrage-deleguee" value={field.value} onChange={field.onChange} />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="porteurProjet" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Porteur de projet</FormLabel>
+                    <MaitriseOuvrageSelect
+                      label="porteur-de-projet"
+                      intitule="porteur de projet"
+                      multiple={false}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                    <FormMessage />
                   </FormItem>
                 )} />
               </div>

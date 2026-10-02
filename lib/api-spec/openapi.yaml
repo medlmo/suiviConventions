@@ -349,7 +349,7 @@ paths:
       parameters:
         - name: q
           in: query
-          description: Recherche texte (nom de convention, responsable, maîtrise d'ouvrage). Supporte l'arabe.
+          description: Recherche texte (nom de convention, responsable, porteur de projet, maîtrise d'ouvrage). Supporte l'arabe.
           schema: { type: string }
         - name: alerte
           in: query
@@ -700,6 +700,7 @@ components:
         contributionRegion:
           type: ["number", "null"]
           description: Montant en MAD
+        porteurProjet: { type: ["string", "null"] }
         maitriseOuvrage: { type: array, items: { type: string } }
         maitriseOuvrageDeleguee: { type: array, items: { type: string } }
         prochainComite:
@@ -751,6 +752,7 @@ components:
         frequenceReunions: { type: ["string", "null"] }
         enveloppeBudgetaire: { type: ["number", "null"] }
         contributionRegion: { type: ["number", "null"] }
+        porteurProjet: { type: ["string", "null"] }
         maitriseOuvrage:
           type: ["array", "null"]
           items: { type: string }
@@ -792,6 +794,7 @@ components:
         frequenceReunions: { type: ["string", "null"] }
         enveloppeBudgetaire: { type: ["number", "null"] }
         contributionRegion: { type: ["number", "null"] }
+        porteurProjet: { type: ["string", "null"] }
         maitriseOuvrage:
           type: ["array", "null"]
           items: { type: string }

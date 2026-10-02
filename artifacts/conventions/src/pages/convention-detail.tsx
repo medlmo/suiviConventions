@@ -80,6 +80,7 @@ const conventionSchema = z.object({
   enveloppeBudgetaire: montantOptionnel,
   contributionRegion: montantOptionnel,
   natureFonds: z.string().nullable().optional(),
+  porteurProjet: z.string().nullable().optional(),
   maitriseOuvrage: z.array(z.string()).nullable().optional(),
   maitriseOuvrageDeleguee: z.array(z.string()).nullable().optional(),
   documentConvention: z.string().nullable().optional(),
@@ -188,6 +189,7 @@ export default function ConventionDetail() {
         enveloppeBudgetaire: convention.enveloppeBudgetaire,
         contributionRegion: convention.contributionRegion,
         natureFonds: convention.natureFonds || "Propres",
+        porteurProjet: convention.porteurProjet ?? null,
         maitriseOuvrage: valeursMO(convention.maitriseOuvrage),
         maitriseOuvrageDeleguee: valeursMO(convention.maitriseOuvrageDeleguee),
         documentConvention: convention.documentConvention,
@@ -631,7 +633,7 @@ export default function ConventionDetail() {
                       </Select>
                     </FormItem>
                   )} />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="maitriseOuvrage" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Maîtrise d'ouvrage</FormLabel>
@@ -642,6 +644,19 @@ export default function ConventionDetail() {
                       <FormItem>
                         <FormLabel>Maîtrise d'ouv. Déléguée</FormLabel>
                          <MaitriseOuvrageSelect label="maitrise-ouvrage-deleguee" value={field.value} onChange={field.onChange} />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="porteurProjet" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Porteur de projet</FormLabel>
+                        <MaitriseOuvrageSelect
+                          label="porteur-de-projet"
+                          intitule="porteur de projet"
+                          multiple={false}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>

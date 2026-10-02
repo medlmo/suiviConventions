@@ -155,6 +155,8 @@ export interface Convention {
      * @nullable
      */
   contributionRegion?: number | null;
+  /** @nullable */
+  porteurProjet?: string | null;
   maitriseOuvrage: string[];
   maitriseOuvrageDeleguee: string[];
   /** @nullable */
@@ -237,6 +239,8 @@ export interface ConventionInput {
   /** @nullable */
   contributionRegion?: number | null;
   /** @nullable */
+  porteurProjet?: string | null;
+  /** @nullable */
   maitriseOuvrage?: string[] | null;
   /** @nullable */
   maitriseOuvrageDeleguee?: string[] | null;
@@ -306,6 +310,8 @@ export interface ConventionUpdate {
   enveloppeBudgetaire?: number | null;
   /** @nullable */
   contributionRegion?: number | null;
+  /** @nullable */
+  porteurProjet?: string | null;
   /** @nullable */
   maitriseOuvrage?: string[] | null;
   /** @nullable */
@@ -594,7 +600,7 @@ conventionId?: number;
 
 export type ListConventionsParams = {
 /**
- * Recherche texte (nom de convention, responsable, maîtrise d'ouvrage). Supporte l'arabe.
+ * Recherche texte (nom de convention, responsable, porteur de projet, maîtrise d'ouvrage). Supporte l'arabe.
  */
 q?: string;
 /**
