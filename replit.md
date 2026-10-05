@@ -40,7 +40,7 @@ Application interne de suivi des conventions de partenariat de la Région Souss-
 - **Les réponses sont validées sans être réécrites** (`valide()`) : renvoyer le résultat de `.parse()` convertirait les jours calendaires en horodatages UTC, avec risque de décalage d'un jour côté client.
 - **Export CSV hors contrat OpenAPI** (`GET /api/conventions/export`) : c'est un téléchargement, consommé par un lien direct. Séparateur `;`, BOM UTF-8 obligatoire (sans lui Excel rend l'arabe illisible), et neutralisation des préfixes de formule (`=`, `+`, `-`, `@`). Les colonnes « PV », « Convention (document) » et « Fiche technique » sont exclues ; « Porteur de projet » précède « Maîtrise d'ouvrage ».
 - **Authentification interne** : connexion par identifiant et mot de passe, sans inscription publique ; seuls les administrateurs créent les comptes. Les droits et périmètres sont contrôlés côté API. Les directeurs et le Directeur Général des Services ont un accès global en lecture seule ; les chefs de division et de service écrivent dans leur périmètre.
-- **Sessions** : les sessions sont conservées dans PostgreSQL, expirent après 14 jours et les expirées sont refusées par le middleware. L'API purge les lignes expirées au démarrage, puis toutes les heures.
+- **Sessions** : les nouvelles sessions sont conservées dans PostgreSQL et expirent après 24 heures ; les expirées sont refusées par le middleware. L'API purge les lignes expirées au démarrage, puis toutes les heures.
 - **Fuseau PostgreSQL** : chaque connexion du pool est démarrée avec `Africa/Casablanca`. Configurer le fuseau dans le pool (`lib/db/src/index.ts`) afin qu'il s'applique aussi aux connexions ouvertes ultérieurement ou recréées.
 
 ## État des données importées

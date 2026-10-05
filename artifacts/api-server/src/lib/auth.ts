@@ -6,7 +6,7 @@ import { db, sessionsTable, usersTable, type AppUser } from "@workspace/db";
 
 const scrypt = promisify(scryptCallback);
 export const COOKIE_NAME = "region_session";
-const SESSION_DAYS = 14;
+const SESSION_HOURS = 24;
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 8;
 
@@ -83,7 +83,7 @@ export async function bootstrapAdmin(): Promise<void> {
 
 export async function creerSession(userId: number, req: Request, res: Response): Promise<void> {
   const token = randomBytes(32).toString("base64url");
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + SESSION_HOURS * 60 * 60 * 1000);
   await db.insert(sessionsTable).values({
     userId,
     tokenHash: hashToken(token),
