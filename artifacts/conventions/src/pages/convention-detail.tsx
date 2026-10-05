@@ -115,6 +115,7 @@ export default function ConventionDetail() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState("");
+  const [formRecordId, setFormRecordId] = useState<number | null>(null);
   const { user } = useAuth();
   const reference = useReferenceData();
 
@@ -131,7 +132,7 @@ export default function ConventionDetail() {
     resolver: zodResolver(conventionSchema),
     defaultValues: {
       nomConvention: "",
-      natureFonds: "Propres",
+      natureFonds: null,
     }
   });
   const rattachementChoisi = form.watch("rattachement");
@@ -172,7 +173,7 @@ export default function ConventionDetail() {
         rattachement: convention.rattachement,
         responsableProjet: convention.responsableProjet,
         typeSession: convention.typeSession,
-        session: convention.session,
+        session: convention.session?.split("T")[0] || null,
         dateVisa: convention.dateVisa?.split('T')[0] || null, // Handle dates from API if needed
         statutConvention: convention.statutConvention,
         decision: convention.decision,
@@ -188,13 +189,14 @@ export default function ConventionDetail() {
         pv: convention.pv,
         enveloppeBudgetaire: convention.enveloppeBudgetaire,
         contributionRegion: convention.contributionRegion,
-        natureFonds: convention.natureFonds || "Propres",
+        natureFonds: convention.natureFonds ?? null,
         porteurProjet: convention.porteurProjet ?? null,
         maitriseOuvrage: valeursMO(convention.maitriseOuvrage),
         maitriseOuvrageDeleguee: valeursMO(convention.maitriseOuvrageDeleguee),
         documentConvention: convention.documentConvention,
         commentaires: convention.commentaires,
       }, { keepDirtyValues: sameRecord });
+      setFormRecordId(id);
     }
   }, [convention, id, form]);
 
@@ -205,7 +207,7 @@ export default function ConventionDetail() {
       brouillonEcheanceManuelle.current = undefined;
       etaitHistorique.current = false;
     }
-    if (!canEdit || !convention) return;
+    if (!canEdit || !convention || formRecordId !== id) return;
     const ancienneDateAutomatique = derniereEcheanceAutomatique.current;
     if (dateHistoriqueManuelle) {
       if (ancienneDateAutomatique && form.getValues("prochaineEcheance") === ancienneDateAutomatique) {
@@ -233,7 +235,7 @@ export default function ConventionDetail() {
       brouillonEcheanceManuelle.current = undefined;
       etaitHistorique.current = false;
     }
-  }, [canEdit, convention?.id, dateEnregistree, dateHistoriqueManuelle, echeanceCalculee?.date, form, id]);
+  }, [canEdit, convention?.id, dateEnregistree, dateHistoriqueManuelle, echeanceCalculee?.date, form, formRecordId, id]);
 
   const onSubmit = async (data: FormValues) => {
     if (!canEdit || !convention) return;
@@ -303,7 +305,7 @@ export default function ConventionDetail() {
       } finally { setIsDeleting(false); }
   };
 
-  if (isLoading) {
+  if (isLoading || (!isError && !!convention && formRecordId !== id)) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-32" />
@@ -458,6 +460,9 @@ export default function ConventionDetail() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            {field.value && !["En cours", "Arrivée à terme", "Résiliée"].includes(field.value) && (
+                              <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
+                            )}
                             <SelectItem value="non-renseigne">Non renseigné</SelectItem>
                             <SelectItem value="En cours">En cours</SelectItem>
                             <SelectItem value="Arrivée à terme">Arrivée à terme</SelectItem>
@@ -500,6 +505,9 @@ export default function ConventionDetail() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            {field.value && !["Ordinaire", "Extraordinaire"].includes(field.value) && (
+                              <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
+                            )}
                             <SelectItem value="Ordinaire">Ordinaire</SelectItem>
                             <SelectItem value="Extraordinaire">Extraordinaire</SelectItem>
                           </SelectContent>
@@ -524,6 +532,9 @@ export default function ConventionDetail() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            {field.value && !["Propre", "Partagée", "Transférée"].includes(field.value) && (
+                              <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
+                            )}
                             <SelectItem value="Propre">Propre</SelectItem>
                             <SelectItem value="Partagée">Partagée</SelectItem>
                             <SelectItem value="Transférée">Transférée</SelectItem>
@@ -543,6 +554,9 @@ export default function ConventionDetail() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            {field.value && !["Infrastructure", "Subventions", "Prestations"].includes(field.value) && (
+                              <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
+                            )}
                             <SelectItem value="Infrastructure">Infrastructure</SelectItem>
                             <SelectItem value="Subventions">Subventions</SelectItem>
                             <SelectItem value="Prestations">Prestations</SelectItem>
@@ -571,6 +585,9 @@ export default function ConventionDetail() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            {field.value && !["A renouveler", "A reconduire tacitemment", "A maintenir", "A ne pas renouveler", "A résilier"].includes(field.value) && (
+                              <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
+                            )}
                             <SelectItem value="non-renseigne">Non renseignée</SelectItem>
                             <SelectItem value="A renouveler">A renouveler</SelectItem>
                             <SelectItem value="A reconduire tacitemment">A reconduire tacitemment</SelectItem>
@@ -617,8 +634,8 @@ export default function ConventionDetail() {
                     <FormItem>
                       <FormLabel>Nature des fonds</FormLabel>
                       <Select
-                        value={field.value || "Propres"}
-                        onValueChange={field.onChange}
+                        value={field.value || "non-renseigne"}
+                        onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -626,6 +643,10 @@ export default function ConventionDetail() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          {field.value && !["Propres", "FEC", "Contribution des partenaires"].includes(field.value) && (
+                            <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
+                          )}
+                          <SelectItem value="non-renseigne">Non renseignée</SelectItem>
                           <SelectItem value="Propres">Propres</SelectItem>
                           <SelectItem value="FEC">FEC</SelectItem>
                           <SelectItem value="Contribution des partenaires">Contribution des partenaires</SelectItem>
