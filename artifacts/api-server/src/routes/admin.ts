@@ -60,7 +60,17 @@ function publicUser(user: typeof usersTable.$inferSelect) {
 }
 
 router.get("/admin/users", adminRequired, async (_req, res): Promise<void> => {
-  const users = await db.select().from(usersTable).orderBy(asc(usersTable.username));
+  const users = await db.select().from(usersTable).orderBy(
+    sql`CASE ${usersTable.role}
+      WHEN 'admin' THEN 0
+      WHEN 'directeur_general_services' THEN 1
+      WHEN 'directeur' THEN 2
+      WHEN 'chef_division' THEN 3
+      WHEN 'chef_service' THEN 4
+      ELSE 5
+    END`,
+    asc(usersTable.username),
+  );
   res.json(users.map(publicUser));
 });
 
