@@ -9,3 +9,4 @@
 - [Remplacement d'un secret](remplacement-secret.md) — confirmer une entrée sécurisée existante peut laisser sa valeur inchangée ; valider le démarrage sans jamais lire la valeur.
 - [Exports générés par Orval](orval-exports.md) — la génération peut réintroduire un export de types incompatible avec les validateurs Zod ; garder les modèles dans un espace nommé.
 - [Sauvegardes chiffrées](sauvegardes-chiffrees.md) — une rotation de SESSION_SECRET doit préserver la possibilité de déchiffrer les sauvegardes de transfert existantes.
+- [Erreurs SQL de Drizzle](erreurs-sql-drizzle.md) — lire le code PostgreSQL dans la cause enveloppée, sans journaliser le message contenant les paramètres sensibles.

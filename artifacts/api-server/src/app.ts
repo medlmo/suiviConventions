@@ -1,8 +1,9 @@
-import express, { type Express } from "express";
+import express, { type ErrorRequestHandler, type Express } from "express";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { csrfOriginGuard } from "./lib/auth";
+import { postgresErrorCode } from "./lib/database-errors";
 
 const app: Express = express();
 app.set("trust proxy", 1);
@@ -41,5 +42,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// The default Express error handler prints Drizzle's query parameters, which
+// can include password hashes. Log only safe metadata and send a generic reply.
+const handleApiError: ErrorRequestHandler = (error: unknown, req, res, _next) => {
+  req.log.error(
+    { errorType: error instanceof Error ? error.name : typeof error, databaseCode: postgresErrorCode(error) },
+    "API request failed",
+  );
+  if (!res.headersSent) res.status(500).json({ error: "Une erreur serveur est survenue. Veuillez réessayer." });
+};
+app.use(handleApiError);
 
 export default app;

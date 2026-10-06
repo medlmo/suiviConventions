@@ -25,6 +25,7 @@ import {
   serviceDansDivision,
   type ReferenceData,
 } from "../lib/reference-data";
+import { postgresErrorCode } from "../lib/database-errors";
 import {
   CreateReferenceDataEntryBody,
   CreateReferenceDataEntryResponse,
@@ -127,7 +128,7 @@ router.post("/admin/users", adminRequired, async (req, res): Promise<void> => {
     }
     res.status(201).json(publicUser(outcome.user));
   } catch (error) {
-    if ((error as { code?: string }).code === "23505") {
+    if (postgresErrorCode(error) === "23505") {
       res.status(409).json({ error: "Cet identifiant existe déjà." });
       return;
     }
@@ -229,7 +230,7 @@ router.patch("/admin/users/:id", adminRequired, async (req, res): Promise<void> 
     }
     res.json(publicUser(outcome.user));
   } catch (error) {
-    if ((error as { code?: string }).code === "23505") {
+    if (postgresErrorCode(error) === "23505") {
       res.status(409).json({ error: "Cet identifiant existe déjà." });
       return;
     }
@@ -343,7 +344,7 @@ router.post("/admin/reference-data/:kind", adminRequired, async (req, res): Prom
     }
     res.json(CreateReferenceDataEntryResponse.parse(await chargerReferentiel()));
   } catch (error) {
-    if ((error as { code?: string }).code === "23505") {
+    if (postgresErrorCode(error) === "23505") {
       res.status(409).json({ error: "Une entrée portant ce nom existe déjà dans cette catégorie." });
       return;
     }
@@ -439,7 +440,7 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
     }
     res.json(RenameReferenceDataEntryResponse.parse(await chargerReferentiel()));
   } catch (error) {
-    if ((error as { code?: string }).code === "23505") {
+    if (postgresErrorCode(error) === "23505") {
       res.status(409).json({ error: "Une entrée portant ce nom existe déjà dans cette catégorie." });
       return;
     }
