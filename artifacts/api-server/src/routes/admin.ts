@@ -57,7 +57,11 @@ function idFrom(raw: string | string[] | undefined): number | undefined {
 }
 
 function publicUser(user: typeof usersTable.$inferSelect) {
-  return { ...versUtilisateur(user), createdAt: user.createdAt.toISOString() };
+  return {
+    ...versUtilisateur(user),
+    createdAt: user.createdAt.toISOString(),
+    lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+  };
 }
 
 router.get("/admin/users", adminRequired, async (_req, res): Promise<void> => {

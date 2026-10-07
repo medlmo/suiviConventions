@@ -84,10 +84,15 @@ export async function bootstrapAdmin(): Promise<void> {
 export async function creerSession(userId: number, req: Request, res: Response): Promise<void> {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_HOURS * 60 * 60 * 1000);
-  await db.insert(sessionsTable).values({
-    userId,
-    tokenHash: hashToken(token),
-    expiresAt,
+  await db.transaction(async (tx) => {
+    await tx.insert(sessionsTable).values({
+      userId,
+      tokenHash: hashToken(token),
+      expiresAt,
+    });
+    await tx.update(usersTable)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(usersTable.id, userId));
   });
   const secure = req.secure || req.get("x-forwarded-proto")?.split(",")[0]?.trim() === "https";
   res.cookie(COOKIE_NAME, token, {

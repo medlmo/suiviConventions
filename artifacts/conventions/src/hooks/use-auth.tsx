@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type Role = "admin" | "directeur" | "directeur_general_services" | "chef_division" | "chef_service";
 export type User = { id: number; username: string; role: Role; direction: string | null; division: string | null; service: string | null; active: boolean };
+export type AdminUser = User & { lastLoginAt: string | null };
 export const roleLabels: Record<Role, string> = {
   admin: "Administrateur", directeur: "Directeur", directeur_general_services: "Directeur Général des Services",
   chef_division: "Chef de division", chef_service: "Chef de service",
