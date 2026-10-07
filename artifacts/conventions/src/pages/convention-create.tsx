@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentUploadField } from "@/components/document-upload-field";
-import { useAuth, errorMessage } from "@/hooks/use-auth";
+import { useAuth, errorMessage, rattachementUtilisateur } from "@/hooks/use-auth";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -101,7 +101,7 @@ export default function ConventionCreate() {
       porteurProjet: null,
       maitriseOuvrage: [],
       maitriseOuvrageDeleguee: [],
-      rattachement: user?.role === "chef_division" || user?.role === "chef_service" ? user.division : null,
+      rattachement: user && (user.role === "chef_division" || user.role === "chef_service") ? rattachementUtilisateur(user) : null,
       responsableProjet: user?.role === "chef_service" ? user.service : null,
     }
   });
@@ -129,8 +129,8 @@ export default function ConventionCreate() {
     if (!reference.data) {
       toast({ variant: "destructive", title: "Référentiel indisponible", description: "Réessayez avant d’enregistrer la convention." }); return;
     }
-    if ((user.role === "chef_division" || user.role === "chef_service") && data.rattachement !== user.division) {
-      toast({ variant: "destructive", title: "Rattachement non autorisé", description: "Choisissez votre division." }); return;
+    if ((user.role === "chef_division" || user.role === "chef_service") && data.rattachement !== rattachementUtilisateur(user)) {
+      toast({ variant: "destructive", title: "Rattachement non autorisé", description: "Choisissez le rattachement de votre compte." }); return;
     }
     if (user.role === "chef_service" && data.responsableProjet !== user.service) {
       toast({ variant: "destructive", title: "Service non autorisé", description: "Choisissez votre service." }); return;

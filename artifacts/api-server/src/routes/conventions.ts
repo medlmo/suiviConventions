@@ -46,6 +46,8 @@ import {
   divisionDeDirection,
   maitriseOuvrageConnue,
   serviceDansDivision,
+  serviceDansRattachement,
+  perimetreChefService,
   servicesDeDivision,
   type ReferenceData,
 } from "../lib/reference-data";
@@ -235,15 +237,11 @@ function filtrePerimetre(user: SessionUser, reference: ReferenceData): SQL | und
   }
   if (
     user.role === "chef_service" &&
-    user.direction &&
-    user.division &&
-    user.service &&
-    divisionDeDirection(reference, user.direction, user.division) &&
-    serviceDansDivision(reference, user.division, user.service)
+    perimetreChefService(reference, user)
   ) {
     return and(
-      eq(conventionsTable.rattachement, user.division),
-      eq(conventionsTable.responsableProjet, user.service),
+      eq(conventionsTable.rattachement, perimetreChefService(reference, user)!),
+      eq(conventionsTable.responsableProjet, user.service!),
     );
   }
   return sql`FALSE`;
@@ -258,10 +256,8 @@ function accessible(row: typeof conventionsTable.$inferSelect, user: SessionUser
       (!row.responsableProjet || serviceDansDivision(reference, user.division, row.responsableProjet));
   }
   if (user.role === "chef_service") {
-    return !!user.direction && !!user.division && !!user.service &&
-      divisionDeDirection(reference, user.direction, user.division) &&
-      serviceDansDivision(reference, user.division, user.service) &&
-      row.rattachement === user.division && row.responsableProjet === user.service;
+    const scope = perimetreChefService(reference, user);
+    return !!scope && row.rattachement === scope && row.responsableProjet === user.service;
   }
   return false;
 }
@@ -283,14 +279,12 @@ function affectationsValides(
       (!responsableProjet || serviceDansDivision(reference, user.division, responsableProjet));
   }
   if (user.role === "chef_service") {
-    return !!user.direction && !!user.division && !!user.service &&
-      divisionDeDirection(reference, user.direction, user.division) &&
-      serviceDansDivision(reference, user.division, user.service) &&
-      rattachement === user.division && responsableProjet === user.service;
+    const scope = perimetreChefService(reference, user);
+    return !!scope && rattachement === scope && responsableProjet === user.service;
   }
   if (user.role === "admin") {
-    return (!rattachement || !responsableProjet || serviceDansDivision(reference, rattachement, responsableProjet)) &&
-      (!responsableProjet || (!!rattachement && serviceDansDivision(reference, rattachement, responsableProjet)));
+    return (!rattachement || !responsableProjet || serviceDansRattachement(reference, rattachement, responsableProjet)) &&
+      (!responsableProjet || (!!rattachement && serviceDansRattachement(reference, rattachement, responsableProjet)));
   }
   return false;
 }
@@ -705,13 +699,15 @@ router.post("/conventions", async (req, res): Promise<void> => {
       valeurs.rattachement = user.division;
     }
     if (user.role === "chef_service") {
+      const scope = perimetreChefService(reference, user);
       if (
-        (valeurs.rattachement !== undefined && valeurs.rattachement !== user.division) ||
+        !scope ||
+        (valeurs.rattachement !== undefined && valeurs.rattachement !== scope) ||
         (valeurs.responsableProjet !== undefined && valeurs.responsableProjet !== user.service)
       ) {
         return { status: 403 as const, error: "La convention doit rester dans votre service." };
       }
-      valeurs.rattachement = user.division;
+      valeurs.rattachement = scope;
       valeurs.responsableProjet = user.service;
     }
     const rattachement = valeurs.rattachement as string | null | undefined;

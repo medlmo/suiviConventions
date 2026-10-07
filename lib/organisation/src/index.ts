@@ -1,3 +1,5 @@
+export const DIRECTION_GENERALE_SERVICES = "Direction Générale des Services";
+
 /**
  * Canonical organizational hierarchy shared by the API and convention UI.
  */

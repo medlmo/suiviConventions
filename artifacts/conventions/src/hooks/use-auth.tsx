@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { DIRECTION_GENERALE_SERVICES } from "@workspace/organisation";
 
 export type Role = "admin" | "directeur" | "directeur_general_services" | "chef_division" | "chef_service";
 export type User = { id: number; username: string; role: Role; direction: string | null; division: string | null; service: string | null; active: boolean };
@@ -94,5 +95,11 @@ export function canEditConvention(user: User, convention?: { rattachement?: stri
   if (user.role === "directeur" || user.role === "directeur_general_services") return false;
   if (!convention) return true;
   if (user.role === "chef_division") return !!user.division && convention.rattachement === user.division;
-  return !!user.division && !!user.service && convention.rattachement === user.division && convention.responsableProjet === user.service;
+  return !!user.service && !!rattachementUtilisateur(user) &&
+    convention.rattachement === rattachementUtilisateur(user) && convention.responsableProjet === user.service;
+}
+
+export function rattachementUtilisateur(user: User): string | null {
+  if (user.division) return user.division;
+  return user.role === "chef_service" && !user.direction && user.service ? DIRECTION_GENERALE_SERVICES : null;
 }

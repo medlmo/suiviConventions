@@ -912,7 +912,7 @@ components:
 
     ReferenceDataKind:
       type: string
-      enum: [directions, divisions, services, maitrises-ouvrage]
+      enum: [directions, divisions, services, services-dgs, maitrises-ouvrage]
     ReferenceService:
       type: object
       required: [id, nom]
@@ -939,11 +939,15 @@ components:
           items: { $ref: "#/components/schemas/ReferenceDivision" }
     ReferenceData:
       type: object
-      required: [organisation, maitrisesOuvrage]
+      required: [organisation, servicesDgs, maitrisesOuvrage]
       properties:
         organisation:
           type: array
           items: { $ref: "#/components/schemas/ReferenceDirection" }
+        servicesDgs:
+          type: array
+          description: Services directement rattachés à la Direction Générale des Services, sans direction ni division intermédiaire.
+          items: { $ref: "#/components/schemas/ReferenceService" }
         maitrisesOuvrage:
           type: array
           items: { $ref: "#/components/schemas/ReferenceService" }
@@ -955,7 +959,7 @@ components:
         parentId:
           type: integer
           minimum: 1
-          description: ID de direction pour une division ou de division pour un service; interdit pour les directions et maîtrises d'ouvrage.
+          description: ID de direction pour une division ou de division pour un service; interdit pour les directions, services-dgs et maîtrises d'ouvrage.
     ReferenceDataRename:
       type: object
       required: [nom]

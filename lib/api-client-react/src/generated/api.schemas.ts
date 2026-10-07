@@ -414,6 +414,7 @@ export const ReferenceDataKind = {
   directions: 'directions',
   divisions: 'divisions',
   services: 'services',
+  'services-dgs': 'services-dgs',
   'maitrises-ouvrage': 'maitrises-ouvrage',
 } as const;
 
@@ -436,6 +437,8 @@ export interface ReferenceDirection {
 
 export interface ReferenceData {
   organisation: ReferenceDirection[];
+  /** Services directement rattachés à la Direction Générale des Services, sans direction ni division intermédiaire. */
+  servicesDgs: ReferenceService[];
   maitrisesOuvrage: ReferenceService[];
 }
 
@@ -446,7 +449,7 @@ export interface ReferenceDataInput {
      */
   nom: string;
   /**
-     * ID de direction pour une division ou de division pour un service; interdit pour les directions et maîtrises d'ouvrage.
+     * ID de direction pour une division ou de division pour un service; interdit pour les directions, services-dgs et maîtrises d'ouvrage.
      * @minimum 1
      */
   parentId?: number;

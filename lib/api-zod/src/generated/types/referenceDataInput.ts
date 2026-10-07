@@ -13,7 +13,7 @@ export interface ReferenceDataInput {
      */
   nom: string;
   /**
-     * ID de direction pour une division ou de division pour un service; interdit pour les directions et maîtrises d'ouvrage.
+     * ID de direction pour une division ou de division pour un service; interdit pour les directions, services-dgs et maîtrises d'ouvrage.
      * @minimum 1
      */
   parentId?: number;

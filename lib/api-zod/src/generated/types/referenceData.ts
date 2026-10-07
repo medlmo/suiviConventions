@@ -10,5 +10,7 @@ import type { ReferenceService } from './referenceService';
 
 export interface ReferenceData {
   organisation: ReferenceDirection[];
+  /** Services directement rattachés à la Direction Générale des Services, sans direction ni division intermédiaire. */
+  servicesDgs: ReferenceService[];
   maitrisesOuvrage: ReferenceService[];
 }

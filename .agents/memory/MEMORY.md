@@ -11,3 +11,4 @@
 - [Sauvegardes chiffrées](sauvegardes-chiffrees.md) — une rotation de SESSION_SECRET doit préserver la possibilité de déchiffrer les sauvegardes de transfert existantes.
 - [Erreurs SQL de Drizzle](erreurs-sql-drizzle.md) — lire le code PostgreSQL dans la cause enveloppée, sans journaliser le message contenant les paramètres sensibles.
 - [Historique des connexions](historique-derniere-connexion.md) — les comptes existants ne doivent afficher que des dates réellement enregistrées, sans extrapoler depuis les modifications de profil.
+- [Services rattachés à la DGS](services-directs-dgs.md) — Coopération et Juridique relèvent directement de la DGS, sans direction ni division intermédiaire.

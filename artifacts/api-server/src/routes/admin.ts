@@ -8,6 +8,7 @@ import {
   divisionsTable,
   maitrisesOuvrageTable,
   servicesTable,
+  servicesDgsTable,
   sessionsTable,
   usersTable,
 } from "@workspace/db";
@@ -23,9 +24,11 @@ import {
   directionConnue,
   divisionDeDirection,
   serviceDansDivision,
+  perimetreChefService,
   type ReferenceData,
 } from "../lib/reference-data";
 import { postgresErrorCode } from "../lib/database-errors";
+import { DIRECTION_GENERALE_SERVICES } from "@workspace/organisation";
 import {
   CreateReferenceDataEntryBody,
   CreateReferenceDataEntryResponse,
@@ -43,6 +46,7 @@ function profileIsValid(profile: Profile, reference: ReferenceData): boolean {
   if (!ROLES.includes(role as Role)) return false;
   if (direction !== null && direction !== undefined && !directionConnue(reference, direction)) return false;
   if (division !== null && division !== undefined && (!direction || !divisionDeDirection(reference, direction, division))) return false;
+  if (role === "chef_service") return perimetreChefService(reference, profile) !== null;
   if (service !== null && service !== undefined && (!division || !serviceDansDivision(reference, division, service))) return false;
   if (role === "admin") return true;
   if (role === "directeur") return !!direction && directionConnue(reference, direction) && !division && !service;
@@ -305,7 +309,7 @@ router.post("/admin/reference-data/:kind", adminRequired, async (req, res): Prom
     !params.success ||
     Object.keys(req.body as Record<string, unknown>).some((key) => !["nom", "parentId"].includes(key)) ||
     typeof kind !== "string" ||
-    !["directions", "divisions", "services", "maitrises-ouvrage"].includes(kind)
+    !["directions", "divisions", "services", "services-dgs", "maitrises-ouvrage"].includes(kind)
   ) {
     res.status(400).json({ error: params.success ? "Type de référentiel invalide." : params.error.message });
     return;
@@ -337,6 +341,8 @@ router.post("/admin/reference-data/:kind", adminRequired, async (req, res): Prom
           .where(eq(divisionsTable.id, parentId!));
         if (!parent) return "bad-parent" as const;
         await tx.insert(servicesTable).values({ divisionId: parent.id, nom });
+      } else if (kind === "services-dgs") {
+        await tx.insert(servicesDgsTable).values({ nom });
       } else {
         await tx.insert(maitrisesOuvrageTable).values({ nom });
       }
@@ -365,7 +371,7 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
     Object.keys(req.body as Record<string, unknown>).some((key) => key !== "nom") ||
     !id ||
     typeof kind !== "string" ||
-    !["directions", "divisions", "services", "maitrises-ouvrage"].includes(kind)
+    !["directions", "divisions", "services", "services-dgs", "maitrises-ouvrage"].includes(kind)
   ) {
     res.status(400).json({ error: !params.success ? params.error.message : "Paramètres de référentiel invalides." });
     return;
@@ -403,18 +409,27 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
           version: sql`${conventionsTable.version} + 1`,
         })
           .where(eq(conventionsTable.rattachement, current.nom));
-      } else if (kind === "services") {
-        const [current] = await tx.select().from(servicesTable).where(eq(servicesTable.id, id)).for("update");
+      } else if (kind === "services" || kind === "services-dgs") {
+        const table = kind === "services" ? servicesTable : servicesDgsTable;
+        const [current] = await tx.select().from(table).where(eq(table.id, id)).for("update");
         if (!current) return false;
-        await tx.update(servicesTable).set({ nom }).where(eq(servicesTable.id, id));
+        await tx.update(table).set({ nom }).where(eq(table.id, id));
         await tx.update(usersTable).set({ service: nom, updatedAt: new Date() })
-          .where(eq(usersTable.service, current.nom));
+          .where(sql`${usersTable.service} = ${current.nom} AND ${
+            kind === "services-dgs"
+              ? sql`${usersTable.direction} IS NULL AND ${usersTable.division} IS NULL`
+              : sql`${usersTable.division} IS NOT NULL`
+          }`);
         await tx.update(conventionsTable).set({
           responsableProjet: nom,
           updatedAt: new Date(),
           version: sql`${conventionsTable.version} + 1`,
         })
-          .where(eq(conventionsTable.responsableProjet, current.nom));
+          .where(sql`${conventionsTable.responsableProjet} = ${current.nom} AND ${
+            kind === "services-dgs"
+              ? sql`${conventionsTable.rattachement} = ${DIRECTION_GENERALE_SERVICES}`
+              : sql`${conventionsTable.rattachement} IS DISTINCT FROM ${DIRECTION_GENERALE_SERVICES}`
+          }`);
       } else {
         const [current] = await tx.select().from(maitrisesOuvrageTable)
           .where(eq(maitrisesOuvrageTable.id, id)).for("update");

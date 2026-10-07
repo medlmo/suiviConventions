@@ -13,5 +13,6 @@ export const ReferenceDataKind = {
   directions: 'directions',
   divisions: 'divisions',
   services: 'services',
+  'services-dgs': 'services-dgs',
   'maitrises-ouvrage': 'maitrises-ouvrage',
 } as const;

@@ -6,8 +6,9 @@ import {
   divisionsTable,
   maitrisesOuvrageTable,
   servicesTable,
+  servicesDgsTable,
 } from "@workspace/db";
-import { organisation as organisationHistorique } from "@workspace/organisation";
+import { DIRECTION_GENERALE_SERVICES, organisation as organisationHistorique } from "@workspace/organisation";
 
 export interface ReferenceData {
   organisation: {
@@ -16,6 +17,7 @@ export interface ReferenceData {
     divisions: { id: number; nom: string; services: { id: number; nom: string }[] }[];
   }[];
   maitrisesOuvrage: { id: number; nom: string }[];
+  servicesDgs: { id: number; nom: string }[];
 }
 
 type ReferenceExecutor = Pick<typeof db, "select">;
@@ -26,6 +28,13 @@ async function initialiserReferentiel(): Promise<void> {
   if (initialisationFaite) return;
   await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
+    const [serviceDgsExistant] = await tx.select({ id: servicesDgsTable.id }).from(servicesDgsTable).limit(1);
+    if (!serviceDgsExistant) {
+      await tx.insert(servicesDgsTable).values([
+        { nom: "Service Coopération" },
+        { nom: "Service Juridique" },
+      ]);
+    }
     const [dejaInitialise] = await tx.select({ id: directionsTable.id }).from(directionsTable).limit(1);
     if (dejaInitialise) return;
 
@@ -96,6 +105,7 @@ export async function chargerReferentielDepuis(executor: ReferenceExecutor): Pro
   const directions = await executor.select().from(directionsTable).orderBy(asc(directionsTable.id));
   const divisions = await executor.select().from(divisionsTable).orderBy(asc(divisionsTable.id));
   const services = await executor.select().from(servicesTable).orderBy(asc(servicesTable.id));
+  const servicesDgs = await executor.select().from(servicesDgsTable).orderBy(asc(servicesDgsTable.id));
   const maitrisesOuvrage = await executor.select().from(maitrisesOuvrageTable).orderBy(asc(maitrisesOuvrageTable.id));
   return {
     organisation: directions.map((direction) => ({
@@ -109,6 +119,7 @@ export async function chargerReferentielDepuis(executor: ReferenceExecutor): Pro
       })),
     })),
     maitrisesOuvrage: maitrisesOuvrage.map(({ id, nom }) => ({ id, nom })),
+    servicesDgs: servicesDgs.map(({ id, nom }) => ({ id, nom })),
   };
 }
 
@@ -124,6 +135,25 @@ export function divisionDeDirection(data: ReferenceData, direction: string, divi
 export function serviceDansDivision(data: ReferenceData, division: string, service: string): boolean {
   return data.organisation.some((entry) =>
     entry.divisions.some((item) => item.nom === division && item.services.some((candidate) => candidate.nom === service)));
+}
+
+export function serviceDansRattachement(data: ReferenceData, rattachement: string, service: string): boolean {
+  return rattachement === DIRECTION_GENERALE_SERVICES
+    ? data.servicesDgs.some((item) => item.nom === service)
+    : serviceDansDivision(data, rattachement, service);
+}
+
+export function perimetreChefService(
+  data: ReferenceData,
+  user: { direction?: string | null; division?: string | null; service?: string | null },
+): string | null {
+  if (!user.service) return null;
+  if (!user.direction && !user.division) {
+    return data.servicesDgs.some((item) => item.nom === user.service) ? DIRECTION_GENERALE_SERVICES : null;
+  }
+  return user.direction && user.division &&
+    divisionDeDirection(data, user.direction, user.division) &&
+    serviceDansDivision(data, user.division, user.service) ? user.division : null;
 }
 
 export function servicesDeDivision(data: ReferenceData, division: string): string[] {

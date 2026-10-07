@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Building2, FolderTree, Layers3, Pencil, Plus, Waypoints } from "lucide-react";
 import { useReferenceData, useReferenceMutation, type ReferenceKind } from "@/hooks/use-reference-data";
 import { errorMessage } from "@/hooks/use-auth";
+import { DIRECTION_GENERALE_SERVICES } from "@workspace/organisation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type Draft = { kind: ReferenceKind; id?: number; parentId?: number; nom: string; parentLabel?: string };
-const labels: Record<ReferenceKind, string> = { directions: "direction", divisions: "division", services: "service", "maitrises-ouvrage": "maîtrise d’ouvrage" };
+const labels: Record<ReferenceKind, string> = { directions: "direction", divisions: "division", services: "service", "services-dgs": "service directement rattaché à la DGS", "maitrises-ouvrage": "maîtrise d’ouvrage" };
 
 export default function AdminReferentiel() {
   const query = useReferenceData();
@@ -35,6 +36,12 @@ export default function AdminReferentiel() {
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.5fr)_minmax(300px,1fr)] gap-5 items-start">
         <Card className="overflow-hidden shadow-sm"><div className="p-5 border-b bg-muted/30 flex flex-wrap gap-3 justify-between items-center"><div><h2 className="font-semibold text-lg flex items-center gap-2"><FolderTree className="w-5 h-5 text-secondary" /> Organigramme</h2><p className="text-sm text-muted-foreground">Directions, divisions et services</p></div><Button size="sm" variant="outline" onClick={() => begin({ kind: "directions", nom: "" })}><Plus className="w-4 h-4 mr-1" /> Direction</Button></div>
           <CardContent className="p-4 sm:p-5 space-y-4">
+            <section className="rounded-lg border overflow-hidden">
+              <div className="bg-accent/40 px-4 py-3"><h3 className="font-semibold">{DIRECTION_GENERALE_SERVICES}</h3><p className="text-sm text-muted-foreground">Services directement rattachés, sans direction ni division intermédiaire</p></div>
+              <div className="p-3 space-y-2">{query.data?.servicesDgs.map(service => <div key={service.id} className="flex items-center gap-2 text-sm"><Waypoints className="w-4 h-4 shrink-0 text-secondary" /><span className="flex-1">{service.nom}</span><Button size="sm" variant="ghost" aria-label={`Renommer ${service.nom}`} onClick={() => begin({ kind: "services-dgs", id: service.id, nom: service.nom })}><Pencil className="w-3.5 h-3.5" /></Button></div>)}
+                <Button size="sm" variant="outline" onClick={() => begin({ kind: "services-dgs", parentLabel: DIRECTION_GENERALE_SERVICES, nom: "" })}><Plus className="w-3.5 h-3.5 mr-1" /> Service directement rattaché à la DGS</Button>
+              </div>
+            </section>
             {!query.data?.organisation.length && <div className="py-12 text-center text-muted-foreground"><Building2 className="mx-auto mb-3 w-8 h-8 text-secondary" />Aucune direction. Ajoutez la première pour construire l’organigramme.</div>}
             {query.data?.organisation.map(direction => <section key={direction.id} className="rounded-lg border overflow-hidden">
               <div className="bg-accent/40 px-4 py-3 flex gap-2 items-center"><Building2 className="w-4 h-4 shrink-0 text-primary" /><h3 className="font-semibold flex-1 min-w-0" dir="auto">{direction.direction}</h3><Button variant="ghost" size="sm" aria-label={`Renommer ${direction.direction}`} onClick={() => begin({ kind: "directions", id: direction.id, nom: direction.direction })}><Pencil className="w-4 h-4" /></Button></div>
