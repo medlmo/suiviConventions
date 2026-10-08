@@ -31,7 +31,7 @@ export default function ConventionsList() {
 
   const { data, isLoading, isError, error, refetch } = useListConventions({
     page,
-    pageSize: 15,
+    pageSize: 20,
     q: q || undefined,
     alerte,
     rattachement: rattachement === "all" ? undefined : rattachement,
