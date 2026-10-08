@@ -585,7 +585,7 @@ export default function ConventionDetail() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {field.value && !["A renouveler", "A reconduire tacitemment", "A maintenir", "A ne pas renouveler", "A résilier"].includes(field.value) && (
+                            {field.value && !["A renouveler", "A reconduire tacitemment", "A maintenir", "A ne pas renouveler", "A résilier", "A clôturer"].includes(field.value) && (
                               <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
                             )}
                             <SelectItem value="non-renseigne">Non renseignée</SelectItem>
@@ -594,6 +594,7 @@ export default function ConventionDetail() {
                             <SelectItem value="A maintenir">A maintenir</SelectItem>
                             <SelectItem value="A ne pas renouveler">A ne pas renouveler</SelectItem>
                             <SelectItem value="A résilier">A résilier</SelectItem>
+                            <SelectItem value="A clôturer">A clôturer</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
