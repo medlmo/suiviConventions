@@ -174,11 +174,6 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
       sql`CASE WHEN ${conventionsTable.maitrisesOuvrageDeleguees} IS NULL THEN COALESCE(${conventionsTable.maitriseOuvrageDeleguee}, '') ELSE '' END`,
       sql`array_to_string(${conventionsTable.maitrisesOuvrage}, ' ')`,
       sql`array_to_string(${conventionsTable.maitrisesOuvrageDeleguees}, ' ')`,
-      conventionsTable.presidenceComite,
-      conventionsTable.membresComite,
-      conventionsTable.frequenceReunions,
-      conventionsTable.commentaires,
-      conventionsTable.pv,
     ];
 
     const recherche = or(
