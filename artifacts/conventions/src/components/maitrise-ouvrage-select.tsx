@@ -6,6 +6,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useReferenceData } from "@/hooks/use-reference-data";
 import { errorMessage } from "@/hooks/use-auth";
 
+const comparateurAlphabetique = new Intl.Collator("fr", {
+  numeric: true,
+  sensitivity: "base",
+});
+
 type Props = {
   value?: string[] | string | null;
   onChange: (value: string[] | string | null) => void;
@@ -32,12 +37,17 @@ export function MaitriseOuvrageSelect({
   const selected = multiple
     ? (Array.isArray(value) ? value : [])
     : (typeof value === "string" && value ? [value] : []);
+  const selectionsTriees = [...selected].sort((a, b) => comparateurAlphabetique.compare(a, b));
   const known = query.data?.maitrisesOuvrage ?? [];
   const unknown = selected.filter(name => !known.some(item => item.nom === name));
   const terme = normaliserRecherche(recherche.trim());
   const correspond = (nom: string) => !terme || normaliserRecherche(nom).includes(terme);
-  const optionsConnues = known.filter(item => correspond(item.nom));
-  const optionsHistoriques = unknown.filter(correspond);
+  const optionsConnues = known
+    .filter(item => correspond(item.nom))
+    .sort((a, b) => comparateurAlphabetique.compare(a.nom, b.nom));
+  const optionsHistoriques = unknown
+    .filter(correspond)
+    .sort((a, b) => comparateurAlphabetique.compare(a, b));
   const toggle = (name: string) => {
     if (!multiple) {
       onChange(name);
@@ -106,7 +116,7 @@ export function MaitriseOuvrageSelect({
       </PopoverContent>
     </Popover>
     {query.isError && <p role="alert" className="text-xs text-destructive">Référentiel indisponible : {errorMessage(query.error)} <button type="button" className="underline" onClick={() => void query.refetch()}>Réessayer</button></p>}
-     {!!selected.length && <div className="flex flex-wrap gap-1.5">{selected.map(name => <span key={name} className="inline-flex max-w-full items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs text-accent-foreground"><span dir="auto" className="truncate">{name}</span>{unknown.includes(name) && <span className="opacity-70">(historique)</span>}<button type="button" aria-label={`Retirer ${name} de ${intitule}`} data-testid={`button-remove-mo-${label}-${name}`} onClick={() => multiple ? toggle(name) : onChange(null)} className="ml-1 font-bold hover:text-destructive">×</button></span>)}</div>}
+     {!!selected.length && <div className="flex flex-wrap gap-1.5">{selectionsTriees.map(name => <span key={name} className="inline-flex max-w-full items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs text-accent-foreground"><span dir="auto" className="truncate">{name}</span>{unknown.includes(name) && <span className="opacity-70">(historique)</span>}<button type="button" aria-label={`Retirer ${name} de ${intitule}`} data-testid={`button-remove-mo-${label}-${name}`} onClick={() => multiple ? toggle(name) : onChange(null)} className="ml-1 font-bold hover:text-destructive">×</button></span>)}</div>}
     {!!unknown.length && <p className="text-xs text-muted-foreground">Les valeurs historiques restent enregistrées tant que vous ne les retirez pas.</p>}
   </div>;
 }
