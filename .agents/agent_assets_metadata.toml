@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "lLJA8wxNwfOzjFFvT7WTP"
+uri = "file://.local/security/github-confidentiality-remediation.txt"
+type = "text"
+title = "Relevé technique du nettoyage GitHub"
+description = "Vérifications réalisées et références nécessaires pour demander à GitHub la purge des anciens objets et vues en cache. Aucune donnée métier incluse."
+logical_id = "839b7003-7d6e-426f-ba1f-229d0348b7fe"
+content_hash = "sha256:828d848e6728e8bc729e1e46a2bf457897653a5501dbb0297ffdad30368a91fe"
+size = 2183
+mtime_ms = 1791644747289
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:0812b685-7833-4a90-96ff-67728fa70575/839b7003-7d6e-426f-ba1f-229d0348b7fe/1b4b5ef7-d4bf-4ca1-8710-ab9494464505"
+storage_version_token = "1791644785245567"
+content_type = "text/plain"
