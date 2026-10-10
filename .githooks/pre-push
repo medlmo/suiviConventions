@@ -1,6 +1,11 @@
 #!/bin/sh
 # Refuse aussi les anciens commits : .gitignore ne protège pas l'historique.
 set -eu
+# Les sauvegardes internes de Replit ne sont pas des publications GitHub.
+case "${2-}" in
+  https://github.com/*|https://*@github.com/*|git@github.com:*|ssh://git@github.com/*) ;;
+  *) exit 0 ;;
+esac
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$local_sha" in
     0000000000000000000000000000000000000000) continue ;;
