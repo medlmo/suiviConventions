@@ -45,12 +45,29 @@ app.use("/api", router);
 
 // The default Express error handler prints Drizzle's query parameters, which
 // can include password hashes. Log only safe metadata and send a generic reply.
-const handleApiError: ErrorRequestHandler = (error: unknown, req, res, _next) => {
+const handleApiError: ErrorRequestHandler = (error: unknown, req, res, next) => {
+  const details = error !== null && typeof error === "object"
+    ? error as { status?: unknown; statusCode?: unknown }
+    : undefined;
+  const status = [details?.status, details?.statusCode].find(
+    (value): value is number =>
+      typeof value === "number" && Number.isInteger(value) && value >= 400 && value <= 599,
+  ) ?? 500;
+
   req.log.error(
-    { errorType: error instanceof Error ? error.name : typeof error, databaseCode: postgresErrorCode(error) },
+    { status, errorType: error instanceof Error ? error.name : typeof error, databaseCode: postgresErrorCode(error) },
     "API request failed",
   );
-  if (!res.headersSent) res.status(500).json({ error: "Une erreur serveur est survenue. Veuillez réessayer." });
+  if (res.headersSent) {
+    // Let Express close the response, without logging raw SQL parameters.
+    next(Object.assign(new Error("Erreur lors du traitement de la réponse."), { status }));
+    return;
+  }
+  res.status(status).json({
+    error: status >= 500
+      ? "Une erreur serveur est survenue. Veuillez réessayer."
+      : "La requête n’a pas pu être traitée.",
+  });
 };
 app.use(handleApiError);
 
