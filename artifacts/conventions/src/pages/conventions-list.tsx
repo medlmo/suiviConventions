@@ -207,14 +207,6 @@ export default function ConventionsList() {
                         : "—"}
                     </span>
                   </div>
-                  {(conv.dernierComiteNote || conv.prochaineEcheanceNote) && (
-                    <div
-                      dir="auto"
-                      className="mt-2 text-xs italic text-muted-foreground line-clamp-2"
-                    >
-                      {conv.prochaineEcheanceNote || conv.dernierComiteNote}
-                    </div>
-                  )}
                 </div>
               </Link>
             ))
@@ -295,21 +287,11 @@ export default function ConventionsList() {
                       <div className="font-medium">
                         {conv.dernierComite ? format(new Date(conv.dernierComite), "dd/MM/yyyy") : "-"}
                       </div>
-                      {conv.dernierComiteNote && (
-                        <div dir="auto" className="text-xs text-muted-foreground mt-1 line-clamp-2 italic bg-muted/30 p-1 rounded inline-block">
-                          {conv.dernierComiteNote}
-                        </div>
-                      )}
                     </td>
                     <td className="px-4 py-4 align-top text-sm">
                       <div className="font-bold text-foreground">
                         {conv.prochaineEcheance ? format(new Date(conv.prochaineEcheance), "dd/MM/yyyy") : "-"}
                       </div>
-                      {conv.prochaineEcheanceNote && (
-                        <div dir="auto" className="text-xs text-muted-foreground mt-1 line-clamp-2 italic bg-muted/30 p-1 rounded inline-block">
-                          {conv.prochaineEcheanceNote}
-                        </div>
-                      )}
                     </td>
                     <td className="px-4 py-4 align-top text-right">
                       <Button variant="secondary" size="sm" asChild className="w-full font-medium">
