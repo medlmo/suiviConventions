@@ -642,16 +642,13 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
     views: [{ state: "frozen", ySplit: 1, showGridLines: false }],
   });
   feuille.columns = colonnes.map((colonne) => {
-    const valeursTexte = conventions.map((convention) => {
+    const longueurMax = conventions.reduce((longueur, convention) => {
       const valeur = colonne.extraire(convention);
-      if (valeur === null || valeur === undefined) return "";
-      if (colonne.date && typeof valeur === "string") return "31/12/9999";
-      return Array.isArray(valeur) ? valeur.join("; ") : String(valeur);
-    });
-    const longueurMax = Math.max(
-      colonne.titre.length,
-      ...valeursTexte.map((valeur) => valeur.length),
-    );
+      if (valeur === null || valeur === undefined) return longueur;
+      if (colonne.date && typeof valeur === "string") return Math.max(longueur, 10);
+      const texte = Array.isArray(valeur) ? valeur.join("; ") : String(valeur);
+      return Math.max(longueur, texte.length);
+    }, colonne.titre.length);
     return {
       header: colonne.titre,
       key: colonne.titre,
