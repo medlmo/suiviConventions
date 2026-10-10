@@ -50,7 +50,7 @@ export function calculerEcheance(donnees: DonneesEcheance): EcheanceCalculee | n
   }
 
   const nature = donnees.nature?.trim().toLocaleLowerCase("fr");
-  const mois = nature === "infrastructure" ? 9
+  const mois = nature === "infrastructure" ? 3
     : ["subvention", "subventions", "prestation", "prestations"].includes(nature ?? "") ? 3
     : null;
   const date = mois === null ? null : ajouterMois(donnees.dateVisa, mois);
