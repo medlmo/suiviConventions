@@ -55,6 +55,7 @@ export const conventionsTable = pgTable(
     porteurProjet: text("porteur_projet"),
     maitrisesOuvrage: text("maitrises_ouvrage").array(),
     maitrisesOuvrageDeleguees: text("maitrises_ouvrage_deleguees").array(),
+    partenaires: text("partenaires").array(),
 
     // Documents
     documentConvention: text("document_convention"),

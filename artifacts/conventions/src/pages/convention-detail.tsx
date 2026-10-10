@@ -83,6 +83,7 @@ const conventionSchema = z.object({
   porteurProjet: z.string().nullable().optional(),
   maitriseOuvrage: z.array(z.string()).nullable().optional(),
   maitriseOuvrageDeleguee: z.array(z.string()).nullable().optional(),
+  partenaires: z.array(z.string()).nullable().optional(),
   documentConvention: z.string().nullable().optional(),
   commentaires: z.string().nullable().optional(),
 }).superRefine((valeurs, contexte) => {
@@ -193,6 +194,7 @@ export default function ConventionDetail() {
         porteurProjet: convention.porteurProjet ?? null,
         maitriseOuvrage: valeursMO(convention.maitriseOuvrage),
         maitriseOuvrageDeleguee: valeursMO(convention.maitriseOuvrageDeleguee),
+        partenaires: valeursMO(convention.partenaires),
         documentConvention: convention.documentConvention,
         commentaires: convention.commentaires,
       }, { keepDirtyValues: sameRecord });
@@ -679,6 +681,17 @@ export default function ConventionDetail() {
                       <FormItem>
                         <FormLabel>Maîtrise d'ouv. Déléguée</FormLabel>
                          <MaitriseOuvrageSelect label="maitrise-ouvrage-deleguee" value={field.value} onChange={field.onChange} />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="partenaires" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Partenaires</FormLabel>
+                        <MaitriseOuvrageSelect
+                          label="partenaires"
+                          intitule="partenaires signataires"
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
                       </FormItem>
                     )} />
                   </div>

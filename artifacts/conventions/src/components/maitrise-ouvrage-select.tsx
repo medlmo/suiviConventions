@@ -93,7 +93,7 @@ export function MaitriseOuvrageSelect({
         </div>
         <div role="listbox" aria-label={intitule} aria-multiselectable={multiple || undefined} className="max-h-64 overflow-y-auto p-1">
           {!known.length && !unknown.length ? (
-            <p className="p-3 text-sm text-muted-foreground">Aucune maîtrise d’ouvrage dans le référentiel.</p>
+            <p className="p-3 text-sm text-muted-foreground">Aucune option dans le référentiel.</p>
           ) : (
             <>
               {optionsConnues.map(item => <button type="button" key={item.id} data-testid={`button-mo-${label}-${item.id}`} role={multiple ? "checkbox" : "option"} aria-checked={multiple ? selected.includes(item.nom) : undefined} aria-selected={!multiple ? selected.includes(item.nom) : undefined} onClick={() => toggle(item.nom)} className="w-full text-left flex items-start gap-2 px-3 py-2 rounded-md text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">

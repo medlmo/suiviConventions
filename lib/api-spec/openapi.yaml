@@ -674,7 +674,7 @@ components:
 
     Convention:
       type: object
-      required: [id, nomConvention, alerte, version, maitriseOuvrage, maitriseOuvrageDeleguee]
+      required: [id, nomConvention, alerte, version, maitriseOuvrage, maitriseOuvrageDeleguee, partenaires]
       properties:
         id: { type: integer }
         version: { type: integer }
@@ -703,6 +703,7 @@ components:
         porteurProjet: { type: ["string", "null"] }
         maitriseOuvrage: { type: array, items: { type: string } }
         maitriseOuvrageDeleguee: { type: array, items: { type: string } }
+        partenaires: { type: array, items: { type: string } }
         prochainComite:
           type: ["string", "null"]
           format: date
@@ -759,6 +760,9 @@ components:
         maitriseOuvrageDeleguee:
           type: ["array", "null"]
           items: { type: string }
+        partenaires:
+          type: ["array", "null"]
+          items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }
         dernierComite: { type: ["string", "null"], format: date }
         dernierComiteNote: { type: ["string", "null"] }
@@ -799,6 +803,9 @@ components:
           type: ["array", "null"]
           items: { type: string }
         maitriseOuvrageDeleguee:
+          type: ["array", "null"]
+          items: { type: string }
+        partenaires:
           type: ["array", "null"]
           items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }

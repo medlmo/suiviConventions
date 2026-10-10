@@ -46,6 +46,7 @@ export function versApi(ligne: LigneConvention) {
     maitriseOuvrage: ligne.maitrisesOuvrage ?? (ligne.maitriseOuvrage ? [ligne.maitriseOuvrage] : []),
     maitriseOuvrageDeleguee: ligne.maitrisesOuvrageDeleguees ??
       (ligne.maitriseOuvrageDeleguee ? [ligne.maitriseOuvrageDeleguee] : []),
+    partenaires: ligne.partenaires ?? [],
     prochainComite: ligne.prochainComite,
     dernierComite: ligne.dernierComite,
     dernierComiteNote: ligne.dernierComiteNote,
@@ -92,7 +93,12 @@ const CHAMPS_TEXTE = [
   "commentaires",
 ] as const;
 
-const CHAMPS_LISTE_TEXTE = ["maitriseOuvrage", "maitriseOuvrageDeleguee"] as const;
+const CHAMPS_LISTE_TEXTE = ["maitriseOuvrage", "maitriseOuvrageDeleguee", "partenaires"] as const;
+const COLONNES_LISTE_TEXTE = {
+  maitriseOuvrage: "maitrisesOuvrage",
+  maitriseOuvrageDeleguee: "maitrisesOuvrageDeleguees",
+  partenaires: "partenaires",
+} as const;
 
 const CHAMPS_DATE = [
   "session",
@@ -145,7 +151,7 @@ export function versColonnes(corps: ChampsEcrivables): Record<string, unknown> {
 
   for (const champ of CHAMPS_LISTE_TEXTE) {
     if (!(champ in corps)) continue;
-    const colonne = champ === "maitriseOuvrage" ? "maitrisesOuvrage" : "maitrisesOuvrageDeleguees";
+    const colonne = COLONNES_LISTE_TEXTE[champ];
     const brut = corps[champ];
     valeurs[colonne] = brut == null ? [] : [...new Set(brut.map((nom) => nom.trim()).filter(Boolean))];
   }
