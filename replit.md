@@ -10,7 +10,7 @@ Application interne de suivi des conventions de partenariat de la Région Souss-
 - `pnpm run build` — typecheck + build
 - `pnpm --filter @workspace/api-spec run codegen` — régénère hooks React Query et schémas Zod depuis l'OpenAPI
 - `pnpm --filter @workspace/db run push` — applique le schéma en base (dev)
-- `pnpm --filter @workspace/scripts run seed` — importe `data/conventions_seed.json` (230 conventions)
+- `pnpm --filter @workspace/scripts run seed` — importe uniquement l'exemple fictif `data/conventions_example.json` ; ne pas exécuter sur une base métier.
 - Env requis : `DATABASE_URL`
 
 ## Stack
@@ -30,7 +30,15 @@ Application interne de suivi des conventions de partenariat de la Région Souss-
 - Mapping colonnes ↔ API et normalisation arabe : `artifacts/api-server/src/lib/conventions-mapper.ts`
 - Routes : `artifacts/api-server/src/routes/conventions.ts`
 - Écrans : `artifacts/conventions/src/pages/` (dashboard, conventions-list, convention-detail, convention-create)
-- Données d'import : `data/conventions_seed.json`, extracteur `scripts/extract_excel.py`
+- Données de démonstration publiques : `data/conventions_example.json` (entièrement fictives).
+- Import privé : extracteur `scripts/extract_excel.py` ; sa sortie `data/conventions_seed.json` et les fichiers source sont exclus de Git et de la publication.
+
+## Confidentialité des fichiers
+
+- Ne jamais versionner ni publier de données métier réelles, de sources Excel internes, de briefs internes ou de captures contenant des données métier.
+- Les dossiers `attached_assets/` et `screenshots/` et le fichier `data/conventions_seed.json` sont exclus de Git et des images publiées.
+- Les données réelles restent dans les bases protégées. Tout exemple public doit être créé de toutes pièces, clairement fictif, et non simplement pseudonymisé à partir de données réelles.
+- Activer la protection locale avec `git config core.hooksPath .githooks` : elle refuse les pushes dont l'historique contient les chemins privés. Après une purge, ne jamais fusionner un ancien clone ou pousser les branches internes historiques de Replit vers GitHub.
 
 ## Architecture decisions
 

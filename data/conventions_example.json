@@ -1,0 +1,28 @@
+[
+  {
+    "nom_convention": "DÉMONSTRATION FICTIVE — Projet exemple sans données réelles",
+    "rattachement": "Direction de démonstration (fictive)",
+    "responsable_projet": "Fonction de démonstration — aucune personne réelle",
+    "session": "Session fictive",
+    "date_visa": "2030-01-01",
+    "presidence_comite": "Présidence fictive",
+    "membres_comite": "Membres fictifs",
+    "frequence_reunions": "Annuelle",
+    "enveloppe_budgetaire": 250000,
+    "contribution_region": 100000,
+    "maitrise_ouvrage": "Organisme de démonstration fictif",
+    "maitrise_ouvrage_deleguee": null,
+    "prochain_comite": null,
+    "dernier_comite": null,
+    "dernier_comite_note": null,
+    "pv": null,
+    "decision": null,
+    "document_convention": null,
+    "fiche_technique": null,
+    "statut_convention": null,
+    "prochaine_echeance": null,
+    "prochaine_echeance_note": null,
+    "nature_fonds": "Démonstration fictive",
+    "source_import": "Exemple créé de toutes pièces ; noms, dates et montants fictifs."
+  }
+]

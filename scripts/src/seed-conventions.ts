@@ -1,12 +1,9 @@
 /**
- * Import initial des conventions extraites du fichier Excel.
+ * Import d'un exemple de démonstration entièrement fictif.
  *
- * Source : `data/conventions_seed.json`, produit par `scripts/extract_excel.py`.
- * L'extraction est figée dans un JSON versionné plutôt que relue depuis le
- * .xlsx à chaque exécution : le fichier source comporte deux blocs de colonnes
- * décalés et des dates écrites en toutes lettres en arabe, dont l'interprétation
- * a été validée une fois avec la Région. Rejouer l'extraction à l'aveugle
- * risquerait de réintroduire silencieusement un mauvais alignement.
+ * Source publique : `data/conventions_example.json`.
+ * Les données métier réelles et les sources Excel ne doivent jamais être
+ * versionnées. Ce script n'est pas un mécanisme de transfert en production.
  *
  * Par sécurité le script refuse d'écraser une base déjà remplie ; utiliser
  * `--force` pour repartir de zéro.
@@ -46,7 +43,7 @@ interface LigneSource {
 const force = process.argv.includes("--force");
 
 async function principal(): Promise<void> {
-  const chemin = path.resolve(process.cwd(), "..", "data", "conventions_seed.json");
+  const chemin = path.resolve(process.cwd(), "..", "data", "conventions_example.json");
   const brut = await readFile(chemin, "utf8");
   const lignes = JSON.parse(brut) as LigneSource[];
 
@@ -98,7 +95,7 @@ async function principal(): Promise<void> {
     await db.insert(conventionsTable).values(valeurs.slice(debut, debut + 50));
   }
 
-  console.log(`${valeurs.length} conventions importées.`);
+  console.log(`${valeurs.length} conventions fictives de démonstration importées.`);
 }
 
 principal()

@@ -3,3 +3,6 @@
 
 # No need to store the pnpm store twice.
 .local
+/data/conventions_seed.json
+/attached_assets/
+/screenshots/

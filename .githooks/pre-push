@@ -1,0 +1,14 @@
+#!/bin/sh
+# Refuse aussi les anciens commits : .gitignore ne protège pas l'historique.
+set -eu
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_sha" in
+    0000000000000000000000000000000000000000) continue ;;
+  esac
+  objects=$(git rev-list --objects "$local_sha") || exit 1
+  if printf '%s\n' "$objects" | grep -Eq '^[[:xdigit:]]+ (data/conventions_seed\.json$|attached_assets/|screenshots/)'; then
+    echo "Push refusé : cette branche contient encore des fichiers confidentiels dans son historique." >&2
+    echo "Repartez de l'historique nettoyé ; ne fusionnez pas une ancienne branche ou un ancien clone." >&2
+    exit 1
+  fi
+done

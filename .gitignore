@@ -47,3 +47,8 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Données métier réelles, sources privées et captures : ne jamais publier.
+/data/conventions_seed.json
+/attached_assets/
+/screenshots/
