@@ -36,7 +36,7 @@ Application interne de suivi des conventions de partenariat de la Région Souss-
 ## Confidentialité des fichiers
 
 - Ne jamais versionner ni publier de données métier réelles, de sources Excel internes, de briefs internes ou de captures contenant des données métier.
-- Les dossiers `attached_assets/` et `screenshots/` et le fichier `data/conventions_seed.json` sont exclus de Git et des images publiées.
+- Les dossiers `attached_assets/`, `screenshots/`, `.conversation/` et le fichier `data/conventions_seed.json` sont exclus de Git et des images publiées.
 - Les données réelles restent dans les bases protégées. Tout exemple public doit être créé de toutes pièces, clairement fictif, et non simplement pseudonymisé à partir de données réelles.
 - Activer la protection locale avec `git config core.hooksPath .githooks` : elle refuse les pushes dont l'historique contient les chemins privés. Après une purge, ne jamais fusionner un ancien clone ou pousser les branches internes historiques de Replit vers GitHub.
 
