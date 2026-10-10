@@ -159,6 +159,7 @@ export interface Convention {
   porteurProjet?: string | null;
   maitriseOuvrage: string[];
   maitriseOuvrageDeleguee: string[];
+  partenaires: string[];
   /** @nullable */
   prochainComite?: string | null;
   /** @nullable */
@@ -245,6 +246,8 @@ export interface ConventionInput {
   /** @nullable */
   maitriseOuvrageDeleguee?: string[] | null;
   /** @nullable */
+  partenaires?: string[] | null;
+  /** @nullable */
   prochainComite?: string | null;
   /** @nullable */
   dernierComite?: string | null;
@@ -316,6 +319,8 @@ export interface ConventionUpdate {
   maitriseOuvrage?: string[] | null;
   /** @nullable */
   maitriseOuvrageDeleguee?: string[] | null;
+  /** @nullable */
+  partenaires?: string[] | null;
   /** @nullable */
   prochainComite?: string | null;
   /** @nullable */

@@ -74,6 +74,7 @@ async function initialiserReferentiel(): Promise<void> {
       legacyMoDeleguee: conventionsTable.maitriseOuvrageDeleguee,
       mo: conventionsTable.maitrisesOuvrage,
       moDeleguees: conventionsTable.maitrisesOuvrageDeleguees,
+      partenaires: conventionsTable.partenaires,
     }).from(conventionsTable);
     const valeurs = new Set<string>();
     for (const convention of conventions) {
@@ -82,6 +83,7 @@ async function initialiserReferentiel(): Promise<void> {
         convention.legacyMoDeleguee,
         ...(convention.mo ?? []),
         ...(convention.moDeleguees ?? []),
+        ...(convention.partenaires ?? []),
       ]) {
         const nom = candidate?.trim();
         if (nom) valeurs.add(nom);

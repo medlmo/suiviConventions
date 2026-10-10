@@ -39,6 +39,8 @@ export interface ConventionInput {
   /** @nullable */
   maitriseOuvrageDeleguee?: string[] | null;
   /** @nullable */
+  partenaires?: string[] | null;
+  /** @nullable */
   prochainComite?: Date | null;
   /** @nullable */
   dernierComite?: Date | null;

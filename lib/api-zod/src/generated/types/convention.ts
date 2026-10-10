@@ -44,6 +44,7 @@ export interface Convention {
   porteurProjet?: string | null;
   maitriseOuvrage: string[];
   maitriseOuvrageDeleguee: string[];
+  partenaires: string[];
   /** @nullable */
   prochainComite?: Date | null;
   /** @nullable */

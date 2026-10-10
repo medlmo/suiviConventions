@@ -175,6 +175,7 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
       sql`CASE WHEN ${conventionsTable.maitrisesOuvrageDeleguees} IS NULL THEN COALESCE(${conventionsTable.maitriseOuvrageDeleguee}, '') ELSE '' END`,
       sql`array_to_string(${conventionsTable.maitrisesOuvrage}, ' ')`,
       sql`array_to_string(${conventionsTable.maitrisesOuvrageDeleguees}, ' ')`,
+      sql`array_to_string(${conventionsTable.partenaires}, ' ')`,
     ];
 
     const recherche = or(
@@ -599,6 +600,7 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
     { titre: "Porteur de projet", extraire: (c) => c.porteurProjet, largeurMin: 20, largeurMax: 36 },
     { titre: "Maîtrise d'ouvrage", extraire: (c) => c.maitriseOuvrage.join("; "), largeurMin: 24, largeurMax: 48 },
     { titre: "Maîtrise d'ouvrage déléguée", extraire: (c) => c.maitriseOuvrageDeleguee.join("; "), largeurMin: 28, largeurMax: 48 },
+    { titre: "Partenaires", extraire: (c) => c.partenaires.join("; "), largeurMin: 24, largeurMax: 48 },
     { titre: "Présidence du comité", extraire: (c) => c.presidenceComite, largeurMin: 20, largeurMax: 34 },
     { titre: "Membres du comité", extraire: (c) => c.membresComite, largeurMin: 24, largeurMax: 52 },
     { titre: "Fréquence des réunions", extraire: (c) => c.frequenceReunions, largeurMin: 20, largeurMax: 36 },
@@ -756,9 +758,10 @@ router.post("/conventions", async (req, res): Promise<void> => {
     if (
       !listeMoValide(parsed.data.maitriseOuvrage, reference) ||
       !listeMoValide(parsed.data.maitriseOuvrageDeleguee, reference) ||
+      !listeMoValide(parsed.data.partenaires, reference) ||
       !valeurMoValide(parsed.data.porteurProjet, reference)
     ) {
-      return { status: 400 as const, error: "Les maîtrises d'ouvrage doivent appartenir au référentiel courant." };
+      return { status: 400 as const, error: "Le porteur de projet, les maîtrises d'ouvrage et les partenaires doivent appartenir au référentiel courant." };
     }
     if (typeof valeurs.nomConvention !== "string" || valeurs.nomConvention === "") {
       return { status: 400 as const, error: "Le nom de la convention est obligatoire." };
@@ -933,12 +936,14 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     const anciennesMo = current.maitrisesOuvrage ?? (current.maitriseOuvrage ? [current.maitriseOuvrage] : []);
     const anciennesMoDeleguees = current.maitrisesOuvrageDeleguees ??
       (current.maitriseOuvrageDeleguee ? [current.maitriseOuvrageDeleguee] : []);
+    const anciensPartenaires = current.partenaires ?? [];
     if (
       !listeMoValide(parsed.data.maitriseOuvrage, reference, anciennesMo) ||
       !listeMoValide(parsed.data.maitriseOuvrageDeleguee, reference, anciennesMoDeleguees) ||
+      !listeMoValide(parsed.data.partenaires, reference, anciensPartenaires) ||
       !valeurMoValide(parsed.data.porteurProjet, reference, current.porteurProjet)
     ) {
-      return { status: 400 as const, error: "Les maîtrises d'ouvrage doivent appartenir au référentiel courant." };
+      return { status: 400 as const, error: "Le porteur de projet, les maîtrises d'ouvrage et les partenaires doivent appartenir au référentiel courant." };
     }
 
     for (const champ of CHAMPS_DOCUMENTS) {
