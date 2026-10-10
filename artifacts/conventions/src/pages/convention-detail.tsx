@@ -658,9 +658,20 @@ export default function ConventionDetail() {
                     </FormItem>
                   )} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="partenaires" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Partenaires</FormLabel>
+                        <MaitriseOuvrageSelect
+                          label="partenaires"
+                          intitule="partenaires signataires"
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormItem>
+                    )} />
                     <FormField control={form.control} name="porteurProjet" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Porteur de projet</FormLabel>
+                        <FormLabel>Porteur du projet</FormLabel>
                         <MaitriseOuvrageSelect
                           label="porteur-de-projet"
                           intitule="porteur de projet"
@@ -679,19 +690,8 @@ export default function ConventionDetail() {
                     )} />
                     <FormField control={form.control} name="maitriseOuvrageDeleguee" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Maîtrise d'ouv. Déléguée</FormLabel>
+                        <FormLabel>Maîtrise d'ouvrage déléguée</FormLabel>
                          <MaitriseOuvrageSelect label="maitrise-ouvrage-deleguee" value={field.value} onChange={field.onChange} />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="partenaires" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Partenaires</FormLabel>
-                        <MaitriseOuvrageSelect
-                          label="partenaires"
-                          intitule="partenaires signataires"
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
                       </FormItem>
                     )} />
                   </div>
