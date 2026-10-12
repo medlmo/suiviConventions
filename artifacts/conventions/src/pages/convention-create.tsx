@@ -330,6 +330,7 @@ export default function ConventionCreate() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="Infrastructure">Infrastructure</SelectItem>
+                        <SelectItem value="Coopération décentralisée">Coopération décentralisée</SelectItem>
                         <SelectItem value="Subventions">Subventions</SelectItem>
                         <SelectItem value="Prestations">Prestations</SelectItem>
                       </SelectContent>

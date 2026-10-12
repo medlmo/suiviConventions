@@ -556,10 +556,11 @@ export default function ConventionDetail() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {field.value && !["Infrastructure", "Subventions", "Prestations"].includes(field.value) && (
+                            {field.value && !["Infrastructure", "Coopération décentralisée", "Subventions", "Prestations"].includes(field.value) && (
                               <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
                             )}
                             <SelectItem value="Infrastructure">Infrastructure</SelectItem>
+                            <SelectItem value="Coopération décentralisée">Coopération décentralisée</SelectItem>
                             <SelectItem value="Subventions">Subventions</SelectItem>
                             <SelectItem value="Prestations">Prestations</SelectItem>
                           </SelectContent>
