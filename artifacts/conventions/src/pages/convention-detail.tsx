@@ -879,6 +879,26 @@ export default function ConventionDetail() {
             </div>
           </div>
           </fieldset>
+          {canEdit && (
+            <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-5">
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+                disabled={isDeleting}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving || uploadsEnCours > 0 || isFetching || !reference.data}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? "Enregistrement..." : "Enregistrer"}
+              </Button>
+            </div>
+          )}
         </form>
       </Form>
       <AlertDialog
