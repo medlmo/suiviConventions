@@ -826,6 +826,11 @@ components:
           type: array
           maxItems: 50
           items: { $ref: "#/components/schemas/ConventionDocumentInput" }
+        documentsRetires:
+          type: array
+          maxItems: 500
+          description: Chemins des documents à détacher de la fiche, sans suppression physique des fichiers
+          items: { type: string, minLength: 1 }
         nomConvention: { type: string, minLength: 1 }
         objetConventionFr: { type: ["string", "null"] }
         rattachement: { type: ["string", "null"] }

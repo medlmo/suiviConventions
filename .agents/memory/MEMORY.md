@@ -14,3 +14,4 @@
 - [Services rattachés à la DGS](services-directs-dgs.md) — Coopération et Juridique relèvent directement de la DGS, sans direction ni division intermédiaire.
 - [Transferts de référentiel en production](transferts-referentiel-production.md) — les anciens manifestes de fusion peuvent être périmés ; contrôler l'état courant et préserver les ajouts propres à la production.
 - [Copies cachées dans Git](copies-cachees-git.md) — une purge par chemins peut laisser des copies identiques ; vérifier les objets d'origine dans tout l'historique réécrit.
+- [Retrait de documents](retrait-documents.md) — retirer une pièce de la fiche la détache ; ne pas supprimer automatiquement le fichier physique.

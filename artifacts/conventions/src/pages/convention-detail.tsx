@@ -96,6 +96,7 @@ const conventionSchema = z.object({
     name: z.string(),
     type: z.enum(["convention", "avenant", "pv"]),
   })).max(50).default([]),
+  documentsRetires: z.array(z.string()).max(500).default([]),
   commentaires: z.string().nullable().optional(),
 }).superRefine((valeurs, contexte) => {
   if (valeurs.enveloppeBudgetaire != null && valeurs.contributionRegion != null &&
@@ -211,6 +212,7 @@ export default function ConventionDetail() {
         communes: valeursMO(convention.communes),
         documentConvention: convention.documentConvention,
         documentsAjoutes: [],
+        documentsRetires: [],
         commentaires: convention.commentaires,
       }, { keepDirtyValues: sameRecord });
       setFormRecordId(id);
@@ -274,6 +276,7 @@ export default function ConventionDetail() {
         form.reset({
           ...data,
           documentsAjoutes: [],
+          documentsRetires: [],
           pv: updatedConvention.pv,
           documentConvention: updatedConvention.documentConvention,
           prochaineEcheance: updatedConvention.prochaineEcheance?.split("T")[0] ?? null,
@@ -845,6 +848,12 @@ export default function ConventionDetail() {
                       {(["convention", "pv"] as const).map(category => (
                         <DocumentHistoryField key={`${id}-${category}`} conventionId={id} category={category}
                           documents={convention.documents ?? []} pending={field.value ?? []} editable={canEdit}
+                          removedPaths={form.watch("documentsRetires") ?? []}
+                          onRemoveSaved={objectPath => {
+                            const retires = form.getValues("documentsRetires") ?? [];
+                            form.setValue("documentsRetires", retires.includes(objectPath)
+                              ? retires.filter(path => path !== objectPath) : [...retires, objectPath], { shouldDirty: true });
+                          }}
                           onAdd={document => form.setValue("documentsAjoutes", [...form.getValues("documentsAjoutes"), document], { shouldDirty: true })}
                           onRemove={objectPath => form.setValue("documentsAjoutes", form.getValues("documentsAjoutes").filter(document => document.objectPath !== objectPath), { shouldDirty: true })}
                           onUploadingChange={active => setUploadsEnCours(count => count + (active ? 1 : -1))} />

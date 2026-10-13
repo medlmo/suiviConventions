@@ -13,6 +13,12 @@ export interface ConventionUpdate {
   version: number;
   /** @maxItems 50 */
   documentsAjoutes?: ConventionDocumentInput[];
+  /**
+     * Chemins des documents à détacher de la fiche, sans suppression physique des fichiers
+     * @maxItems 500
+     * @items.minLength 1
+     */
+  documentsRetires?: string[];
   /** @minLength 1 */
   nomConvention?: string;
   /** @nullable */

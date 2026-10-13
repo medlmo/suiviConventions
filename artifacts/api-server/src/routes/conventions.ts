@@ -1007,12 +1007,19 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     }
 
     const documents = await preparerHistoriqueDocuments(current, parsed.data, documentVerifie);
-    if (!documents) return { status: 400 as const, error: ERREUR_DOCUMENT };
+    if (!documents) return { status: 400 as const, error: "Ajout ou retrait de document invalide. Seuls les documents de cette fiche peuvent être retirés et les nouveaux fichiers doivent être vérifiés." };
     valeurs.documents = documents;
     // Garder les anciens champs compatibles avec les exports et anciens clients.
     for (const document of parsed.data.documentsAjoutes ?? []) {
       if (document.type === "pv") valeurs.pv = document.objectPath;
       if (document.type === "convention") valeurs.documentConvention = document.objectPath;
+    }
+    // Ne pas ressusciter un document retiré via les anciennes colonnes scalaires.
+    for (const [champ, type] of [["documentConvention", "convention"], ["pv", "pv"]] as const) {
+      const cheminFinal = Object.hasOwn(valeurs, champ) ? valeurs[champ] : current[champ];
+      if (typeof cheminFinal === "string" && parsed.data.documentsRetires?.includes(cheminFinal)) {
+        valeurs[champ] = [...documents].reverse().find(document => document.type === type)?.objectPath ?? null;
+      }
     }
 
     const enveloppeFinale = Object.hasOwn(parsed.data, "enveloppeBudgetaire")

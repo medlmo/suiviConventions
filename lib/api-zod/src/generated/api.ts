@@ -819,6 +819,9 @@ export const updateConventionBodyDocumentsAjoutesItemObjectPathMax = 512;
 export const updateConventionBodyDocumentsAjoutesMax = 50;
 
 
+export const updateConventionBodyDocumentsRetiresMax = 500;
+
+
 
 
 export const UpdateConventionBody = zod.object({
@@ -827,6 +830,7 @@ export const UpdateConventionBody = zod.object({
   "objectPath": zod.string().min(1).max(updateConventionBodyDocumentsAjoutesItemObjectPathMax),
   "type": zod.enum(['convention', 'avenant', 'pv'])
 })).max(updateConventionBodyDocumentsAjoutesMax).optional(),
+  "documentsRetires": zod.array(zod.string().min(1)).max(updateConventionBodyDocumentsRetiresMax).optional().describe('Chemins des documents à détacher de la fiche, sans suppression physique des fichiers'),
   "nomConvention": zod.string().min(1).optional(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
