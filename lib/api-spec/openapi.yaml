@@ -674,7 +674,7 @@ components:
 
     Convention:
       type: object
-      required: [id, nomConvention, alerte, version, maitriseOuvrage, maitriseOuvrageDeleguee, partenaires]
+      required: [id, nomConvention, alerte, version, maitriseOuvrage, maitriseOuvrageDeleguee, partenaires, provincesPrefectures, communes]
       properties:
         id: { type: integer }
         version: { type: integer }
@@ -704,6 +704,14 @@ components:
         maitriseOuvrage: { type: array, items: { type: string } }
         maitriseOuvrageDeleguee: { type: array, items: { type: string } }
         partenaires: { type: array, items: { type: string } }
+        provincesPrefectures:
+          type: array
+          description: Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage
+          items: { type: string }
+        communes:
+          type: array
+          description: Communes du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage
+          items: { type: string }
         prochainComite:
           type: ["string", "null"]
           format: date
@@ -763,6 +771,12 @@ components:
         partenaires:
           type: ["array", "null"]
           items: { type: string }
+        provincesPrefectures:
+          type: ["array", "null"]
+          items: { type: string }
+        communes:
+          type: ["array", "null"]
+          items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }
         dernierComite: { type: ["string", "null"], format: date }
         dernierComiteNote: { type: ["string", "null"] }
@@ -806,6 +820,12 @@ components:
           type: ["array", "null"]
           items: { type: string }
         partenaires:
+          type: ["array", "null"]
+          items: { type: string }
+        provincesPrefectures:
+          type: ["array", "null"]
+          items: { type: string }
+        communes:
           type: ["array", "null"]
           items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }
