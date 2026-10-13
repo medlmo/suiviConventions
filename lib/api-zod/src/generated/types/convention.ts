@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Alerte } from './alerte';
+import type { ConventionDocument } from './conventionDocument';
 import type { ConventionTypeSession } from './conventionTypeSession';
 
 export interface Convention {
@@ -68,6 +69,7 @@ export interface Convention {
   nature?: string | null;
   /** @nullable */
   documentConvention?: string | null;
+  documents?: ConventionDocument[];
   /** @nullable */
   ficheTechnique?: string | null;
   /** @nullable */

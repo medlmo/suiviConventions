@@ -112,6 +112,41 @@ export interface Alerte {
   joursRestants?: number | null;
 }
 
+export type ConventionDocumentInputType = typeof ConventionDocumentInputType[keyof typeof ConventionDocumentInputType];
+
+
+export const ConventionDocumentInputType = {
+  convention: 'convention',
+  avenant: 'avenant',
+  pv: 'pv',
+} as const;
+
+export interface ConventionDocumentInput {
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
+  objectPath: string;
+  type: ConventionDocumentInputType;
+}
+
+export type ConventionDocumentType = typeof ConventionDocumentType[keyof typeof ConventionDocumentType];
+
+
+export const ConventionDocumentType = {
+  convention: 'convention',
+  avenant: 'avenant',
+  pv: 'pv',
+} as const;
+
+export interface ConventionDocument {
+  objectPath: string;
+  type: ConventionDocumentType;
+  name: string;
+  /** @nullable */
+  addedAt: string | null;
+}
+
 /**
  * @nullable
  */
@@ -183,6 +218,7 @@ export interface Convention {
   nature?: string | null;
   /** @nullable */
   documentConvention?: string | null;
+  documents?: ConventionDocument[];
   /** @nullable */
   ficheTechnique?: string | null;
   /** @nullable */
@@ -221,6 +257,8 @@ export const ConventionInputTypeSession = {
 export interface ConventionInput {
   /** @minLength 1 */
   nomConvention: string;
+  /** @maxItems 50 */
+  documentsAjoutes?: ConventionDocumentInput[];
   /** @nullable */
   objetConventionFr?: string | null;
   /** @nullable */
@@ -297,6 +335,8 @@ export const ConventionUpdateTypeSession = {
 export interface ConventionUpdate {
   /** @minimum 1 */
   version: number;
+  /** @maxItems 50 */
+  documentsAjoutes?: ConventionDocumentInput[];
   /** @minLength 1 */
   nomConvention?: string;
   /** @nullable */
@@ -601,6 +641,13 @@ export interface AuditPage {
   items: AuditEvent[];
   total: number;
 }
+
+export type DownloadConventionDocumentParams = {
+/**
+ * Chemin d'un fichier présent dans l'historique de cette convention
+ */
+objectPath?: string;
+};
 
 export type ListAuditParams = {
 /**

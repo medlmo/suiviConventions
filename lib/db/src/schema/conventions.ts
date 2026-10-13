@@ -1,4 +1,4 @@
-import { date, index, integer, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { date, index, integer, jsonb, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -17,6 +17,13 @@ import { z } from "zod/v4";
  * bruit : les jeter reviendrait à perdre la raison pour laquelle aucune date
  * n'est fixée.
  */
+export type HistoriqueDocument = {
+  objectPath: string;
+  type: "convention" | "avenant" | "pv";
+  name: string;
+  addedAt: string | null;
+};
+
 export const conventionsTable = pgTable(
   "conventions",
   {
@@ -61,6 +68,7 @@ export const conventionsTable = pgTable(
 
     // Documents
     documentConvention: text("document_convention"),
+    documents: jsonb("documents").$type<HistoriqueDocument[]>().notNull().default([]),
     ficheTechnique: text("fiche_technique"),
 
     // Divers

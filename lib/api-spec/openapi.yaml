@@ -113,6 +113,10 @@ paths:
           schema:
             type: string
             enum: [documentConvention, pv]
+        - name: objectPath
+          in: query
+          description: Chemin d'un fichier présent dans l'historique de cette convention
+          schema: { type: string }
       responses:
         "200":
           description: Fichier PDF ou Word
@@ -672,6 +676,21 @@ components:
           type: ["integer", "null"]
           description: Jours avant l'échéance (négatif si dépassée), null si pas d'échéance
 
+    ConventionDocumentInput:
+      type: object
+      required: [objectPath, type]
+      properties:
+        objectPath: { type: string, minLength: 1, maxLength: 512 }
+        type: { type: string, enum: [convention, avenant, pv] }
+    ConventionDocument:
+      type: object
+      required: [objectPath, type, name, addedAt]
+      properties:
+        objectPath: { type: string }
+        type: { type: string, enum: [convention, avenant, pv] }
+        name: { type: string }
+        addedAt: { type: ["string", "null"], format: date-time }
+
     Convention:
       type: object
       required: [id, nomConvention, alerte, version, maitriseOuvrage, maitriseOuvrageDeleguee, partenaires, provincesPrefectures, communes]
@@ -726,6 +745,9 @@ components:
         competence: { type: ["string", "null"] }
         nature: { type: ["string", "null"] }
         documentConvention: { type: ["string", "null"] }
+        documents:
+          type: array
+          items: { $ref: "#/components/schemas/ConventionDocument" }
         ficheTechnique: { type: ["string", "null"] }
         statutConvention: { type: ["string", "null"] }
         prochaineEcheance:
@@ -746,6 +768,10 @@ components:
       required: [nomConvention]
       properties:
         nomConvention: { type: string, minLength: 1 }
+        documentsAjoutes:
+          type: array
+          maxItems: 50
+          items: { $ref: "#/components/schemas/ConventionDocumentInput" }
         objetConventionFr: { type: ["string", "null"] }
         rattachement: { type: ["string", "null"] }
         responsableProjet: { type: ["string", "null"] }
@@ -796,6 +822,10 @@ components:
       required: [version]
       properties:
         version: { type: integer, minimum: 1 }
+        documentsAjoutes:
+          type: array
+          maxItems: 50
+          items: { $ref: "#/components/schemas/ConventionDocumentInput" }
         nomConvention: { type: string, minLength: 1 }
         objetConventionFr: { type: ["string", "null"] }
         rattachement: { type: ["string", "null"] }

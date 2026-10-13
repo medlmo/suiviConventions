@@ -35,12 +35,14 @@ import {
 } from "../lib/alertes";
 import {
   colonnesConvention,
+  documentsConvention,
   echapperJokersLike,
   normaliserPourRecherche,
   versApi,
   versColonnes,
 } from "../lib/conventions-mapper";
 import { calculerEcheance } from "../lib/echeances";
+import { preparerHistoriqueDocuments } from "../lib/document-history";
 import {
   chargerReferentiel,
   chargerReferentielDepuis,
@@ -67,7 +69,6 @@ const CHAMPS_DATE_CORPS = [
 const CHAMPS_MONTANT_CORPS = ["enveloppeBudgetaire", "contributionRegion"] as const;
 const ERREUR_CONTRIBUTION = "La contribution de la Région (MAD) ne peut pas dépasser l'enveloppe budgétaire (MAD).";
 const ERREUR_DOCUMENT = "Les champs Convention et PV doivent contenir un PDF ou un document Word de 10 Mo maximum.";
-const CHAMPS_DOCUMENTS = ["documentConvention", "pv"] as const;
 
 function contributionDepasseEnveloppe(
   enveloppe: number | string | null | undefined,
@@ -769,12 +770,10 @@ router.post("/conventions", async (req, res): Promise<void> => {
     res.status(400).json({ error: ERREUR_CONTRIBUTION });
     return;
   }
-  for (const champ of CHAMPS_DOCUMENTS) {
-    const chemin = parsed.data[champ];
-    if (chemin != null && chemin.trim() !== "" && !(await documentVerifie(chemin))) {
-      res.status(400).json({ error: ERREUR_DOCUMENT });
-      return;
-    }
+  const documents = await preparerHistoriqueDocuments(null, parsed.data, documentVerifie);
+  if (!documents) {
+    res.status(400).json({ error: ERREUR_DOCUMENT });
+    return;
   }
 
   const user = req.user!;
@@ -783,6 +782,11 @@ router.post("/conventions", async (req, res): Promise<void> => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
     const reference = await chargerReferentielDepuis(tx);
     const valeurs = versColonnes(parsed.data);
+    valeurs.documents = documents;
+    for (const document of parsed.data.documentsAjoutes ?? []) {
+      if (document.type === "pv") valeurs.pv = document.objectPath;
+      if (document.type === "convention") valeurs.documentConvention = document.objectPath;
+    }
     const echeance = calculerEcheance({
       nature: valeurs.nature as string | null | undefined,
       dateVisa: valeurs.dateVisa as string | null | undefined,
@@ -897,7 +901,17 @@ router.get("/conventions/:id/documents/:field", async (req, res): Promise<void> 
     return;
   }
 
-  const chemin = req.params.field === "pv" ? ligne.pv : ligne.documentConvention;
+  const cheminDemande = req.query.objectPath;
+  if (cheminDemande !== undefined && typeof cheminDemande !== "string") {
+    res.status(400).json({ error: "Chemin de document invalide." });
+    return;
+  }
+  const chemin = typeof cheminDemande === "string"
+    ? documentsConvention(ligne).find(document =>
+      document.objectPath === cheminDemande &&
+      (req.params.field === "pv" ? document.type === "pv" : document.type !== "pv")
+    )?.objectPath
+    : req.params.field === "pv" ? ligne.pv : ligne.documentConvention;
   if (!chemin) {
     res.status(404).json({ error: "Convention ou document introuvable." });
     return;
@@ -992,13 +1006,13 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       return { status: 400 as const, error: "Le porteur, les maîtrises d'ouvrage, les partenaires et les territoires doivent appartenir au référentiel adapté." };
     }
 
-    for (const champ of CHAMPS_DOCUMENTS) {
-      if (!Object.hasOwn(parsed.data, champ)) continue;
-      const valeur = parsed.data[champ];
-      if (valeur == null || valeur.trim() === "" || valeur === current[champ]) continue;
-      if (!(await documentVerifie(valeur))) {
-        return { status: 400 as const, error: ERREUR_DOCUMENT };
-      }
+    const documents = await preparerHistoriqueDocuments(current, parsed.data, documentVerifie);
+    if (!documents) return { status: 400 as const, error: ERREUR_DOCUMENT };
+    valeurs.documents = documents;
+    // Garder les anciens champs compatibles avec les exports et anciens clients.
+    for (const document of parsed.data.documentsAjoutes ?? []) {
+      if (document.type === "pv") valeurs.pv = document.objectPath;
+      if (document.type === "convention") valeurs.documentConvention = document.objectPath;
     }
 
     const enveloppeFinale = Object.hasOwn(parsed.data, "enveloppeBudgetaire")

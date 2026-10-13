@@ -74,6 +74,10 @@ export const DownloadConventionDocumentParams = zod.object({
   "field": zod.enum(['documentConvention', 'pv'])
 })
 
+export const DownloadConventionDocumentQueryParams = zod.object({
+  "objectPath": zod.coerce.string().optional().describe('Chemin d\'un fichier présent dans l\'historique de cette convention')
+})
+
 export const DownloadConventionDocumentResponse = zod.unknown()
 
 
@@ -435,6 +439,12 @@ export const ListConventionsResponse = zod.object({
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
+  "documents": zod.array(zod.object({
+  "objectPath": zod.string(),
+  "type": zod.enum(['convention', 'avenant', 'pv']),
+  "name": zod.string(),
+  "addedAt": zod.coerce.date().nullable()
+})).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
   "prochaineEcheance": zod.coerce.date().nullish(),
@@ -463,10 +473,18 @@ export const ListConventionsResponse = zod.object({
  * @summary Créer une convention
  */
 
+export const createConventionBodyDocumentsAjoutesItemObjectPathMax = 512;
+
+export const createConventionBodyDocumentsAjoutesMax = 50;
+
 
 
 export const CreateConventionBody = zod.object({
   "nomConvention": zod.string().min(1),
+  "documentsAjoutes": zod.array(zod.object({
+  "objectPath": zod.string().min(1).max(createConventionBodyDocumentsAjoutesItemObjectPathMax),
+  "type": zod.enum(['convention', 'avenant', 'pv'])
+})).max(createConventionBodyDocumentsAjoutesMax).optional(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
   "responsableProjet": zod.string().nullish(),
@@ -528,6 +546,12 @@ export const CreateConventionResponse = zod.object({
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
+  "documents": zod.array(zod.object({
+  "objectPath": zod.string(),
+  "type": zod.enum(['convention', 'avenant', 'pv']),
+  "name": zod.string(),
+  "addedAt": zod.coerce.date().nullable()
+})).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
   "prochaineEcheance": zod.coerce.date().nullish(),
@@ -611,6 +635,12 @@ export const ListAlertesResponseItem = zod.object({
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
+  "documents": zod.array(zod.object({
+  "objectPath": zod.string(),
+  "type": zod.enum(['convention', 'avenant', 'pv']),
+  "name": zod.string(),
+  "addedAt": zod.coerce.date().nullable()
+})).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
   "prochaineEcheance": zod.coerce.date().nullish(),
@@ -676,6 +706,12 @@ export const GetAgendaResponseItem = zod.object({
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
+  "documents": zod.array(zod.object({
+  "objectPath": zod.string(),
+  "type": zod.enum(['convention', 'avenant', 'pv']),
+  "name": zod.string(),
+  "addedAt": zod.coerce.date().nullable()
+})).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
   "prochaineEcheance": zod.coerce.date().nullish(),
@@ -745,6 +781,12 @@ export const GetConventionResponse = zod.object({
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
+  "documents": zod.array(zod.object({
+  "objectPath": zod.string(),
+  "type": zod.enum(['convention', 'avenant', 'pv']),
+  "name": zod.string(),
+  "addedAt": zod.coerce.date().nullable()
+})).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
   "prochaineEcheance": zod.coerce.date().nullish(),
@@ -772,11 +814,19 @@ export const UpdateConventionParams = zod.object({
 })
 
 
+export const updateConventionBodyDocumentsAjoutesItemObjectPathMax = 512;
+
+export const updateConventionBodyDocumentsAjoutesMax = 50;
+
 
 
 
 export const UpdateConventionBody = zod.object({
   "version": zod.number().int().min(1),
+  "documentsAjoutes": zod.array(zod.object({
+  "objectPath": zod.string().min(1).max(updateConventionBodyDocumentsAjoutesItemObjectPathMax),
+  "type": zod.enum(['convention', 'avenant', 'pv'])
+})).max(updateConventionBodyDocumentsAjoutesMax).optional(),
   "nomConvention": zod.string().min(1).optional(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
@@ -840,6 +890,12 @@ export const UpdateConventionResponse = zod.object({
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
+  "documents": zod.array(zod.object({
+  "objectPath": zod.string(),
+  "type": zod.enum(['convention', 'avenant', 'pv']),
+  "name": zod.string(),
+  "addedAt": zod.coerce.date().nullable()
+})).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
   "prochaineEcheance": zod.coerce.date().nullish(),

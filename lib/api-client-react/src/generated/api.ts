@@ -29,6 +29,7 @@ import type {
   ConventionPage,
   ConventionUpdate,
   DeleteConventionParams,
+  DownloadConventionDocumentParams,
   Erreur,
   GetAgendaParams,
   HealthStatus,
@@ -333,21 +334,30 @@ export const useCompleteUpload = <TError = ErrorType<Erreur | void>,
     }
 
 export const getDownloadConventionDocumentUrl = (id: number,
-    field: 'documentConvention' | 'pv',) => {
+    field: 'documentConvention' | 'pv',
+    params?: DownloadConventionDocumentParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/conventions/${id}/documents/${field}`
+  return stringifiedParams.length > 0 ? `/api/conventions/${id}/documents/${field}?${stringifiedParams}` : `/api/conventions/${id}/documents/${field}`
 }
 
 /**
  * @summary Télécharger un document privé d'une convention
  */
 export const downloadConventionDocument = async (id: number,
-    field: 'documentConvention' | 'pv', options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+    field: 'documentConvention' | 'pv',
+    params?: DownloadConventionDocumentParams, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
 
-  return customFetch<Blob>(getDownloadConventionDocumentUrl(id,field),
+  return customFetch<Blob>(getDownloadConventionDocumentUrl(id,field,params),
   {
     ...options,
     method: 'GET'
@@ -361,24 +371,26 @@ export const downloadConventionDocument = async (id: number,
 
 
 export const getDownloadConventionDocumentQueryKey = (id: number,
-    field: 'documentConvention' | 'pv',) => {
+    field: 'documentConvention' | 'pv',
+    params?: DownloadConventionDocumentParams,) => {
     return [
-    `/api/conventions/${id}/documents/${field}`
+    `/api/conventions/${id}/documents/${field}`, ...(params ? [params] : [])
     ] as const;
     }
 
 
 export const getDownloadConventionDocumentQueryOptions = <TData = Awaited<ReturnType<typeof downloadConventionDocument>>, TError = ErrorType<void | Erreur>>(id: number,
-    field: 'documentConvention' | 'pv', options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadConventionDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+    field: 'documentConvention' | 'pv',
+    params?: DownloadConventionDocumentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadConventionDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getDownloadConventionDocumentQueryKey(id,field);
+  const queryKey =  queryOptions?.queryKey ?? getDownloadConventionDocumentQueryKey(id,field,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadConventionDocument>>> = ({ signal }) => downloadConventionDocument(id,field, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadConventionDocument>>> = ({ signal }) => downloadConventionDocument(id,field,params, { signal, ...requestOptions });
 
 
 
@@ -397,11 +409,12 @@ export type DownloadConventionDocumentQueryError = ErrorType<void | Erreur>
 
 export function useDownloadConventionDocument<TData = Awaited<ReturnType<typeof downloadConventionDocument>>, TError = ErrorType<void | Erreur>>(
  id: number,
-    field: 'documentConvention' | 'pv', options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadConventionDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+    field: 'documentConvention' | 'pv',
+    params?: DownloadConventionDocumentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadConventionDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getDownloadConventionDocumentQueryOptions(id,field,options)
+  const queryOptions = getDownloadConventionDocumentQueryOptions(id,field,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -5,11 +5,14 @@
  * Suivi des conventions de partenariat de la Région Souss-Massa. Le statut d'alerte n'est jamais stocké : il est recalculé à chaque requête par rapport à la date du jour.
  * OpenAPI spec version: 0.1.0
  */
+import type { ConventionDocumentInput } from './conventionDocumentInput';
 import type { ConventionInputTypeSession } from './conventionInputTypeSession';
 
 export interface ConventionInput {
   /** @minLength 1 */
   nomConvention: string;
+  /** @maxItems 50 */
+  documentsAjoutes?: ConventionDocumentInput[];
   /** @nullable */
   objetConventionFr?: string | null;
   /** @nullable */

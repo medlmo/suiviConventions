@@ -9,11 +9,11 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { DocumentUploadField } from "@/components/document-upload-field";
+import { DocumentHistoryField } from "@/components/document-history-field";
 import { useAuth, errorMessage, rattachementUtilisateur } from "@/hooks/use-auth";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -76,6 +76,11 @@ const conventionSchema = z.object({
   provincesPrefectures: z.array(z.string()).nullable().optional(),
   communes: z.array(z.string()).nullable().optional(),
   documentConvention: z.string().nullable().optional(),
+  documentsAjoutes: z.array(z.object({
+    objectPath: z.string(),
+    name: z.string(),
+    type: z.enum(["convention", "avenant", "pv"]),
+  })).max(50).default([]),
   commentaires: z.string().nullable().optional(),
 }).superRefine((valeurs, contexte) => {
   if (valeurs.enveloppeBudgetaire != null && valeurs.contributionRegion != null &&
@@ -98,11 +103,13 @@ export default function ConventionCreate() {
   const reference = useReferenceData();
 
   const createMutation = useCreateConvention();
+  const [uploadsEnCours, setUploadsEnCours] = useState(0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(conventionSchema),
     defaultValues: {
       nomConvention: "",
+      documentsAjoutes: [],
       statutConvention: "En cours",
       natureFonds: "Propres",
       porteurProjet: null,
@@ -135,6 +142,7 @@ export default function ConventionCreate() {
   }, [echeanceCalculee?.date, form]);
 
   const onSubmit = (data: FormValues) => {
+    if (uploadsEnCours > 0 || createMutation.isPending) return;
     if (!user || user.role === "directeur" || user.role === "directeur_general_services") return;
     if (!reference.data) {
       toast({ variant: "destructive", title: "Référentiel indisponible", description: "Réessayez avant d’enregistrer la convention." }); return;
@@ -190,6 +198,7 @@ export default function ConventionCreate() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <fieldset disabled={createMutation.isPending} className="space-y-8 min-w-0">
           
           <Card className="border-t-4 border-t-primary shadow-sm bg-card">
             <CardContent className="pt-6">
@@ -543,30 +552,19 @@ export default function ConventionCreate() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="documentConvention" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="documentConvention">Convention</FormLabel>
-                    <DocumentUploadField
-                      id="documentConvention"
-                      field="documentConvention"
-                      value={field.value}
-                      onChange={field.onChange}
-                    />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="pv" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="pv">PV</FormLabel>
-                    <DocumentUploadField
-                      id="pv"
-                      field="pv"
-                      value={field.value}
-                      onChange={field.onChange}
-                    />
-                  </FormItem>
-                )} />
-              </div>
+              <FormField control={form.control} name="documentsAjoutes" render={({ field }) => (
+                <FormItem>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(["convention", "pv"] as const).map(category => (
+                      <DocumentHistoryField key={category} category={category} documents={[]} pending={field.value ?? []} editable
+                        onAdd={document => form.setValue("documentsAjoutes", [...(form.getValues("documentsAjoutes") ?? []), document], { shouldDirty: true })}
+                        onRemove={objectPath => form.setValue("documentsAjoutes", (form.getValues("documentsAjoutes") ?? []).filter(document => document.objectPath !== objectPath), { shouldDirty: true })}
+                        onUploadingChange={active => setUploadsEnCours(count => count + (active ? 1 : -1))} />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormField control={form.control} name="commentaires" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Commentaires</FormLabel>
@@ -580,11 +578,12 @@ export default function ConventionCreate() {
             <Button type="button" variant="outline" onClick={() => setLocation("/conventions")}>
               Annuler
             </Button>
-             <Button type="submit" size="lg" disabled={createMutation.isPending || !reference.data} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
+             <Button type="submit" size="lg" disabled={createMutation.isPending || uploadsEnCours > 0 || !reference.data} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
               <Save className="w-5 h-5 mr-2" />
               {createMutation.isPending ? "Création..." : "Créer la convention"}
             </Button>
           </div>
+          </fieldset>
         </form>
       </Form>
     </div>

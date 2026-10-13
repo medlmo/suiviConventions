@@ -15,7 +15,7 @@ import * as z from "zod";
 import { useEffect, useRef, useState } from "react";
 import { api, canEditConvention, errorMessage, useAuth, type ApiError } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { DocumentUploadField } from "@/components/document-upload-field";
+import { DocumentHistoryField } from "@/components/document-history-field";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,6 +91,11 @@ const conventionSchema = z.object({
   provincesPrefectures: z.array(z.string()).nullable().optional(),
   communes: z.array(z.string()).nullable().optional(),
   documentConvention: z.string().nullable().optional(),
+  documentsAjoutes: z.array(z.object({
+    objectPath: z.string(),
+    name: z.string(),
+    type: z.enum(["convention", "avenant", "pv"]),
+  })).max(50).default([]),
   commentaires: z.string().nullable().optional(),
 }).superRefine((valeurs, contexte) => {
   if (valeurs.enveloppeBudgetaire != null && valeurs.contributionRegion != null &&
@@ -121,6 +126,7 @@ export default function ConventionDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadsEnCours, setUploadsEnCours] = useState(0);
   const [conflict, setConflict] = useState("");
   const [formRecordId, setFormRecordId] = useState<number | null>(null);
   const { user } = useAuth();
@@ -204,6 +210,7 @@ export default function ConventionDetail() {
         provincesPrefectures: valeursMO(convention.provincesPrefectures),
         communes: valeursMO(convention.communes),
         documentConvention: convention.documentConvention,
+        documentsAjoutes: [],
         commentaires: convention.commentaires,
       }, { keepDirtyValues: sameRecord });
       setFormRecordId(id);
@@ -249,7 +256,7 @@ export default function ConventionDetail() {
 
   const onSubmit = async (data: FormValues) => {
     if (!canEdit || !convention) return;
-    if (isFetching) return; // attendre la version actualisée après invalidation
+    if (isFetching || uploadsEnCours > 0) return; // attendre la version et les fichiers
     if (!reference.data) {
       toast({ variant: "destructive", title: "Référentiel indisponible", description: "Réessayez avant d’enregistrer." }); return;
     }
@@ -266,6 +273,9 @@ export default function ConventionDetail() {
         queryClient.setQueryData(getGetConventionQueryKey(id), updatedConvention);
         form.reset({
           ...data,
+          documentsAjoutes: [],
+          pv: updatedConvention.pv,
+          documentConvention: updatedConvention.documentConvention,
           prochaineEcheance: updatedConvention.prochaineEcheance?.split("T")[0] ?? null,
         });
         toast({
@@ -387,7 +397,7 @@ export default function ConventionDetail() {
             <Trash2 className="w-4 h-4 mr-2" />
             Supprimer
           </Button>
-           <Button onClick={form.handleSubmit(onSubmit)} disabled={saving || isFetching || !reference.data}>
+           <Button onClick={form.handleSubmit(onSubmit)} disabled={saving || uploadsEnCours > 0 || isFetching || !reference.data}>
             <Save className="w-4 h-4 mr-2" />
             {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
@@ -399,7 +409,7 @@ export default function ConventionDetail() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <fieldset disabled={!canEdit} className="space-y-6 min-w-0">
+          <fieldset disabled={!canEdit || saving} className="space-y-6 min-w-0">
           
           {/* Titre Principal Large */}
           <Card className="border-t-4 border-t-primary shadow-md bg-card">
@@ -830,30 +840,16 @@ export default function ConventionDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
-                  <FormField control={form.control} name="documentConvention" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="documentConvention">Convention</FormLabel>
-                      <DocumentUploadField
-                        id="documentConvention"
-                        field="documentConvention"
-                        value={field.value}
-                        persistedValue={convention.documentConvention}
-                        conventionId={id}
-                        onChange={field.onChange}
-                      />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="pv" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="pv">PV</FormLabel>
-                      <DocumentUploadField
-                        id="pv"
-                        field="pv"
-                        value={field.value}
-                        persistedValue={convention.pv}
-                        conventionId={id}
-                        onChange={field.onChange}
-                      />
+                  <FormField control={form.control} name="documentsAjoutes" render={({ field }) => (
+                    <FormItem className="space-y-6">
+                      {(["convention", "pv"] as const).map(category => (
+                        <DocumentHistoryField key={`${id}-${category}`} conventionId={id} category={category}
+                          documents={convention.documents ?? []} pending={field.value ?? []} editable={canEdit}
+                          onAdd={document => form.setValue("documentsAjoutes", [...form.getValues("documentsAjoutes"), document], { shouldDirty: true })}
+                          onRemove={objectPath => form.setValue("documentsAjoutes", form.getValues("documentsAjoutes").filter(document => document.objectPath !== objectPath), { shouldDirty: true })}
+                          onUploadingChange={active => setUploadsEnCours(count => count + (active ? 1 : -1))} />
+                      ))}
+                      <FormMessage />
                     </FormItem>
                   )} />
                   

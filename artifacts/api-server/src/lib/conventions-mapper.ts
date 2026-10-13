@@ -1,5 +1,5 @@
 import { getTableColumns, sql, type SQL } from "drizzle-orm";
-import { conventionsTable } from "@workspace/db";
+import { conventionsTable, type HistoriqueDocument } from "@workspace/db";
 import {
   construireAlerte,
   joursRestantsSql,
@@ -23,6 +23,21 @@ function nombreOuNull(valeur: string | null): number | null {
   if (valeur === null) return null;
   const nombre = Number(valeur);
   return Number.isFinite(nombre) ? nombre : null;
+}
+
+/** Les références anciennes restent consultables sans inventer une date d'ajout. */
+export function documentsConvention(ligne: Pick<LigneConvention, "documents" | "pv" | "documentConvention">): HistoriqueDocument[] {
+  const documents = [...(ligne.documents ?? [])];
+  for (const [champ, type, name] of [
+    ["documentConvention", "convention", "Convention enregistrée précédemment"],
+    ["pv", "pv", "PV enregistré précédemment"],
+  ] as const) {
+    const objectPath = ligne[champ];
+    if (objectPath && !documents.some(document => document.objectPath === objectPath)) {
+      documents.push({ objectPath, type, name, addedAt: null });
+    }
+  }
+  return documents;
 }
 
 /** Ligne de base -> objet Convention du contrat OpenAPI. */
@@ -57,6 +72,7 @@ export function versApi(ligne: LigneConvention) {
     competence: ligne.competence,
     nature: ligne.nature,
     documentConvention: ligne.documentConvention,
+    documents: documentsConvention(ligne),
     ficheTechnique: ligne.ficheTechnique,
     statutConvention: ligne.statutConvention,
     prochaineEcheance: ligne.prochaineEcheance,

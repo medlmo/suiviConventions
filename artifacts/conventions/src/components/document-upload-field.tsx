@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError, errorMessage } from "../hooks/use-auth";
 import { Input } from "./ui/input";
 
@@ -23,6 +23,8 @@ type Props = {
   persistedValue?: string | null;
   conventionId?: number;
   onChange: (value: string | null) => void;
+  onUploaded?: (document: StoredDocument) => void;
+  onUploadingChange?: (uploading: boolean) => void;
 };
 
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
@@ -43,11 +45,22 @@ export function DocumentUploadField({
   persistedValue,
   conventionId,
   onChange,
+  onUploaded,
+  onUploadingChange,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const [uploadedName, setUploadedName] = useState("");
+  const mounted = useRef(true);
+  const uploadActive = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (uploadActive.current) onUploadingChange?.(false);
+    };
+  }, []);
 
   const uploadFile = async (file: File) => {
     const contentType = mimePourNom(file.name);
@@ -63,6 +76,8 @@ export function DocumentUploadField({
     }
 
     setIsUploading(true);
+    uploadActive.current = true;
+    onUploadingChange?.(true);
     setError("");
     try {
       const upload = await api<UploadUrl>("/storage/uploads/request-url", {
@@ -83,13 +98,20 @@ export function DocumentUploadField({
         method: "POST",
         body: JSON.stringify({ objectPath: upload.objectPath, name: file.name }),
       });
-      onChange(stored.objectPath);
-      setUploadedName(stored.name);
+      if (mounted.current) {
+        onChange(stored.objectPath);
+        onUploaded?.(stored);
+        setUploadedName(stored.name);
+      }
     } catch (uploadError) {
-      setError(uploadError instanceof ApiError ? errorMessage(uploadError) :
+      if (mounted.current) setError(uploadError instanceof ApiError ? errorMessage(uploadError) :
         uploadError instanceof Error ? uploadError.message : "Le téléversement du fichier a échoué.");
     } finally {
-      setIsUploading(false);
+      uploadActive.current = false;
+      if (mounted.current) {
+        setIsUploading(false);
+        onUploadingChange?.(false);
+      }
       if (inputRef.current) inputRef.current.value = "";
     }
   };
