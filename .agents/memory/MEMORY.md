@@ -16,3 +16,4 @@
 - [Copies cachées dans Git](copies-cachees-git.md) — une purge par chemins peut laisser des copies identiques ; vérifier les objets d'origine dans tout l'historique réécrit.
 - [Retrait de documents](retrait-documents.md) — retirer une pièce de la fiche la détache ; ne pas supprimer automatiquement le fichier physique.
 - [Fiches techniques Word](fiches-techniques-word.md) — export à la demande sans modifier la fiche ; précaution de compilation pour les images embarquées.
+- [Protection documentaire](protection-documents.md) — analyse obligatoire des nouveaux dépôts et des pièces historiques ; échec ou indisponibilité bloque l'accès sans supprimer le fichier.

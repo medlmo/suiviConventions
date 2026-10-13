@@ -39,7 +39,7 @@ export const RequestUploadUrlResponse = zod.object({
 
 
 /**
- * @summary Vérifier et finaliser un document téléversé
+ * @summary Analyser la structure et le contenu antimalware avant de finaliser un document
  */
 
 export const completeUploadBodyNameMax = 255;
@@ -64,7 +64,7 @@ export const CompleteUploadResponse = zod.object({
 
 
 /**
- * @summary Télécharger un document privé d'une convention
+ * @summary Télécharger un document privé après contrôle de sécurité, y compris les documents historiques
  */
 
 

@@ -13,6 +13,7 @@ import {
   normaliserNomDocument,
   typeDocumentPourNom,
 } from "../lib/objectStorage";
+import { DocumentSecurityError } from "../lib/document-security-errors";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -84,6 +85,10 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     );
     res.json(CompleteUploadResponse.parse(document));
   } catch (error) {
+    if (error instanceof DocumentSecurityError) {
+      res.status(error.status).json({ error: error.message, code: error.code, securityStatus: error.securityStatus });
+      return;
+    }
     if (error instanceof InvalidDocumentError) {
       res.status(400).json({ error: ERREUR_FORMAT });
       return;

@@ -254,7 +254,7 @@ export const getCompleteUploadUrl = () => {
 }
 
 /**
- * @summary Vérifier et finaliser un document téléversé
+ * @summary Analyser la structure et le contenu antimalware avant de finaliser un document
  */
 export const completeUpload = async (completeUploadInput: CompleteUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<StoredDocument> => {
 
@@ -320,7 +320,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CompleteUploadMutationVariables = {data: BodyType<CompleteUploadInput>}
 
     /**
- * @summary Vérifier et finaliser un document téléversé
+ * @summary Analyser la structure et le contenu antimalware avant de finaliser un document
  */
 export const useCompleteUpload = <TError = ErrorType<Erreur | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeUpload>>, TError,CompleteUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -351,7 +351,7 @@ export const getDownloadConventionDocumentUrl = (id: number,
 }
 
 /**
- * @summary Télécharger un document privé d'une convention
+ * @summary Télécharger un document privé après contrôle de sécurité, y compris les documents historiques
  */
 export const downloadConventionDocument = async (id: number,
     field: 'documentConvention' | 'pv',
@@ -404,7 +404,7 @@ export type DownloadConventionDocumentQueryError = ErrorType<void | Erreur>
 
 
 /**
- * @summary Télécharger un document privé d'une convention
+ * @summary Télécharger un document privé après contrôle de sécurité, y compris les documents historiques
  */
 
 export function useDownloadConventionDocument<TData = Awaited<ReturnType<typeof downloadConventionDocument>>, TError = ErrorType<void | Erreur>>(

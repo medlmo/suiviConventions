@@ -32,6 +32,8 @@ export * from './conventionUpdateTypeSession';
 export * from './deleteConventionParams';
 export * from './downloadConventionDocumentParams';
 export * from './erreur';
+export * from './erreurCode';
+export * from './erreurSecurityStatus';
 export * from './getAgendaParams';
 export * from './healthStatus';
 export * from './listAlertesParams';

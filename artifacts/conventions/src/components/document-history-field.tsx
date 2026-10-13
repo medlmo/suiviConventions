@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ConventionDocument, ConventionDocumentInput } from "@workspace/api-client-react";
 import { DocumentUploadField } from "./document-upload-field";
+import { DocumentDownloadLink } from "./document-download-link";
 import { Button } from "./ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -42,10 +43,10 @@ export function DocumentHistoryField({
       {[...enregistres].reverse().map(document => <li key={`${document.type}-${document.objectPath}`} className="rounded-md border p-3 text-sm space-y-1">
         <div className="font-medium">{libelles[document.type]}</div>
         {conventionId != null && document.objectPath.startsWith("/objects/documents/") ? (
-          <a className="text-primary underline underline-offset-4 break-all"
+          <DocumentDownloadLink name={document.name} className="text-primary underline underline-offset-4 break-all"
             href={`${import.meta.env.BASE_URL}api/conventions/${conventionId}/documents/${category === "pv" ? "pv" : "documentConvention"}?objectPath=${encodeURIComponent(document.objectPath)}`}>
             {document.name} — Télécharger
-          </a>
+          </DocumentDownloadLink>
         ) : <p className="break-all text-muted-foreground">Référence historique : {document.objectPath}</p>}
         <p className="text-xs text-muted-foreground">{document.addedAt
           ? `Ajouté le ${new Date(document.addedAt).toLocaleString("fr-FR")}`

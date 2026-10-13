@@ -9,8 +9,27 @@ export interface HealthStatus {
   status: string;
 }
 
+export type ErreurCode = typeof ErreurCode[keyof typeof ErreurCode];
+
+
+export const ErreurCode = {
+  DOCUMENT_REJECTED: 'DOCUMENT_REJECTED',
+  ANALYSIS_UNAVAILABLE: 'ANALYSIS_UNAVAILABLE',
+  ANALYSIS_BUSY: 'ANALYSIS_BUSY',
+} as const;
+
+export type ErreurSecurityStatus = typeof ErreurSecurityStatus[keyof typeof ErreurSecurityStatus];
+
+
+export const ErreurSecurityStatus = {
+  quarantined: 'quarantined',
+  rejected: 'rejected',
+} as const;
+
 export interface Erreur {
   error: string;
+  code?: ErreurCode;
+  securityStatus?: ErreurSecurityStatus;
 }
 
 export type UploadUrlInputContentType = typeof UploadUrlInputContentType[keyof typeof UploadUrlInputContentType];

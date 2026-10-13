@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { File, Storage } from "@google-cloud/storage";
+import { inspectDocument, DOCUMENT_SECURITY_POLICY } from "./document-security";
+import { DocumentSecurityError, documentRejected } from "./document-security-errors";
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 
@@ -52,6 +54,60 @@ export interface VerifiedDocument {
   name: string;
   contentType: string;
   size: number;
+  generation: string;
+}
+
+const activeInspections = new Map<string, Promise<void>>();
+
+async function inspectStoredFile(file: File, name: string, size: number, force = false): Promise<void> {
+  const [metadata] = await file.getMetadata();
+  const generation = String(metadata.generation);
+  const flags = metadata.metadata ?? {};
+  if (!force && flags.securityStatus === "clean" && flags.securityPolicy === DOCUMENT_SECURITY_POLICY &&
+    flags.securityGeneration === generation && typeof flags.securityHash === "string" &&
+    /^[0-9a-f]{64}$/u.test(flags.securityHash) &&
+    typeof flags.securityScannedAt === "string" &&
+    Date.parse(flags.securityScannedAt) > Date.now() - 24 * 60 * 60 * 1000) return;
+  if (!force && flags.securityStatus === "rejected" && flags.securityPolicy === DOCUMENT_SECURITY_POLICY) throw documentRejected();
+  const key = `${file.bucket.name}/${file.name}/${generation}`;
+  const existing = activeInspections.get(key);
+  if (existing) return existing;
+  const work = (async () => {
+    await file.setMetadata({ metadata: { ...flags, securityStatus: "quarantined", securityReason: "analysis_pending" } });
+    try {
+      const result = await inspectDocument(name, async () => {
+        const stream = file.createReadStream({ start: 0, end: DOCUMENT_MAX_SIZE_BYTES });
+        const chunks: Buffer[] = [];
+        let length = 0;
+        for await (const chunk of stream) {
+          const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+          length += bytes.length;
+          if (length > DOCUMENT_MAX_SIZE_BYTES) {
+            stream.destroy();
+            throw documentRejected();
+          }
+          chunks.push(bytes);
+        }
+        if (length !== size) throw documentRejected();
+        return Buffer.concat(chunks);
+      });
+      await file.setMetadata({ metadata: {
+        ...flags, ...result, securityStatus: "clean", securityGeneration: generation, securityReason: null,
+      } });
+    } catch (error) {
+      const securityError = error instanceof DocumentSecurityError ? error : new DocumentSecurityError(
+        "Document en quarantaine : le contrôle de sécurité n'a pas pu aboutir. L'accès est refusé.",
+        "ANALYSIS_UNAVAILABLE",
+      );
+      await file.setMetadata({ metadata: {
+        ...flags, securityStatus: securityError.securityStatus, securityPolicy: DOCUMENT_SECURITY_POLICY,
+        securityReason: securityError.code,
+      } }).catch(() => undefined);
+      throw securityError;
+    }
+  })().finally(() => { activeInspections.delete(key); });
+  activeInspections.set(key, work);
+  return work;
 }
 
 export function normaliserNomDocument(nomBrut: string): string | null {
@@ -93,6 +149,11 @@ export class ObjectStorageService {
   getPrivateObjectDir(): string {
     const dir = process.env.PRIVATE_OBJECT_DIR || "";
     if (!dir) throw new Error("PRIVATE_OBJECT_DIR n'est pas configuré.");
+    const normalized = dir.replace(/\/+$/u, "");
+    const publicDirs = (process.env.PUBLIC_OBJECT_SEARCH_PATHS ?? "").split(",").map(p => p.trim().replace(/\/+$/u, "")).filter(Boolean);
+    if (publicDirs.some(p => normalized === p || normalized.startsWith(p + "/") || p.startsWith(normalized + "/"))) {
+      throw new Error("Les répertoires de documents privés et d'objets publics doivent être séparés.");
+    }
     return dir;
   }
 
@@ -111,13 +172,13 @@ export class ObjectStorageService {
     return `/objects/${rawObjectPath.slice(privateDir.length)}`;
   }
 
-  async getObjectEntityFile(objectPath: string): Promise<File> {
+  async getObjectEntityFile(objectPath: string, generation?: string): Promise<File> {
     if (!OBJECT_PATH_PATTERN.test(objectPath)) throw new ObjectNotFoundError();
     const relativePath = objectPath.slice("/objects/".length);
     let privateDir = this.getPrivateObjectDir();
     if (!privateDir.endsWith("/")) privateDir = `${privateDir}/`;
     const { bucketName, objectName } = parseObjectPath(`${privateDir}${relativePath}`);
-    const file = objectStorageClient.bucket(bucketName).file(objectName);
+    const file = objectStorageClient.bucket(bucketName).file(objectName, generation ? { generation } : undefined);
     const [exists] = await file.exists();
     if (!exists) throw new ObjectNotFoundError();
     return file;
@@ -130,59 +191,61 @@ export class ObjectStorageService {
     const expectedContentType = typeDocumentPourNom(name);
     if (!expectedContentType) throw new InvalidDocumentError();
 
-    const source = await this.getObjectEntityFile(uploadPath);
-    let finalFile: File | undefined;
-
-    try {
-      const [sourceMetadata] = await source.getMetadata();
-      const size = Number(sourceMetadata.size);
-      if (
-        !Number.isSafeInteger(size) ||
-        size < 1 ||
-        size > DOCUMENT_MAX_SIZE_BYTES ||
-        sourceMetadata.contentType !== expectedContentType ||
-        !signatureValide(name, await lirePrefixe(source))
-      ) {
-        throw new InvalidDocumentError();
-      }
-
-      const objectId = randomUUID();
-      const { bucketName, objectName } = parseObjectPath(
-        `${this.getPrivateObjectDir()}/documents/${objectId}`,
-      );
-      finalFile = objectStorageClient.bucket(bucketName).file(objectName);
-      await source.copy(finalFile);
-
-      const [copiedMetadata] = await finalFile.getMetadata();
-      const copiedSize = Number(copiedMetadata.size);
-      if (
-        copiedSize !== size ||
-        copiedMetadata.contentType !== expectedContentType ||
-        !signatureValide(name, await lirePrefixe(finalFile))
-      ) {
-        throw new InvalidDocumentError();
-      }
-
-      await finalFile.setMetadata({
-        contentType: expectedContentType,
-        metadata: {
-          documentVerified: "true",
-          originalName: name,
-        },
-      });
-
-      await source.delete().catch(() => undefined);
-      return {
-        objectPath: `/objects/documents/${objectId}`,
-        name,
-        contentType: expectedContentType,
-        size,
-      };
-    } catch (error) {
-      if (finalFile) await finalFile.delete().catch(() => undefined);
-      await source.delete().catch(() => undefined);
-      throw error;
+    const uploaded = await this.getObjectEntityFile(uploadPath);
+    const [sourceMetadata] = await uploaded.getMetadata();
+    const source = objectStorageClient.bucket(uploaded.bucket.name).file(uploaded.name, { generation: String(sourceMetadata.generation) });
+    const size = Number(sourceMetadata.size);
+    if (
+      !Number.isSafeInteger(size) ||
+      size < 1 ||
+      size > DOCUMENT_MAX_SIZE_BYTES ||
+      sourceMetadata.contentType !== expectedContentType ||
+      !signatureValide(name, await lirePrefixe(source))
+    ) {
+      await source.setMetadata({ metadata: {
+        ...sourceMetadata.metadata, originalName: name, securityStatus: "rejected",
+        securityPolicy: DOCUMENT_SECURITY_POLICY, securityReason: "INVALID_METADATA_OR_SIGNATURE",
+      } });
+      throw documentRejected();
     }
+
+    await source.setMetadata({ metadata: { ...sourceMetadata.metadata, originalName: name, documentVerified: "false" } });
+    await inspectStoredFile(source, name, size, true);
+    const [scannedMetadata] = await source.getMetadata();
+    const objectId = randomUUID();
+    const { bucketName, objectName } = parseObjectPath(
+      `${this.getPrivateObjectDir()}/documents/${objectId}`,
+    );
+    const destination = objectStorageClient.bucket(bucketName).file(objectName);
+    await source.copy(destination, { preconditionOpts: { ifGenerationMatch: 0 } });
+
+    const [copiedMetadata] = await destination.getMetadata();
+    const generation = String(copiedMetadata.generation);
+    const finalFile = objectStorageClient.bucket(bucketName).file(objectName, { generation });
+    const copiedSize = Number(copiedMetadata.size);
+    if (
+      copiedSize !== size ||
+      copiedMetadata.contentType !== expectedContentType ||
+      !signatureValide(name, await lirePrefixe(finalFile))
+    ) throw new InvalidDocumentError();
+
+    await finalFile.setMetadata({
+      contentType: expectedContentType,
+      metadata: {
+        ...scannedMetadata.metadata,
+        documentVerified: "true", securityStatus: "clean", securityGeneration: generation,
+        originalName: name,
+      },
+    });
+
+    await source.delete().catch(() => undefined);
+    return {
+      objectPath: `/objects/documents/${objectId}`,
+      name,
+      contentType: expectedContentType,
+      size,
+      generation,
+    };
   }
 
   async getVerifiedDocumentInfo(objectPath: string): Promise<VerifiedDocument | null> {
@@ -209,7 +272,10 @@ export class ObjectStorageService {
     ) {
       return null;
     }
-    return { objectPath, name, contentType, size };
+    const generation = String(metadata.generation);
+    const pinned = objectStorageClient.bucket(file.bucket.name).file(file.name, { generation });
+    await inspectStoredFile(pinned, name, size);
+    return { objectPath, name, contentType, size, generation };
   }
 }
 

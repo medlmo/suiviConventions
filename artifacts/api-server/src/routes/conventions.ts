@@ -952,7 +952,7 @@ router.get("/conventions/:id/documents/:field", async (req, res): Promise<void> 
     return;
   }
 
-  const fichier = await objectStorageService.getObjectEntityFile(chemin);
+  const fichier = await objectStorageService.getObjectEntityFile(chemin, document.generation);
   const nomAscii = document.name.replace(/[^A-Za-z0-9._-]/g, "_") || "document";
   const nomEncode = encodeURIComponent(document.name).replace(/[!'()*]/g, (caractere) =>
     `%${caractere.charCodeAt(0).toString(16).toUpperCase()}`);

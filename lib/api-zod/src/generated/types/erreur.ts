@@ -5,7 +5,11 @@
  * Suivi des conventions de partenariat de la Région Souss-Massa. Le statut d'alerte n'est jamais stocké : il est recalculé à chaque requête par rapport à la date du jour.
  * OpenAPI spec version: 0.1.0
  */
+import type { ErreurCode } from './erreurCode';
+import type { ErreurSecurityStatus } from './erreurSecurityStatus';
 
 export interface Erreur {
   error: string;
+  code?: ErreurCode;
+  securityStatus?: ErreurSecurityStatus;
 }

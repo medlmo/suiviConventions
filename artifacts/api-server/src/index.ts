@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { bootstrapAdmin, nettoyerSessionsExpirees } from "./lib/auth";
+import { prepareDocumentAntivirus } from "./lib/document-antivirus";
 
 const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 
@@ -27,6 +28,9 @@ async function start(): Promise<void> {
     }
 
     logger.info({ port }, "Server listening");
+    void prepareDocumentAntivirus();
+    const antivirusTimer = setInterval(() => void prepareDocumentAntivirus(), 12 * 60 * 60 * 1000);
+    antivirusTimer.unref();
 
     const nettoyer = async (): Promise<void> => {
       try {

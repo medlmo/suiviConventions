@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, errorMessage } from "../hooks/use-auth";
 import { Input } from "./ui/input";
+import { DocumentDownloadLink } from "./document-download-link";
 
 type DocumentField = "documentConvention" | "pv";
 
@@ -134,17 +135,17 @@ export function DocumentUploadField({
         }}
       />
       <p className="text-xs text-muted-foreground">PDF ou Word (.doc, .docx) — 10 Mo maximum.</p>
-      {isUploading && <p className="text-sm text-muted-foreground" role="status">Téléversement et vérification du fichier…</p>}
+      {isUploading && <p className="text-sm text-muted-foreground" role="status">Téléversement, contrôle du document et analyse antimalware… Le fichier reste en quarantaine jusqu’à validation.</p>}
       {!isUploading && isStoredFile && uploadedName && (
         <p className="text-sm text-muted-foreground">Fichier chargé : {uploadedName}</p>
       )}
       {!isUploading && isPersisted && (
-        <a
+        <DocumentDownloadLink
           className="text-sm font-medium text-primary underline underline-offset-4"
-          href={`/api/conventions/${conventionId}/documents/${field}`}
+          href={`${import.meta.env.BASE_URL}api/conventions/${conventionId}/documents/${field}`}
         >
           Télécharger le fichier enregistré
-        </a>
+        </DocumentDownloadLink>
       )}
       {!isUploading && value && !isStoredFile && (
         <p className="text-sm text-muted-foreground">

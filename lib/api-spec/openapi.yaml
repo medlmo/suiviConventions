@@ -73,7 +73,7 @@ paths:
     post:
       operationId: completeUpload
       tags: [storage]
-      summary: Vérifier et finaliser un document téléversé
+      summary: Analyser la structure et le contenu antimalware avant de finaliser un document
       requestBody:
         required: true
         content:
@@ -97,11 +97,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
+        "423":
+          description: Document refusé après contrôle ; conservé mais inaccessible
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+        "503":
+          description: Analyse indisponible ou occupée ; document en quarantaine
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
   /conventions/{id}/documents/{field}:
     get:
       operationId: downloadConventionDocument
       tags: [conventions]
-      summary: Télécharger un document privé d'une convention
+      summary: Télécharger un document privé après contrôle de sécurité, y compris les documents historiques
       parameters:
         - name: id
           in: path
@@ -127,6 +137,16 @@ paths:
         "403": { description: Accès à la convention non autorisé }
         "404":
           description: Convention ou fichier introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+        "423":
+          description: Document refusé après contrôle ; conservé mais inaccessible
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+        "503":
+          description: Analyse indisponible ou occupée ; document en quarantaine
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
@@ -629,6 +649,12 @@ components:
       required: [error]
       properties:
         error: { type: string }
+        code:
+          type: string
+          enum: [DOCUMENT_REJECTED, ANALYSIS_UNAVAILABLE, ANALYSIS_BUSY]
+        securityStatus:
+          type: string
+          enum: [quarantined, rejected]
 
     UploadUrlInput:
       type: object

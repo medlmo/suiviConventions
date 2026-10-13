@@ -21,6 +21,7 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+packages = ["clamav", "qpdf", "_7zz", "util-linux"]
 
 [objectStorage]
 defaultBucketID = "replit-objstore-5e7456db-566c-4a3b-b6fd-2f825410a3ee"
