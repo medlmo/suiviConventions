@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, errorMessage } from "../hooks/use-auth";
 import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 import { DocumentDownloadLink } from "./document-download-link";
 
 type DocumentField = "documentConvention" | "pv";
@@ -16,6 +17,8 @@ type StoredDocument = {
   contentType: string;
   size: number;
 };
+
+type PendingCompletion = { objectPath: string; name: string };
 
 type Props = {
   id: string;
@@ -53,6 +56,7 @@ export function DocumentUploadField({
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const [uploadedName, setUploadedName] = useState("");
+  const [pendingCompletion, setPendingCompletion] = useState<PendingCompletion | null>(null);
   const mounted = useRef(true);
   const uploadActive = useRef(false);
   useEffect(() => {
@@ -80,6 +84,7 @@ export function DocumentUploadField({
     uploadActive.current = true;
     onUploadingChange?.(true);
     setError("");
+    setPendingCompletion(null);
     try {
       const upload = await api<UploadUrl>("/storage/uploads/request-url", {
         method: "POST",
@@ -95,15 +100,9 @@ export function DocumentUploadField({
         throw new Error("Le téléversement du fichier a échoué.");
       }
 
-      const stored = await api<StoredDocument>("/storage/uploads/complete", {
-        method: "POST",
-        body: JSON.stringify({ objectPath: upload.objectPath, name: file.name }),
-      });
-      if (mounted.current) {
-        onChange(stored.objectPath);
-        onUploaded?.(stored);
-        setUploadedName(stored.name);
-      }
+      const completion = { objectPath: upload.objectPath, name: file.name };
+      if (mounted.current) setPendingCompletion(completion);
+      await finaliserTeleversement(completion);
     } catch (uploadError) {
       if (mounted.current) setError(uploadError instanceof ApiError ? errorMessage(uploadError) :
         uploadError instanceof Error ? uploadError.message : "Le téléversement du fichier a échoué.");
@@ -117,6 +116,51 @@ export function DocumentUploadField({
     }
   };
 
+  const finaliserTeleversement = async (completion: PendingCompletion) => {
+    try {
+      const stored = await api<StoredDocument>("/storage/uploads/complete", {
+        method: "POST",
+        body: JSON.stringify(completion),
+      });
+      if (mounted.current) {
+        setPendingCompletion(null);
+        setError("");
+        onChange(stored.objectPath);
+        onUploaded?.(stored);
+        setUploadedName(stored.name);
+      }
+    } catch (cause) {
+      if (!mounted.current) return;
+      if (cause instanceof ApiError &&
+        (cause.code === "ANALYSIS_UNAVAILABLE" || cause.code === "ANALYSIS_BUSY")) {
+        setPendingCompletion(completion);
+        setError(cause.code === "ANALYSIS_UNAVAILABLE"
+          ? "L’antivirus est temporairement indisponible. Votre fichier est conservé ; réessayez l’analyse sans le téléverser à nouveau."
+          : "Une autre analyse est en cours. Votre fichier est conservé ; réessayez dans quelques instants.");
+        return;
+      }
+      setPendingCompletion(null);
+      setError(errorMessage(cause));
+    }
+  };
+
+  const retryFinalisation = async () => {
+    if (!pendingCompletion || uploadActive.current) return;
+    setIsUploading(true);
+    uploadActive.current = true;
+    onUploadingChange?.(true);
+    setError("");
+    try {
+      await finaliserTeleversement(pendingCompletion);
+    } finally {
+      uploadActive.current = false;
+      if (mounted.current) {
+        setIsUploading(false);
+        onUploadingChange?.(false);
+      }
+    }
+  };
+
   const isStoredFile = Boolean(value?.startsWith("/objects/documents/"));
   const isPersisted = isStoredFile && value === persistedValue && conventionId != null;
 
@@ -127,7 +171,7 @@ export function DocumentUploadField({
         id={id}
         type="file"
         accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        disabled={isUploading}
+        disabled={isUploading || Boolean(pendingCompletion)}
         aria-label="Choisir un fichier PDF ou Word de 10 Mo maximum"
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
@@ -135,7 +179,11 @@ export function DocumentUploadField({
         }}
       />
       <p className="text-xs text-muted-foreground">PDF ou Word (.doc, .docx) — 10 Mo maximum.</p>
-      {isUploading && <p className="text-sm text-muted-foreground" role="status">Téléversement, contrôle du document et analyse antimalware… Le fichier reste en quarantaine jusqu’à validation.</p>}
+      {isUploading && <p className="text-sm text-muted-foreground" role="status">
+        {pendingCompletion
+          ? "Finalisation et analyse antimalware… Le fichier reste en quarantaine jusqu’à validation."
+          : "Téléversement, contrôle du document et analyse antimalware… Le fichier reste en quarantaine jusqu’à validation."}
+      </p>}
       {!isUploading && isStoredFile && uploadedName && (
         <p className="text-sm text-muted-foreground">Fichier chargé : {uploadedName}</p>
       )}
@@ -153,6 +201,11 @@ export function DocumentUploadField({
         </p>
       )}
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+      {pendingCompletion && !isUploading && (
+        <Button type="button" variant="outline" size="sm" onClick={() => void retryFinalisation()}>
+          Réessayer l’analyse
+        </Button>
+      )}
     </div>
   );
 }

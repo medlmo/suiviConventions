@@ -86,6 +86,7 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     res.json(CompleteUploadResponse.parse(document));
   } catch (error) {
     if (error instanceof DocumentSecurityError) {
+      res.setHeader("Retry-After", error.code === "ANALYSIS_UNAVAILABLE" ? "60" : "5");
       res.status(error.status).json({ error: error.message, code: error.code, securityStatus: error.securityStatus });
       return;
     }

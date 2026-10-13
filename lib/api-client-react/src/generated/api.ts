@@ -21,6 +21,7 @@ import type {
 
 import type {
   AdminUser,
+  AntivirusReadiness,
   AuditPage,
   AuthUser,
   CompleteUploadInput,
@@ -145,6 +146,84 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getHealthCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAntivirusReadinessUrl = () => {
+
+
+
+
+  return `/api/healthz/antivirus`
+}
+
+/**
+ * Indique si la base ClamAV est assez récente pour valider de nouveaux dépôts.
+ * @summary Vérifier la disponibilité de l'antivirus documentaire
+ */
+export const antivirusReadiness = async ( options?: Parameters<typeof customFetch>[1]): Promise<AntivirusReadiness> => {
+
+  return customFetch<AntivirusReadiness>(getAntivirusReadinessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAntivirusReadinessQueryKey = () => {
+    return [
+    `/api/healthz/antivirus`
+    ] as const;
+    }
+
+
+export const getAntivirusReadinessQueryOptions = <TData = Awaited<ReturnType<typeof antivirusReadiness>>, TError = ErrorType<AntivirusReadiness>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof antivirusReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAntivirusReadinessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof antivirusReadiness>>> = ({ signal }) => antivirusReadiness({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof antivirusReadiness>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AntivirusReadinessQueryResult = NonNullable<Awaited<ReturnType<typeof antivirusReadiness>>>
+export type AntivirusReadinessQueryError = ErrorType<AntivirusReadiness>
+
+
+/**
+ * @summary Vérifier la disponibilité de l'antivirus documentaire
+ */
+
+export function useAntivirusReadiness<TData = Awaited<ReturnType<typeof antivirusReadiness>>, TError = ErrorType<AntivirusReadiness>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof antivirusReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAntivirusReadinessQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

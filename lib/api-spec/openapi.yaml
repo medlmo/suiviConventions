@@ -41,6 +41,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /healthz/antivirus:
+    get:
+      operationId: antivirusReadiness
+      tags: [health]
+      summary: Vérifier la disponibilité de l'antivirus documentaire
+      description: Indique si la base ClamAV est assez récente pour valider de nouveaux dépôts.
+      security: []
+      responses:
+        "200":
+          description: Base antimalware disponible
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AntivirusReadiness" }
+        "503":
+          description: Base antimalware absente, périmée ou en cours de préparation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AntivirusReadiness" }
+
   /storage/uploads/request-url:
     post:
       operationId: requestUploadUrl
@@ -643,6 +662,15 @@ components:
           type: string
       required:
         - status
+    AntivirusReadiness:
+      type: object
+      required: [ready, updating, scannerAvailable, lastUpdateFailed, databaseAgeSeconds]
+      properties:
+        ready: { type: boolean }
+        updating: { type: boolean }
+        scannerAvailable: { type: boolean }
+        lastUpdateFailed: { type: boolean }
+        databaseAgeSeconds: { type: ["integer", "null"], minimum: 0 }
 
     Erreur:
       type: object

@@ -11,7 +11,7 @@ export const roleLabels: Record<Role, string> = {
 };
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public code?: string) { super(message); }
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -22,11 +22,13 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     if (response.status === 401 && path !== "/auth/login" && path !== "/auth/me") window.dispatchEvent(new Event("conventions-session-expired"));
     let message = "";
+    let code: string | undefined;
     try {
       const body = await response.json();
       message = body.message || body.error || "";
+      code = typeof body.code === "string" ? body.code : undefined;
     } catch { /* The response may not contain JSON. */ }
-    throw new ApiError(response.status, message || `Erreur ${response.status}`);
+    throw new ApiError(response.status, message || `Erreur ${response.status}`, code);
   }
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }

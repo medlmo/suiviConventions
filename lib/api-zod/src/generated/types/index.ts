@@ -9,6 +9,7 @@
 export * from './adminUser';
 export * from './alerte';
 export * from './alerteCouleur';
+export * from './antivirusReadiness';
 export * from './auditEvent';
 export * from './auditEventAction';
 export * from './auditEventAfter';
