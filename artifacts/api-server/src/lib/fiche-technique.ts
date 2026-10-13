@@ -3,7 +3,7 @@ import {
   PageNumber, Paragraph, Table, TableCell, TableLayoutType, TableRow, TextRun,
   VerticalAlign, WidthType,
 } from "docx";
-import logo from "../../../conventions/public/logo-crsm.png";
+import logo from "./logo-crsm-word.png";
 import type { ConventionApi } from "./conventions-mapper";
 
 const NAVY = "17365D";
@@ -76,8 +76,8 @@ function rubrique(label: string): TableRow {
 /** Génération à la demande : ni données inventées, ni fichier sauvegardé dans la fiche. */
 export async function genererFicheTechnique(convention: ConventionApi): Promise<Buffer> {
   const header = new Header({
-    children: [new Paragraph({ spacing: { before: 0, after: 0 }, children: [new ImageRun({
-      type: "png", data: Buffer.from(logo, "base64"), transformation: { width: 60, height: 84 },
+    children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new ImageRun({
+      type: "png", data: Buffer.from(logo, "base64"), transformation: { width: 60, height: 81 },
       altText: { name: "Logo Région Souss-Massa", title: "Région Souss-Massa", description: "Logo officiel de la Région Souss-Massa" },
     })] })],
   });
@@ -125,7 +125,7 @@ export async function genererFicheTechnique(convention: ConventionApi): Promise<
         margin: { top: 1900, bottom: 1000, left: 1050, right: 1050, header: 320, footer: 450 } } },
       headers: { default: header }, footers: { default: footer },
       children: [
-        new Paragraph({ spacing: { after: 120 }, children: [new TextRun({
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [new TextRun({
           text: "FICHE TECHNIQUE", bold: true, size: 36, color: NAVY,
         })] }),
         new Table({
