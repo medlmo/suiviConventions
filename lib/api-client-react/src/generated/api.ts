@@ -1918,6 +1918,83 @@ export function useGetOptionsFiltres<TData = Awaited<ReturnType<typeof getOption
 
 
 
+export const getGenerateFicheTechniqueUrl = (id: number,) => {
+
+
+
+
+  return `/api/conventions/${id}/fiche-technique`
+}
+
+/**
+ * @summary Télécharger la fiche technique Word d'une convention accessible
+ */
+export const generateFicheTechnique = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGenerateFicheTechniqueUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGenerateFicheTechniqueQueryKey = (id: number,) => {
+    return [
+    `/api/conventions/${id}/fiche-technique`
+    ] as const;
+    }
+
+
+export const getGenerateFicheTechniqueQueryOptions = <TData = Awaited<ReturnType<typeof generateFicheTechnique>>, TError = ErrorType<void | Erreur>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof generateFicheTechnique>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGenerateFicheTechniqueQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof generateFicheTechnique>>> = ({ signal }) => generateFicheTechnique(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof generateFicheTechnique>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GenerateFicheTechniqueQueryResult = NonNullable<Awaited<ReturnType<typeof generateFicheTechnique>>>
+export type GenerateFicheTechniqueQueryError = ErrorType<void | Erreur>
+
+
+/**
+ * @summary Télécharger la fiche technique Word d'une convention accessible
+ */
+
+export function useGenerateFicheTechnique<TData = Awaited<ReturnType<typeof generateFicheTechnique>>, TError = ErrorType<void | Erreur>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof generateFicheTechnique>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGenerateFicheTechniqueQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetConventionUrl = (id: number,) => {
 
 

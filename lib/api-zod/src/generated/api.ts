@@ -746,6 +746,19 @@ export const GetOptionsFiltresResponse = zod.object({
 
 
 /**
+ * @summary Télécharger la fiche technique Word d'une convention accessible
+ */
+
+
+
+export const GenerateFicheTechniqueParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const GenerateFicheTechniqueResponse = zod.unknown()
+
+
+/**
  * @summary Détail d'une convention
  */
 export const GetConventionParams = zod.object({

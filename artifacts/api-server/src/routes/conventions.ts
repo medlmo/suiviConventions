@@ -43,6 +43,7 @@ import {
 } from "../lib/conventions-mapper";
 import { calculerEcheance } from "../lib/echeances";
 import { preparerHistoriqueDocuments } from "../lib/document-history";
+import { genererFicheTechnique } from "../lib/fiche-technique";
 import {
   chargerReferentiel,
   chargerReferentielDepuis,
@@ -853,6 +854,35 @@ router.post("/conventions", async (req, res): Promise<void> => {
     return;
   }
   res.status(201).json(valide(CreateConventionResponse, versApi(result.line)));
+});
+
+router.get("/conventions/:id/fiche-technique", async (req, res): Promise<void> => {
+  const params = GetConventionParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(404).json({ error: "Convention introuvable." });
+    return;
+  }
+  const reference = await chargerReferentiel();
+  const [ligne] = await db.select(colonnesConvention).from(conventionsTable).where(and(
+    eq(conventionsTable.id, params.data.id),
+    isNull(conventionsTable.deletedAt),
+    conditionsVisibles(req.user!, reference),
+  ));
+  if (!ligne) {
+    res.status(404).json({ error: "Convention introuvable." });
+    return;
+  }
+  try {
+    const fichier = await genererFicheTechnique(versApi(ligne));
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    res.setHeader("Content-Disposition", `attachment; filename="fiche-technique-convention-${ligne.id}.docx"`);
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.send(fichier);
+  } catch (error) {
+    req.log.error({ err: error, conventionId: ligne.id }, "Génération de la fiche technique impossible");
+    res.status(500).json({ error: "La fiche technique n'a pas pu être générée. Réessayez." });
+  }
 });
 
 router.get("/conventions/:id", async (req, res): Promise<void> => {

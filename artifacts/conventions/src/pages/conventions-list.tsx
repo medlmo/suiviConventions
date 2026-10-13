@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Download, Plus, FilterX, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { AlerteBadge } from "@/components/alerte-badge";
+import { FicheTechniqueButton } from "@/components/fiche-technique-button";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/utils";
@@ -232,7 +233,7 @@ export default function ConventionsList() {
                 <th className="px-4 py-4 cursor-pointer hover:text-foreground transition-colors group w-40" onClick={() => handleSort("prochaineEcheance")}>
                   <div className="flex items-center gap-1">Proch. Échéance <SortIcon field="prochaineEcheance" /></div>
                 </th>
-                <th className="px-4 py-4 text-right w-24">Actions</th>
+                <th className="px-4 py-4 text-right w-60">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -294,9 +295,12 @@ export default function ConventionsList() {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-top text-right">
-                      <Button variant="secondary" size="sm" asChild className="w-full font-medium">
-                        <Link href={`/conventions/${conv.id}`}>Ouvrir</Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="secondary" size="sm" asChild className="font-medium">
+                          <Link href={`/conventions/${conv.id}`}>Ouvrir</Link>
+                        </Button>
+                        <FicheTechniqueButton conventionId={conv.id} />
+                      </div>
                     </td>
                   </tr>
                 ))

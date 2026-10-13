@@ -498,6 +498,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/OptionsFiltres"
 
+  /conventions/{id}/fiche-technique:
+    get:
+      operationId: generateFicheTechnique
+      tags: [conventions]
+      summary: Télécharger la fiche technique Word d'une convention accessible
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Document Word avec logo et informations courantes de la convention
+          content:
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema: { type: string, format: binary }
+        "401": { description: Authentification requise }
+        "404": { description: Convention introuvable ou non accessible }
+        "500":
+          description: Génération du document impossible
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
+
   /conventions/{id}:
     get:
       operationId: getConvention
