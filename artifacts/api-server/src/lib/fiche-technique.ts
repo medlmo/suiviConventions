@@ -76,35 +76,17 @@ function rubrique(label: string): TableRow {
 /** Génération à la demande : ni données inventées, ni fichier sauvegardé dans la fiche. */
 export async function genererFicheTechnique(convention: ConventionApi): Promise<Buffer> {
   const header = new Header({
-    children: [new Table({
-      width: { size: WIDTH, type: WidthType.DXA },
-      columnWidths: [1400, WIDTH - 1400], layout: TableLayoutType.FIXED,
-      borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideHorizontal: NONE, insideVertical: NONE },
-      rows: [new TableRow({ children: [
-        new TableCell({
-          width: { size: 1400, type: WidthType.DXA },
-          children: [new Paragraph({ children: [new ImageRun({
-            type: "png", data: Buffer.from(logo, "base64"), transformation: { width: 60, height: 84 },
-            altText: { name: "Logo Région Souss-Massa", title: "Région Souss-Massa", description: "Logo officiel de la Région Souss-Massa" },
-          })] })],
-        }),
-        new TableCell({
-          width: { size: WIDTH - 1400, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER,
-          children: [
-            new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "RÉGION SOUSS-MASSA", bold: true, size: 26, color: NAVY })] }),
-            new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "Conseil régional", size: 22, color: NAVY })] }),
-            new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: "Suivi des conventions de partenariat", size: 19, color: MUTED })] }),
-          ],
-        }),
-      ] })],
-    }), new Paragraph({ spacing: { after: 0 } })],
+    children: [new Paragraph({ spacing: { before: 0, after: 0 }, children: [new ImageRun({
+      type: "png", data: Buffer.from(logo, "base64"), transformation: { width: 60, height: 84 },
+      altText: { name: "Logo Région Souss-Massa", title: "Région Souss-Massa", description: "Logo officiel de la Région Souss-Massa" },
+    })] })],
   });
   const footer = new Footer({ children: [new Paragraph({
     border: { top: { color: GOLD, style: BorderStyle.SINGLE, size: 6, space: 8 } },
     spacing: { before: 100 },
     alignment: AlignmentType.RIGHT,
     children: [
-      new TextRun({ text: `Région Souss-Massa • Convention n° ${convention.id}   |   Page `, color: MUTED, size: 17 }),
+      new TextRun({ text: "Page ", color: MUTED, size: 17 }),
       new TextRun({ children: [PageNumber.CURRENT], color: MUTED, size: 17 }),
       new TextRun({ text: " / ", color: MUTED, size: 17 }),
       new TextRun({ children: [PageNumber.TOTAL_PAGES], color: MUTED, size: 17 }),
@@ -146,21 +128,12 @@ export async function genererFicheTechnique(convention: ConventionApi): Promise<
         new Paragraph({ spacing: { after: 120 }, children: [new TextRun({
           text: "FICHE TECHNIQUE", bold: true, size: 36, color: NAVY,
         })] }),
-        new Paragraph({
-          border: { bottom: { color: GOLD, style: BorderStyle.SINGLE, size: 12, space: 8 } },
-          spacing: { after: 220 },
-          children: [new TextRun({ text: `Convention n° ${convention.id}  •  Éditée le ${new Date().toLocaleDateString("fr-FR", { timeZone: "Africa/Casablanca" })}`, color: MUTED, size: 19 })],
-        }),
         new Table({
           width: { size: WIDTH, type: WidthType.DXA },
           layout: TableLayoutType.FIXED, columnWidths: [2900, WIDTH - 2900],
           borders: { top: RULE, bottom: RULE, left: RULE, right: RULE, insideHorizontal: RULE, insideVertical: RULE },
           rows,
         }),
-        new Paragraph({ spacing: { before: 140 }, children: [new TextRun({
-          text: "Fiche générée à partir des informations enregistrées dans l’application. Les données manquantes sont signalées « Non renseigné ».",
-          color: MUTED, size: 17, italics: true,
-        })] }),
       ],
     }],
   }));
