@@ -17,3 +17,4 @@
 - [Retrait de documents](retrait-documents.md) — retirer une pièce de la fiche la détache ; ne pas supprimer automatiquement le fichier physique.
 - [Fiches techniques Word](fiches-techniques-word.md) — export à la demande sans modifier la fiche ; précaution de compilation pour les images embarquées.
 - [Protection documentaire](protection-documents.md) — analyse obligatoire des nouveaux dépôts et des pièces historiques ; échec ou indisponibilité bloque l'accès sans supprimer le fichier.
+- [Limites d'audit App Storage](app-storage-audit-limitations.md) — la garantie générale de confidentialité ne révèle pas l'IAM/les ACL effectifs d'un bucket donné.
