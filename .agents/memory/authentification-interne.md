@@ -20,3 +20,9 @@ Les libellés de l'organigramme ne sont pas de simples étiquettes d'affichage :
 **Why:** Les périmètres historiques sont enregistrés sous forme de texte. Changer seulement le référentiel ferait perdre l'accès aux conventions concernées ou rendrait leur affectation invalide, même si le rôle de l'utilisateur n'a pas changé.
 
 **How to apply:** Effectuer les renommages et la mise à jour des périmètres utilisateurs/conventions dans une même transaction, avec les changements de version nécessaires ; sérialiser cette opération avec les créations et modifications qui valident ces mêmes libellés. Ne jamais traiter un renommage comme une simple retouche visuelle.
+
+La limitation des connexions doit réserver une tentative avant toute vérification asynchrone du mot de passe. Un plafond de capacité ne doit pas effacer les restrictions encore actives : les nouvelles clés sont temporairement refusées jusqu'à l'expiration de places existantes.
+
+**Why:** Enregistrer seulement les échecs après le contrôle laisserait passer une rafale simultanée. Évincer des clés actives pour borner la mémoire permettrait à une attaque de forte cardinalité d'effacer les blocages ; le refus temporaire privilégie ici la protection plutôt que la disponibilité des nouvelles clés.
+
+**How to apply:** Conserver une admission synchrone et bornée, des limites indépendantes par compte et par IP, et des expirations fixes. Une connexion réussie ne doit pas effacer le compteur collectif de l'IP.

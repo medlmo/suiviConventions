@@ -5,7 +5,7 @@
 - [Valeurs historiques des conventions](valeurs-historiques-conventions.md) — les nouvelles listes guidées ne doivent pas effacer les anciennes valeurs libres sans action de l'utilisateur.
 - [Calcul des échéances](calcul-echeances-conventions.md) — avant le premier comité, le visa fixe la date même avec fréquence inconnue ; préserver les dates manuelles historiques.
 - [Applicabilité des avenants](applicabilite-avenants.md) — l'application suit normalement des conventions visées ; ne pas appliquer un avenant avant son propre visa.
-- [Authentification interne](authentification-interne.md) — les comptes sont créés par l'administration avec un identifiant sans e-mail ; conserver ce choix et les droits de lecture globaux des directeurs.
+- [Authentification interne](authentification-interne.md) — comptes sans e-mail, droits des directeurs, précautions de cache, d'organigramme et de limitation des tentatives.
 - [Remplacement d'un secret](remplacement-secret.md) — confirmer une entrée sécurisée existante peut laisser sa valeur inchangée ; valider le démarrage sans jamais lire la valeur.
 - [Exports générés par Orval](orval-exports.md) — la génération peut réintroduire un export de types incompatible avec les validateurs Zod ; garder les modèles dans un espace nommé.
 - [Sauvegardes chiffrées](sauvegardes-chiffrees.md) — une rotation de SESSION_SECRET doit préserver la possibilité de déchiffrer les sauvegardes de transfert existantes.

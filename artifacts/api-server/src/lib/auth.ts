@@ -8,8 +8,8 @@ const scrypt = promisify(scryptCallback);
 export const COOKIE_NAME = "region_session";
 const SESSION_HOURS = 24;
 const LOGIN_LIMITS = {
-  account: { windowMs: 30 * 60 * 1000, maxFailures: 12 },
-  ip: { windowMs: 15 * 60 * 1000, maxFailures: 40 },
+  account: { windowMs: 30 * 60 * 1000, maxAttempts: 12 },
+  ip: { windowMs: 15 * 60 * 1000, maxAttempts: 120 },
 } as const;
 const MAX_TRACKED_KEYS_PER_LIMIT = 20_000;
 const ATTEMPT_CLEANUP_INTERVAL_MS = 60 * 1000;
@@ -26,13 +26,13 @@ declare global {
   }
 }
 
-type FailedLoginWindow = { count: number; expiresAt: number };
+type LoginAttemptWindow = { count: number; expiresAt: number };
 
-const failedLoginsByAccount = new Map<string, FailedLoginWindow>();
-const failedLoginsByIp = new Map<string, FailedLoginWindow>();
+const loginAttemptsByAccount = new Map<string, LoginAttemptWindow>();
+const loginAttemptsByIp = new Map<string, LoginAttemptWindow>();
 
 function supprimerFenêtresExpirées(
-  fenêtres: Map<string, FailedLoginWindow>,
+  fenêtres: Map<string, LoginAttemptWindow>,
   maintenant: number,
 ): void {
   for (const [clé, fenêtre] of fenêtres) {
@@ -42,8 +42,8 @@ function supprimerFenêtresExpirées(
 
 const nettoyageTentatives = setInterval(() => {
   const maintenant = Date.now();
-  supprimerFenêtresExpirées(failedLoginsByAccount, maintenant);
-  supprimerFenêtresExpirées(failedLoginsByIp, maintenant);
+  supprimerFenêtresExpirées(loginAttemptsByAccount, maintenant);
+  supprimerFenêtresExpirées(loginAttemptsByIp, maintenant);
 }, ATTEMPT_CLEANUP_INTERVAL_MS);
 nettoyageTentatives.unref();
 
@@ -51,8 +51,8 @@ function cleCompte(username: string): string {
   return username.trim().toLocaleLowerCase("fr-FR");
 }
 
-function enregistrerEchec(
-  fenêtres: Map<string, FailedLoginWindow>,
+function enregistrerTentative(
+  fenêtres: Map<string, LoginAttemptWindow>,
   clé: string,
   durée: number,
   maintenant: number,
@@ -60,21 +60,14 @@ function enregistrerEchec(
   const actuelle = fenêtres.get(clé);
   if (actuelle && actuelle.expiresAt > maintenant) {
     actuelle.count += 1;
-    // Keep recently active keys at the end so capacity eviction is O(1).
-    fenêtres.delete(clé);
-    fenêtres.set(clé, actuelle);
     return;
   }
   if (actuelle) fenêtres.delete(clé);
-  if (fenêtres.size >= MAX_TRACKED_KEYS_PER_LIMIT) {
-    const plusAncienne = fenêtres.keys().next().value;
-    if (plusAncienne !== undefined) fenêtres.delete(plusAncienne);
-  }
   fenêtres.set(clé, { count: 1, expiresAt: maintenant + durée });
 }
 
 function fenêtreBloquée(
-  fenêtres: Map<string, FailedLoginWindow>,
+  fenêtres: Map<string, LoginAttemptWindow>,
   clé: string,
   seuil: number,
   maintenant: number,
@@ -234,39 +227,43 @@ export function adminRequired(req: Request, res: Response, next: NextFunction): 
 
 export function estRateLimited(username: string, ip: string): boolean {
   const maintenant = Date.now();
-  return fenêtreBloquée(
-    failedLoginsByAccount,
-    cleCompte(username),
-    LOGIN_LIMITS.account.maxFailures,
+  const compte = cleCompte(username);
+  const adresse = ip.trim().toLowerCase() || "unknown";
+  if (fenêtreBloquée(
+    loginAttemptsByAccount,
+    compte,
+    LOGIN_LIMITS.account.maxAttempts,
     maintenant,
   ) || fenêtreBloquée(
-    failedLoginsByIp,
-    ip.trim().toLowerCase() || "unknown",
-    LOGIN_LIMITS.ip.maxFailures,
+    loginAttemptsByIp,
+    adresse,
+    LOGIN_LIMITS.ip.maxAttempts,
     maintenant,
-  );
-}
-
-export function enregistrerEchecConnexion(username: string, ip: string): void {
-  const maintenant = Date.now();
-  enregistrerEchec(
-    failedLoginsByAccount,
-    cleCompte(username),
+  )) return true;
+  // Refuse new keys at capacity rather than evicting an active restriction.
+  if (
+    (!loginAttemptsByAccount.has(compte) && loginAttemptsByAccount.size >= MAX_TRACKED_KEYS_PER_LIMIT) ||
+    (!loginAttemptsByIp.has(adresse) && loginAttemptsByIp.size >= MAX_TRACKED_KEYS_PER_LIMIT)
+  ) return true;
+  // Reserve both counters synchronously, before the asynchronous password check.
+  enregistrerTentative(
+    loginAttemptsByAccount,
+    compte,
     LOGIN_LIMITS.account.windowMs,
     maintenant,
   );
-  enregistrerEchec(
-    failedLoginsByIp,
-    ip.trim().toLowerCase() || "unknown",
+  enregistrerTentative(
+    loginAttemptsByIp,
+    adresse,
     LOGIN_LIMITS.ip.windowMs,
     maintenant,
   );
+  return false;
 }
 
 export function reinitialiserTentatives(username: string): void {
-  // Successful authentication clears only this account's failures; it must not
-  // erase failures contributed by other accounts behind the same IP address.
-  failedLoginsByAccount.delete(cleCompte(username));
+  // A successful login must not erase activity by other accounts on this IP.
+  loginAttemptsByAccount.delete(cleCompte(username));
 }
 
 export function csrfOriginGuard(req: Request, res: Response, next: NextFunction): void {

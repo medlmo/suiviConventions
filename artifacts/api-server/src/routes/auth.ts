@@ -7,7 +7,6 @@ import {
   creerSession,
   estRole,
   estRateLimited,
-  enregistrerEchecConnexion,
   hashPassword,
   reinitialiserTentatives,
   sessionMiddleware,
@@ -33,7 +32,6 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1);
   const valide = user ? await verifyPassword(parsed.data.password, user.passwordHash) : false;
   if (!user || !user.active || !valide || !estRole(user.role)) {
-    enregistrerEchecConnexion(username, ip);
     res.status(401).json({ error: "Identifiant ou mot de passe invalide." });
     return;
   }
