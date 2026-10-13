@@ -39,11 +39,9 @@ export function DocumentDownloadLink({ href, name, className, children }: Props)
   };
   return <div>
     <button type="button" className={className} disabled={busy} onClick={() => void download()}>
-      {busy ? "Contrôle de sécurité et téléchargement…" : children}
+      {busy ? "Téléchargement…" : children}
     </button>
-    {busy && <p role="status" className="text-xs text-muted-foreground">
-      Le fichier n’est délivré qu’après validation. Le premier contrôle peut prendre quelques instants.
-    </p>}
+    {busy && <p role="status" className="text-xs text-muted-foreground">Téléchargement du document…</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </div>;
 }

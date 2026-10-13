@@ -273,8 +273,14 @@ export class ObjectStorageService {
       return null;
     }
     const generation = String(metadata.generation);
-    const pinned = objectStorageClient.bucket(file.bucket.name).file(file.name, { generation });
-    await inspectStoredFile(pinned, name, size);
+    const flags = metadata.metadata ?? {};
+    if (flags.securityStatus === "rejected") throw documentRejected();
+    if (flags.securityStatus === "clean" && (
+      flags.securityPolicy !== DOCUMENT_SECURITY_POLICY ||
+      flags.securityGeneration !== generation ||
+      typeof flags.securityHash !== "string" ||
+      !/^[0-9a-f]{64}$/u.test(flags.securityHash)
+    )) return null;
     return { objectPath, name, contentType, size, generation };
   }
 }

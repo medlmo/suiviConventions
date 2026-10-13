@@ -3,11 +3,11 @@ name: Protection documentaire
 description: Périmètre décidé pour l'antimalware, la quarantaine et les documents historiques.
 ---
 
-La protection concerne tous les documents, y compris les pièces déjà enregistrées. Aucun fichier non contrôlé ne doit être délivré ; une analyse échouée ou indisponible bloque l'accès. Les pièces historiques sont contrôlées à leur premier accès, sans suppression physique.
+Les nouveaux dépôts sont analysés avant leur mise à disposition. Le téléchargement ne déclenche aucune analyse antivirus, y compris pour les documents historiques jamais analysés ; les fichiers déjà identifiés comme rejetés restent bloqués. Les pièces ne sont pas supprimées automatiquement.
 
-**Why:** L'utilisateur a choisi explicitement « Tous les documents », plutôt que les seuls nouveaux dépôts, après avoir été averti que l'indisponibilité de l'antivirus pourrait aussi bloquer les téléchargements historiques.
+**Why:** L'utilisateur a ensuite demandé explicitement de limiter l'analyse antivirus au dépôt et a choisi de télécharger les anciens documents jamais analysés sans scan, afin d'éviter le délai à chaque téléchargement.
 
-**How to apply:** Conserver cette règle lors des évolutions du dépôt, du téléchargement, des archives et des reprises de contrôle. Ne pas ajouter de mode permissif de secours ou de purge automatique des pièces refusées.
+**How to apply:** Ne jamais lancer ou relancer ClamAV depuis un chemin de téléchargement. Maintenir l'analyse obligatoire des nouveaux dépôts et ne pas servir un document dont une analyse antérieure l'a explicitement rejeté.
 
 L'analyse est locale. Le recours à un service tiers qui recevrait les documents nécessite une décision explicite.
 
