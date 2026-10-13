@@ -17,10 +17,28 @@ type Props = {
   label: string;
   multiple?: boolean;
   intitule?: string;
+  filtrerOptions?: (nom: string) => boolean;
 };
 
 function normaliserRecherche(valeur: string): string {
   return valeur.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
+}
+
+function normaliserNomTerritoire(valeur: string): string {
+  return valeur
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[’‘`]/g, "'")
+    .toLocaleLowerCase("fr")
+    .trim();
+}
+
+export function estProvincePrefecture(nom: string): boolean {
+  return /^(?:province\s+de\s+|prefecture\s+(?:de\s+|d'))/.test(normaliserNomTerritoire(nom));
+}
+
+export function estCommune(nom: string): boolean {
+  return /^commune\s+(?:de\s+|d')/.test(normaliserNomTerritoire(nom));
 }
 
 export function MaitriseOuvrageSelect({
@@ -29,6 +47,7 @@ export function MaitriseOuvrageSelect({
   label,
   multiple = true,
   intitule = "maîtrise d’ouvrage",
+  filtrerOptions = () => true,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [recherche, setRecherche] = useState("");
@@ -39,10 +58,11 @@ export function MaitriseOuvrageSelect({
     : (typeof value === "string" && value ? [value] : []);
   const selectionsTriees = [...selected].sort((a, b) => comparateurAlphabetique.compare(a, b));
   const known = query.data?.maitrisesOuvrage ?? [];
-  const unknown = selected.filter(name => !known.some(item => item.nom === name));
+  const optionsReference = known.filter(item => filtrerOptions(item.nom));
+  const unknown = selected.filter(name => !optionsReference.some(item => item.nom === name));
   const terme = normaliserRecherche(recherche.trim());
   const correspond = (nom: string) => !terme || normaliserRecherche(nom).includes(terme);
-  const optionsConnues = known
+  const optionsConnues = optionsReference
     .filter(item => correspond(item.nom))
     .sort((a, b) => comparateurAlphabetique.compare(a.nom, b.nom));
   const optionsHistoriques = unknown
@@ -92,7 +112,7 @@ export function MaitriseOuvrageSelect({
           />
         </div>
         <div role="listbox" aria-label={intitule} aria-multiselectable={multiple || undefined} className="max-h-64 overflow-y-auto p-1">
-          {!known.length && !unknown.length ? (
+          {!optionsReference.length && !unknown.length ? (
             <p className="p-3 text-sm text-muted-foreground">Aucune option dans le référentiel.</p>
           ) : (
             <>

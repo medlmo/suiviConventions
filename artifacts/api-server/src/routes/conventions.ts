@@ -176,6 +176,8 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
       sql`array_to_string(${conventionsTable.maitrisesOuvrage}, ' ')`,
       sql`array_to_string(${conventionsTable.maitrisesOuvrageDeleguees}, ' ')`,
       sql`array_to_string(${conventionsTable.partenaires}, ' ')`,
+      sql`array_to_string(${conventionsTable.provincesPrefectures}, ' ')`,
+      sql`array_to_string(${conventionsTable.communes}, ' ')`,
     ];
 
     const recherche = or(
@@ -298,6 +300,37 @@ function listeMoValide(
   return valeurs == null || valeurs.every((valeur) => {
     const nom = valeur.trim();
     return !nom || maitriseOuvrageConnue(reference, nom) || historique.includes(nom);
+  });
+}
+
+function normaliserNomTerritoire(nom: string): string {
+  return nom
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[’‘`]/g, "'")
+    .toLocaleLowerCase("fr")
+    .trim();
+}
+
+function nomProvinceOuPrefecture(nom: string): boolean {
+  return /^(?:province\s+de\s+|prefecture\s+(?:de\s+|d'))/.test(normaliserNomTerritoire(nom));
+}
+
+function nomCommune(nom: string): boolean {
+  return /^commune\s+(?:de\s+|d')/.test(normaliserNomTerritoire(nom));
+}
+
+function listeTerritoiresValide(
+  valeurs: string[] | null | undefined,
+  reference: ReferenceData,
+  estValide: (nom: string) => boolean,
+  historique: string[] = [],
+): boolean {
+  return valeurs == null || valeurs.every((valeur) => {
+    const nom = valeur.trim();
+    return !nom ||
+      historique.includes(nom) ||
+      (maitriseOuvrageConnue(reference, nom) && estValide(nom));
   });
 }
 
@@ -601,6 +634,8 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
     { titre: "Maîtrise d'ouvrage", extraire: (c) => c.maitriseOuvrage.join("; "), largeurMin: 24, largeurMax: 48 },
     { titre: "Maîtrise d'ouvrage déléguée", extraire: (c) => c.maitriseOuvrageDeleguee.join("; "), largeurMin: 28, largeurMax: 48 },
     { titre: "Partenaires", extraire: (c) => c.partenaires.join("; "), largeurMin: 24, largeurMax: 48 },
+    { titre: "Province(s) / préfecture(s)", extraire: (c) => c.provincesPrefectures.join("; "), largeurMin: 24, largeurMax: 42 },
+    { titre: "Commune(s)", extraire: (c) => c.communes.join("; "), largeurMin: 20, largeurMax: 42 },
     { titre: "Présidence du comité", extraire: (c) => c.presidenceComite, largeurMin: 20, largeurMax: 34 },
     { titre: "Membres du comité", extraire: (c) => c.membresComite, largeurMin: 24, largeurMax: 52 },
     { titre: "Fréquence des réunions", extraire: (c) => c.frequenceReunions, largeurMin: 20, largeurMax: 36 },
@@ -759,9 +794,11 @@ router.post("/conventions", async (req, res): Promise<void> => {
       !listeMoValide(parsed.data.maitriseOuvrage, reference) ||
       !listeMoValide(parsed.data.maitriseOuvrageDeleguee, reference) ||
       !listeMoValide(parsed.data.partenaires, reference) ||
+      !listeTerritoiresValide(parsed.data.provincesPrefectures, reference, nomProvinceOuPrefecture) ||
+      !listeTerritoiresValide(parsed.data.communes, reference, nomCommune) ||
       !valeurMoValide(parsed.data.porteurProjet, reference)
     ) {
-      return { status: 400 as const, error: "Le porteur de projet, les maîtrises d'ouvrage et les partenaires doivent appartenir au référentiel courant." };
+      return { status: 400 as const, error: "Le porteur, les maîtrises d'ouvrage, les partenaires et les territoires doivent appartenir au référentiel adapté." };
     }
     if (typeof valeurs.nomConvention !== "string" || valeurs.nomConvention === "") {
       return { status: 400 as const, error: "Le nom de la convention est obligatoire." };
@@ -937,13 +974,22 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     const anciennesMoDeleguees = current.maitrisesOuvrageDeleguees ??
       (current.maitriseOuvrageDeleguee ? [current.maitriseOuvrageDeleguee] : []);
     const anciensPartenaires = current.partenaires ?? [];
+    const anciennesProvincesPrefectures = current.provincesPrefectures ?? [];
+    const anciennesCommunes = current.communes ?? [];
     if (
       !listeMoValide(parsed.data.maitriseOuvrage, reference, anciennesMo) ||
       !listeMoValide(parsed.data.maitriseOuvrageDeleguee, reference, anciennesMoDeleguees) ||
       !listeMoValide(parsed.data.partenaires, reference, anciensPartenaires) ||
+      !listeTerritoiresValide(
+        parsed.data.provincesPrefectures,
+        reference,
+        nomProvinceOuPrefecture,
+        anciennesProvincesPrefectures,
+      ) ||
+      !listeTerritoiresValide(parsed.data.communes, reference, nomCommune, anciennesCommunes) ||
       !valeurMoValide(parsed.data.porteurProjet, reference, current.porteurProjet)
     ) {
-      return { status: 400 as const, error: "Le porteur de projet, les maîtrises d'ouvrage et les partenaires doivent appartenir au référentiel courant." };
+      return { status: 400 as const, error: "Le porteur, les maîtrises d'ouvrage, les partenaires et les territoires doivent appartenir au référentiel adapté." };
     }
 
     for (const champ of CHAMPS_DOCUMENTS) {

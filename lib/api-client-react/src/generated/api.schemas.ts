@@ -160,6 +160,10 @@ export interface Convention {
   maitriseOuvrage: string[];
   maitriseOuvrageDeleguee: string[];
   partenaires: string[];
+  /** Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
+  provincesPrefectures: string[];
+  /** Communes du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
+  communes: string[];
   /** @nullable */
   prochainComite?: string | null;
   /** @nullable */
@@ -248,6 +252,10 @@ export interface ConventionInput {
   /** @nullable */
   partenaires?: string[] | null;
   /** @nullable */
+  provincesPrefectures?: string[] | null;
+  /** @nullable */
+  communes?: string[] | null;
+  /** @nullable */
   prochainComite?: string | null;
   /** @nullable */
   dernierComite?: string | null;
@@ -321,6 +329,10 @@ export interface ConventionUpdate {
   maitriseOuvrageDeleguee?: string[] | null;
   /** @nullable */
   partenaires?: string[] | null;
+  /** @nullable */
+  provincesPrefectures?: string[] | null;
+  /** @nullable */
+  communes?: string[] | null;
   /** @nullable */
   prochainComite?: string | null;
   /** @nullable */

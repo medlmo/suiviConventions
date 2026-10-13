@@ -34,6 +34,8 @@ export const conventionsTable = pgTable(
     decision: text("decision"),
     competence: text("competence"),
     nature: text("nature"),
+    provincesPrefectures: text("provinces_prefectures").array(),
+    communes: text("communes").array(),
 
     // Comité de suivi
     presidenceComite: text("presidence_comite"),

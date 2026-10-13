@@ -43,6 +43,10 @@ export interface ConventionUpdate {
   /** @nullable */
   partenaires?: string[] | null;
   /** @nullable */
+  provincesPrefectures?: string[] | null;
+  /** @nullable */
+  communes?: string[] | null;
+  /** @nullable */
   prochainComite?: Date | null;
   /** @nullable */
   dernierComite?: Date | null;

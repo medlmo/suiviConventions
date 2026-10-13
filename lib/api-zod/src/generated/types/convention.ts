@@ -45,6 +45,10 @@ export interface Convention {
   maitriseOuvrage: string[];
   maitriseOuvrageDeleguee: string[];
   partenaires: string[];
+  /** Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
+  provincesPrefectures: string[];
+  /** Communes du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
+  communes: string[];
   /** @nullable */
   prochainComite?: Date | null;
   /** @nullable */

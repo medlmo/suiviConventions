@@ -30,7 +30,11 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RattachementSelect, ServiceSelect } from "@/components/organisation-selects";
-import { MaitriseOuvrageSelect } from "@/components/maitrise-ouvrage-select";
+import {
+  estCommune,
+  estProvincePrefecture,
+  MaitriseOuvrageSelect,
+} from "@/components/maitrise-ouvrage-select";
 import { useReferenceData } from "@/hooks/use-reference-data";
 import { calculerEcheance } from "@/lib/echeances";
 import { ArrowLeft, Save, CalendarIcon, FileText, Info, Wallet } from "lucide-react";
@@ -69,6 +73,8 @@ const conventionSchema = z.object({
   maitriseOuvrage: z.array(z.string()).nullable().optional(),
   maitriseOuvrageDeleguee: z.array(z.string()).nullable().optional(),
   partenaires: z.array(z.string()).nullable().optional(),
+  provincesPrefectures: z.array(z.string()).nullable().optional(),
+  communes: z.array(z.string()).nullable().optional(),
   documentConvention: z.string().nullable().optional(),
   commentaires: z.string().nullable().optional(),
 }).superRefine((valeurs, contexte) => {
@@ -103,6 +109,8 @@ export default function ConventionCreate() {
       maitriseOuvrage: [],
       maitriseOuvrageDeleguee: [],
       partenaires: [],
+      provincesPrefectures: [],
+      communes: [],
       rattachement: user && (user.role === "chef_division" || user.role === "chef_service") ? rattachementUtilisateur(user) : null,
       responsableProjet: user?.role === "chef_service" ? user.service : null,
     }
@@ -341,6 +349,30 @@ export default function ConventionCreate() {
                   <FormItem>
                     <FormLabel>Date de visa</FormLabel>
                     <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="provincesPrefectures" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Province(s) / préfecture(s)</FormLabel>
+                    <MaitriseOuvrageSelect
+                      label="localisation-provinces-prefectures"
+                      intitule="provinces et préfectures"
+                      filtrerOptions={estProvincePrefecture}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="communes" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Commune(s)</FormLabel>
+                    <MaitriseOuvrageSelect
+                      label="localisation-communes"
+                      intitule="communes"
+                      filtrerOptions={estCommune}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
                   </FormItem>
                 )} />
               </div>

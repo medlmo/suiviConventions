@@ -40,7 +40,11 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RattachementSelect, ServiceSelect } from "@/components/organisation-selects";
-import { MaitriseOuvrageSelect } from "@/components/maitrise-ouvrage-select";
+import {
+  estCommune,
+  estProvincePrefecture,
+  MaitriseOuvrageSelect,
+} from "@/components/maitrise-ouvrage-select";
 import { useReferenceData } from "@/hooks/use-reference-data";
 import { calculerEcheance } from "@/lib/echeances";
 import { AlerteBadge } from "@/components/alerte-badge";
@@ -84,6 +88,8 @@ const conventionSchema = z.object({
   maitriseOuvrage: z.array(z.string()).nullable().optional(),
   maitriseOuvrageDeleguee: z.array(z.string()).nullable().optional(),
   partenaires: z.array(z.string()).nullable().optional(),
+  provincesPrefectures: z.array(z.string()).nullable().optional(),
+  communes: z.array(z.string()).nullable().optional(),
   documentConvention: z.string().nullable().optional(),
   commentaires: z.string().nullable().optional(),
 }).superRefine((valeurs, contexte) => {
@@ -195,6 +201,8 @@ export default function ConventionDetail() {
         maitriseOuvrage: valeursMO(convention.maitriseOuvrage),
         maitriseOuvrageDeleguee: valeursMO(convention.maitriseOuvrageDeleguee),
         partenaires: valeursMO(convention.partenaires),
+        provincesPrefectures: valeursMO(convention.provincesPrefectures),
+        communes: valeursMO(convention.communes),
         documentConvention: convention.documentConvention,
         commentaires: convention.commentaires,
       }, { keepDirtyValues: sameRecord });
@@ -600,6 +608,32 @@ export default function ConventionDetail() {
                             <SelectItem value="A clôturer">A clôturer</SelectItem>
                           </SelectContent>
                         </Select>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="provincesPrefectures" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Province(s) / préfecture(s)</FormLabel>
+                        <MaitriseOuvrageSelect
+                          label="localisation-provinces-prefectures"
+                          intitule="provinces et préfectures"
+                          filtrerOptions={estProvincePrefecture}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="communes" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Commune(s)</FormLabel>
+                        <MaitriseOuvrageSelect
+                          label="localisation-communes"
+                          intitule="communes"
+                          filtrerOptions={estCommune}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
                       </FormItem>
                     )} />
                   </div>

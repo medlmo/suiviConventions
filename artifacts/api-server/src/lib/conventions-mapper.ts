@@ -47,6 +47,8 @@ export function versApi(ligne: LigneConvention) {
     maitriseOuvrageDeleguee: ligne.maitrisesOuvrageDeleguees ??
       (ligne.maitriseOuvrageDeleguee ? [ligne.maitriseOuvrageDeleguee] : []),
     partenaires: ligne.partenaires ?? [],
+    provincesPrefectures: ligne.provincesPrefectures ?? [],
+    communes: ligne.communes ?? [],
     prochainComite: ligne.prochainComite,
     dernierComite: ligne.dernierComite,
     dernierComiteNote: ligne.dernierComiteNote,
@@ -93,11 +95,19 @@ const CHAMPS_TEXTE = [
   "commentaires",
 ] as const;
 
-const CHAMPS_LISTE_TEXTE = ["maitriseOuvrage", "maitriseOuvrageDeleguee", "partenaires"] as const;
+const CHAMPS_LISTE_TEXTE = [
+  "maitriseOuvrage",
+  "maitriseOuvrageDeleguee",
+  "partenaires",
+  "provincesPrefectures",
+  "communes",
+] as const;
 const COLONNES_LISTE_TEXTE = {
   maitriseOuvrage: "maitrisesOuvrage",
   maitriseOuvrageDeleguee: "maitrisesOuvrageDeleguees",
   partenaires: "partenaires",
+  provincesPrefectures: "provincesPrefectures",
+  communes: "communes",
 } as const;
 
 const CHAMPS_DATE = [

@@ -442,6 +442,8 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
           maitrisesOuvrage: sql`CASE WHEN ${conventionsTable.maitrisesOuvrage} IS NULL THEN NULL ELSE array_replace(${conventionsTable.maitrisesOuvrage}, ${current.nom}, ${nom}) END`,
           maitrisesOuvrageDeleguees: sql`CASE WHEN ${conventionsTable.maitrisesOuvrageDeleguees} IS NULL THEN NULL ELSE array_replace(${conventionsTable.maitrisesOuvrageDeleguees}, ${current.nom}, ${nom}) END`,
           partenaires: sql`CASE WHEN ${conventionsTable.partenaires} IS NULL THEN NULL ELSE array_replace(${conventionsTable.partenaires}, ${current.nom}, ${nom}) END`,
+          provincesPrefectures: sql`CASE WHEN ${conventionsTable.provincesPrefectures} IS NULL THEN NULL ELSE array_replace(${conventionsTable.provincesPrefectures}, ${current.nom}, ${nom}) END`,
+          communes: sql`CASE WHEN ${conventionsTable.communes} IS NULL THEN NULL ELSE array_replace(${conventionsTable.communes}, ${current.nom}, ${nom}) END`,
           updatedAt: new Date(),
           version: sql`${conventionsTable.version} + 1`,
         }).where(sql`
@@ -451,6 +453,8 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
           OR ${conventionsTable.maitrisesOuvrage} @> ARRAY[${current.nom}]::text[]
           OR ${conventionsTable.maitrisesOuvrageDeleguees} @> ARRAY[${current.nom}]::text[]
           OR ${conventionsTable.partenaires} @> ARRAY[${current.nom}]::text[]
+          OR ${conventionsTable.provincesPrefectures} @> ARRAY[${current.nom}]::text[]
+          OR ${conventionsTable.communes} @> ARRAY[${current.nom}]::text[]
         `);
       }
       return true;
