@@ -178,6 +178,38 @@ export interface ConventionDocument {
   addedAt: string | null;
 }
 
+export interface ContributionAnnuelle {
+  /**
+     * @minimum 1900
+     * @maximum 2200
+     */
+  annee: number;
+  /**
+     * Montant en MAD
+     * @minimum 0
+     * @maximum 9999999999999.99
+     */
+  montant: number;
+}
+
+export interface LigneFinanciere {
+  /** @minLength 1 */
+  partenaire: string;
+  /** @maxItems 301 */
+  contributions: ContributionAnnuelle[];
+}
+
+export interface SuiviFinancier {
+  /**
+     * @maxItems 301
+     * @items.minimum 1900
+     * @items.maximum 2200
+     */
+  annees: number[];
+  /** @maxItems 500 */
+  lignes: LigneFinanciere[];
+}
+
 /**
  * @nullable
  */
@@ -226,6 +258,7 @@ export interface Convention {
   maitriseOuvrage: string[];
   maitriseOuvrageDeleguee: string[];
   partenaires: string[];
+  suiviFinancier?: SuiviFinancier;
   /** Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
   provincesPrefectures: string[];
   /** Communes du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
@@ -364,6 +397,7 @@ export const ConventionUpdateTypeSession = {
 } as const;
 
 export interface ConventionUpdate {
+  suiviFinancier?: SuiviFinancier;
   /** @minimum 1 */
   version: number;
   /** @maxItems 50 */

@@ -1,5 +1,5 @@
 import { getTableColumns, sql, type SQL } from "drizzle-orm";
-import { conventionsTable, type HistoriqueDocument } from "@workspace/db";
+import { conventionsTable, type HistoriqueDocument, type SuiviFinancier } from "@workspace/db";
 import {
   construireAlerte,
   joursRestantsSql,
@@ -62,6 +62,7 @@ export function versApi(ligne: LigneConvention) {
     maitriseOuvrageDeleguee: ligne.maitrisesOuvrageDeleguees ??
       (ligne.maitriseOuvrageDeleguee ? [ligne.maitriseOuvrageDeleguee] : []),
     partenaires: ligne.partenaires ?? [],
+    suiviFinancier: ligne.suiviFinancier ?? { annees: [], lignes: [] },
     provincesPrefectures: ligne.provincesPrefectures ?? [],
     communes: ligne.communes ?? [],
     prochainComite: ligne.prochainComite,
@@ -141,7 +142,7 @@ type ChampsEcrivables = Partial<
     Record<(typeof CHAMPS_LISTE_TEXTE)[number], string[] | null | undefined> &
     Record<(typeof CHAMPS_DATE)[number], string | Date | null> &
     Record<(typeof CHAMPS_MONTANT)[number], number | null>
->;
+> & { suiviFinancier?: SuiviFinancier };
 
 /**
  * Les schémas générés depuis l'OpenAPI coercent les `format: date` en objets
@@ -167,6 +168,7 @@ function versJourCalendaire(valeur: string | Date | null | undefined): string | 
  */
 export function versColonnes(corps: ChampsEcrivables): Record<string, unknown> {
   const valeurs: Record<string, unknown> = {};
+  if (corps.suiviFinancier !== undefined) valeurs.suiviFinancier = corps.suiviFinancier;
 
   for (const champ of CHAMPS_TEXTE) {
     if (!(champ in corps)) continue;

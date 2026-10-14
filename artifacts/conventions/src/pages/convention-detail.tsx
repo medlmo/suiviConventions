@@ -16,6 +16,8 @@ import { useEffect, useRef, useState } from "react";
 import { api, canEditConvention, errorMessage, useAuth, type ApiError } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentHistoryField } from "@/components/document-history-field";
+import { SuiviFinancierEditor, parseMontant, versApi, versBrouillon } from "@/components/suivi-financier-editor";
+import type { FieldErrors } from "react-hook-form";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -98,7 +100,27 @@ const conventionSchema = z.object({
   })).max(50).default([]),
   documentsRetires: z.array(z.string()).max(500).default([]),
   commentaires: z.string().nullable().optional(),
+  suiviFinancier: z.object({
+    annees: z.array(z.number()).max(301),
+    lignes: z.array(z.object({ partenaire: z.string(), montants: z.record(z.string()) })).max(500),
+  }).default({ annees: [], lignes: [] }),
 }).superRefine((valeurs, contexte) => {
+  const suivi = valeurs.suiviFinancier;
+  const erreur = (message: string) => contexte.addIssue({ code: "custom", path: ["suiviFinancier"], message });
+  if (suivi.annees.some((a) => !Number.isInteger(a) || a < 1900 || a > 2200)) erreur("Les années doivent être des entiers entre 1900 et 2200.");
+  if (new Set(suivi.annees).size !== suivi.annees.length) erreur("Une année est présente plusieurs fois.");
+  const eligibles = valeurs.partenaires ?? [];
+  const vus = new Set<string>();
+  suivi.lignes.forEach((ligne) => {
+    if (!ligne.partenaire) erreur("Une ligne n'a pas de partenaire.");
+    else if (!eligibles.includes(ligne.partenaire)) erreur(`« ${ligne.partenaire} » ne figure plus parmi les partenaires de la fiche : réaffectez ou retirez la ligne.`);
+    if (ligne.partenaire && vus.has(ligne.partenaire)) erreur(`« ${ligne.partenaire} » apparaît sur plusieurs lignes.`);
+    vus.add(ligne.partenaire);
+    for (const annee of suivi.annees) {
+      const brut = (ligne.montants[String(annee)] ?? "").trim();
+      if (brut && parseMontant(brut) === null) erreur(`Montant invalide pour « ${ligne.partenaire || "ligne sans partenaire"} » en ${annee} (positif ou nul, 2 décimales, 9 999 999 999 999,99 maximum).`);
+    }
+  });
   if (valeurs.enveloppeBudgetaire != null && valeurs.contributionRegion != null &&
       valeurs.contributionRegion > valeurs.enveloppeBudgetaire) {
     contexte.addIssue({
@@ -118,6 +140,13 @@ function valeursMO(value: unknown): string[] {
   return typeof value === "string" && value.length ? [value] : [];
 }
 
+function collecterMessages(erreur: unknown): string[] {
+  if (!erreur || typeof erreur !== "object") return [];
+  const e = erreur as { message?: unknown; types?: Record<string, unknown> };
+  const propres = typeof e.message === "string" && e.message ? [e.message] : [];
+  return [...propres, ...Object.entries(erreur).filter(([k]) => k !== "message" && k !== "ref" && k !== "type").flatMap(([, v]) => collecterMessages(v))];
+}
+
 export default function ConventionDetail() {
   const params = useParams();
   const id = parseInt(params.id || "0", 10);
@@ -130,6 +159,7 @@ export default function ConventionDetail() {
   const [uploadsEnCours, setUploadsEnCours] = useState(0);
   const [conflict, setConflict] = useState("");
   const [formRecordId, setFormRecordId] = useState<number | null>(null);
+  const [onglet, setOnglet] = useState<"fiche" | "financier">("fiche");
   const { user } = useAuth();
   const reference = useReferenceData();
 
@@ -214,6 +244,7 @@ export default function ConventionDetail() {
         documentsAjoutes: [],
         documentsRetires: [],
         commentaires: convention.commentaires,
+        suiviFinancier: versBrouillon(convention.suiviFinancier),
       }, { keepDirtyValues: sameRecord });
       setFormRecordId(id);
     }
@@ -265,7 +296,8 @@ export default function ConventionDetail() {
     // Nettoyer les chaines vides en null pour l'API
     const cleanData = Object.fromEntries(
       Object.entries(data).map(([k, v]) => [k, v === "" ? null : v])
-    );
+    ) as Record<string, unknown>;
+    cleanData.suiviFinancier = versApi(data.suiviFinancier);
     if (echeanceCalculee) cleanData.prochaineEcheance = echeanceCalculee.date;
 
     setSaving(true); setConflict("");
@@ -299,6 +331,12 @@ export default function ConventionDetail() {
           description: errorMessage(error),
         });
       } finally { setSaving(false); }
+  };
+
+  const onInvalid = (erreurs: FieldErrors<FormValues>) => {
+    const autres = Object.keys(erreurs).filter((cle) => cle !== "suiviFinancier");
+    setOnglet(autres.length ? "fiche" : "financier");
+    toast({ variant: "destructive", title: "Formulaire incomplet", description: "Corrigez les champs signalés avant d’enregistrer." });
   };
 
   const handleDelete = async () => {
@@ -400,7 +438,7 @@ export default function ConventionDetail() {
             <Trash2 className="w-4 h-4 mr-2" />
             Supprimer
           </Button>
-           <Button onClick={form.handleSubmit(onSubmit)} disabled={saving || uploadsEnCours > 0 || isFetching || !reference.data}>
+           <Button onClick={form.handleSubmit(onSubmit, onInvalid)} disabled={saving || uploadsEnCours > 0 || isFetching || !reference.data}>
             <Save className="w-4 h-4 mr-2" />
             {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
@@ -411,8 +449,49 @@ export default function ConventionDetail() {
        {conflict && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex flex-wrap items-center justify-between gap-3"><span className="text-sm text-destructive">{conflict}</span><Button variant="outline" size="sm" disabled={isFetching} onClick={async () => { const result = await refetch(); if (result.data) setConflict(""); }}>Actualiser la fiche</Button></div>}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
+          <div role="tablist" aria-label="Sections de la convention" className="inline-flex rounded-lg border border-border bg-muted/40 p-1">
+            {([["fiche", "Fiche"], ["financier", "Suivi financier"]] as const).map(([cle, libelle]) => (
+              <button key={cle} id={`tab-${cle}`} type="button" role="tab" aria-selected={onglet === cle}
+                aria-controls={`panel-${cle}`} tabIndex={onglet === cle ? 0 : -1} data-testid={`tab-${cle}`}
+                onKeyDown={(e) => {
+                  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+                  e.preventDefault();
+                  const cible = e.key === "Home" ? "fiche" : e.key === "End" ? "financier" : cle === "fiche" ? "financier" : "fiche";
+                  setOnglet(cible);
+                  document.getElementById(`tab-${cible}`)?.focus();
+                }}
+                onClick={() => setOnglet(cle)}
+                className={`relative rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${onglet === cle ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                {libelle}
+                {cle === "financier" && form.formState.errors.suiviFinancier && <span className="ms-2 inline-block h-2 w-2 rounded-full bg-destructive align-middle" />}
+                {cle === "fiche" && Object.keys(form.formState.errors).some((k) => k !== "suiviFinancier") && <span className="ms-2 inline-block h-2 w-2 rounded-full bg-destructive align-middle" />}
+              </button>
+            ))}
+          </div>
           <fieldset disabled={!canEdit || saving} className="space-y-6 min-w-0">
+          <div id="panel-financier" hidden={onglet !== "financier"} role="tabpanel" aria-labelledby="tab-financier">
+            <Card className="shadow-sm">
+              <CardHeader className="bg-muted/30 pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Wallet className="w-5 h-5 text-secondary" />
+                  Suivi financier
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <FormField control={form.control} name="suiviFinancier" render={({ field }) => (
+                  <SuiviFinancierEditor
+                    value={field.value ?? { annees: [], lignes: [] }}
+                    onChange={(v) => form.setValue("suiviFinancier", v, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}
+                    partenairesEligibles={form.watch("partenaires") ?? []}
+                    readOnly={!canEdit}
+                    erreurs={[...new Set(collecterMessages(form.formState.errors.suiviFinancier))]}
+                  />
+                )} />
+              </CardContent>
+            </Card>
+          </div>
+          <div id="panel-fiche" hidden={onglet !== "fiche"} role="tabpanel" aria-labelledby="tab-fiche" className="space-y-6">
           
           {/* Titre Principal Large */}
           <Card className="border-t-4 border-t-primary shadow-md bg-card">
@@ -877,6 +956,7 @@ export default function ConventionDetail() {
               </Card>
 
             </div>
+          </div>
           </div>
           </fieldset>
           {canEdit && (

@@ -426,6 +426,24 @@ export const ListConventionsQueryParams = zod.object({
   "ordre": zod.enum(['asc', 'desc']).default(listConventionsQueryOrdreDefault)
 })
 
+export const listConventionsResponseItemsItemSuiviFinancierAnneesItemMin = 1900;
+export const listConventionsResponseItemsItemSuiviFinancierAnneesItemMax = 2200;
+
+export const listConventionsResponseItemsItemSuiviFinancierAnneesMax = 301;
+
+
+export const listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsItemAnneeMin = 1900;
+export const listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsItemAnneeMax = 2200;
+
+export const listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsItemMontantMin = 0;
+export const listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsItemMontantMax = 9999999999999.99;
+
+export const listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsMax = 301;
+
+export const listConventionsResponseItemsItemSuiviFinancierLignesMax = 500;
+
+
+
 export const ListConventionsResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.number().int(),
@@ -446,6 +464,16 @@ export const ListConventionsResponse = zod.object({
   "maitriseOuvrage": zod.array(zod.string()),
   "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "partenaires": zod.array(zod.string()),
+  "suiviFinancier": zod.object({
+  "annees": zod.array(zod.number().int().min(listConventionsResponseItemsItemSuiviFinancierAnneesItemMin).max(listConventionsResponseItemsItemSuiviFinancierAnneesItemMax)).max(listConventionsResponseItemsItemSuiviFinancierAnneesMax),
+  "lignes": zod.array(zod.object({
+  "partenaire": zod.string().min(1),
+  "contributions": zod.array(zod.object({
+  "annee": zod.number().int().min(listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsItemAnneeMin).max(listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsItemAnneeMax),
+  "montant": zod.number().min(listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsItemMontantMin).max(listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsItemMontantMax).describe('Montant en MAD')
+})).max(listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsMax)
+})).max(listConventionsResponseItemsItemSuiviFinancierLignesMax)
+}).optional(),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -534,6 +562,24 @@ export const CreateConventionBody = zod.object({
   "commentaires": zod.string().nullish()
 })
 
+export const createConventionResponseSuiviFinancierAnneesItemMin = 1900;
+export const createConventionResponseSuiviFinancierAnneesItemMax = 2200;
+
+export const createConventionResponseSuiviFinancierAnneesMax = 301;
+
+
+export const createConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMin = 1900;
+export const createConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMax = 2200;
+
+export const createConventionResponseSuiviFinancierLignesItemContributionsItemMontantMin = 0;
+export const createConventionResponseSuiviFinancierLignesItemContributionsItemMontantMax = 9999999999999.99;
+
+export const createConventionResponseSuiviFinancierLignesItemContributionsMax = 301;
+
+export const createConventionResponseSuiviFinancierLignesMax = 500;
+
+
+
 export const CreateConventionResponse = zod.object({
   "id": zod.number().int(),
   "version": zod.number().int(),
@@ -553,6 +599,16 @@ export const CreateConventionResponse = zod.object({
   "maitriseOuvrage": zod.array(zod.string()),
   "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "partenaires": zod.array(zod.string()),
+  "suiviFinancier": zod.object({
+  "annees": zod.array(zod.number().int().min(createConventionResponseSuiviFinancierAnneesItemMin).max(createConventionResponseSuiviFinancierAnneesItemMax)).max(createConventionResponseSuiviFinancierAnneesMax),
+  "lignes": zod.array(zod.object({
+  "partenaire": zod.string().min(1),
+  "contributions": zod.array(zod.object({
+  "annee": zod.number().int().min(createConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMin).max(createConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMax),
+  "montant": zod.number().min(createConventionResponseSuiviFinancierLignesItemContributionsItemMontantMin).max(createConventionResponseSuiviFinancierLignesItemContributionsItemMontantMax).describe('Montant en MAD')
+})).max(createConventionResponseSuiviFinancierLignesItemContributionsMax)
+})).max(createConventionResponseSuiviFinancierLignesMax)
+}).optional(),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -623,6 +679,24 @@ export const ListAlertesQueryParams = zod.object({
   "limit": zod.coerce.number().int().min(1).max(listAlertesQueryLimitMax).default(listAlertesQueryLimitDefault)
 })
 
+export const listAlertesResponseSuiviFinancierAnneesItemMin = 1900;
+export const listAlertesResponseSuiviFinancierAnneesItemMax = 2200;
+
+export const listAlertesResponseSuiviFinancierAnneesMax = 301;
+
+
+export const listAlertesResponseSuiviFinancierLignesItemContributionsItemAnneeMin = 1900;
+export const listAlertesResponseSuiviFinancierLignesItemContributionsItemAnneeMax = 2200;
+
+export const listAlertesResponseSuiviFinancierLignesItemContributionsItemMontantMin = 0;
+export const listAlertesResponseSuiviFinancierLignesItemContributionsItemMontantMax = 9999999999999.99;
+
+export const listAlertesResponseSuiviFinancierLignesItemContributionsMax = 301;
+
+export const listAlertesResponseSuiviFinancierLignesMax = 500;
+
+
+
 export const ListAlertesResponseItem = zod.object({
   "id": zod.number().int(),
   "version": zod.number().int(),
@@ -642,6 +716,16 @@ export const ListAlertesResponseItem = zod.object({
   "maitriseOuvrage": zod.array(zod.string()),
   "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "partenaires": zod.array(zod.string()),
+  "suiviFinancier": zod.object({
+  "annees": zod.array(zod.number().int().min(listAlertesResponseSuiviFinancierAnneesItemMin).max(listAlertesResponseSuiviFinancierAnneesItemMax)).max(listAlertesResponseSuiviFinancierAnneesMax),
+  "lignes": zod.array(zod.object({
+  "partenaire": zod.string().min(1),
+  "contributions": zod.array(zod.object({
+  "annee": zod.number().int().min(listAlertesResponseSuiviFinancierLignesItemContributionsItemAnneeMin).max(listAlertesResponseSuiviFinancierLignesItemContributionsItemAnneeMax),
+  "montant": zod.number().min(listAlertesResponseSuiviFinancierLignesItemContributionsItemMontantMin).max(listAlertesResponseSuiviFinancierLignesItemContributionsItemMontantMax).describe('Montant en MAD')
+})).max(listAlertesResponseSuiviFinancierLignesItemContributionsMax)
+})).max(listAlertesResponseSuiviFinancierLignesMax)
+}).optional(),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -690,6 +774,24 @@ export const GetAgendaQueryParams = zod.object({
   "mois": zod.coerce.number().int().min(1).max(getAgendaQueryMoisMax).default(getAgendaQueryMoisDefault).describe('Nombre de mois à couvrir')
 })
 
+export const getAgendaResponseConventionsItemSuiviFinancierAnneesItemMin = 1900;
+export const getAgendaResponseConventionsItemSuiviFinancierAnneesItemMax = 2200;
+
+export const getAgendaResponseConventionsItemSuiviFinancierAnneesMax = 301;
+
+
+export const getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsItemAnneeMin = 1900;
+export const getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsItemAnneeMax = 2200;
+
+export const getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsItemMontantMin = 0;
+export const getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsItemMontantMax = 9999999999999.99;
+
+export const getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsMax = 301;
+
+export const getAgendaResponseConventionsItemSuiviFinancierLignesMax = 500;
+
+
+
 export const GetAgendaResponseItem = zod.object({
   "mois": zod.string().describe('Mois au format AAAA-MM'),
   "libelle": zod.string().describe('Libellé français du mois, ex. "octobre 2026"'),
@@ -713,6 +815,16 @@ export const GetAgendaResponseItem = zod.object({
   "maitriseOuvrage": zod.array(zod.string()),
   "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "partenaires": zod.array(zod.string()),
+  "suiviFinancier": zod.object({
+  "annees": zod.array(zod.number().int().min(getAgendaResponseConventionsItemSuiviFinancierAnneesItemMin).max(getAgendaResponseConventionsItemSuiviFinancierAnneesItemMax)).max(getAgendaResponseConventionsItemSuiviFinancierAnneesMax),
+  "lignes": zod.array(zod.object({
+  "partenaire": zod.string().min(1),
+  "contributions": zod.array(zod.object({
+  "annee": zod.number().int().min(getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsItemAnneeMin).max(getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsItemAnneeMax),
+  "montant": zod.number().min(getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsItemMontantMin).max(getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsItemMontantMax).describe('Montant en MAD')
+})).max(getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsMax)
+})).max(getAgendaResponseConventionsItemSuiviFinancierLignesMax)
+}).optional(),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -782,6 +894,24 @@ export const GetConventionParams = zod.object({
   "id": zod.coerce.number().int()
 })
 
+export const getConventionResponseSuiviFinancierAnneesItemMin = 1900;
+export const getConventionResponseSuiviFinancierAnneesItemMax = 2200;
+
+export const getConventionResponseSuiviFinancierAnneesMax = 301;
+
+
+export const getConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMin = 1900;
+export const getConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMax = 2200;
+
+export const getConventionResponseSuiviFinancierLignesItemContributionsItemMontantMin = 0;
+export const getConventionResponseSuiviFinancierLignesItemContributionsItemMontantMax = 9999999999999.99;
+
+export const getConventionResponseSuiviFinancierLignesItemContributionsMax = 301;
+
+export const getConventionResponseSuiviFinancierLignesMax = 500;
+
+
+
 export const GetConventionResponse = zod.object({
   "id": zod.number().int(),
   "version": zod.number().int(),
@@ -801,6 +931,16 @@ export const GetConventionResponse = zod.object({
   "maitriseOuvrage": zod.array(zod.string()),
   "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "partenaires": zod.array(zod.string()),
+  "suiviFinancier": zod.object({
+  "annees": zod.array(zod.number().int().min(getConventionResponseSuiviFinancierAnneesItemMin).max(getConventionResponseSuiviFinancierAnneesItemMax)).max(getConventionResponseSuiviFinancierAnneesMax),
+  "lignes": zod.array(zod.object({
+  "partenaire": zod.string().min(1),
+  "contributions": zod.array(zod.object({
+  "annee": zod.number().int().min(getConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMin).max(getConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMax),
+  "montant": zod.number().min(getConventionResponseSuiviFinancierLignesItemContributionsItemMontantMin).max(getConventionResponseSuiviFinancierLignesItemContributionsItemMontantMax).describe('Montant en MAD')
+})).max(getConventionResponseSuiviFinancierLignesItemContributionsMax)
+})).max(getConventionResponseSuiviFinancierLignesMax)
+}).optional(),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -843,6 +983,22 @@ export const UpdateConventionParams = zod.object({
   "id": zod.coerce.number().int()
 })
 
+export const updateConventionBodySuiviFinancierAnneesItemMin = 1900;
+export const updateConventionBodySuiviFinancierAnneesItemMax = 2200;
+
+export const updateConventionBodySuiviFinancierAnneesMax = 301;
+
+
+export const updateConventionBodySuiviFinancierLignesItemContributionsItemAnneeMin = 1900;
+export const updateConventionBodySuiviFinancierLignesItemContributionsItemAnneeMax = 2200;
+
+export const updateConventionBodySuiviFinancierLignesItemContributionsItemMontantMin = 0;
+export const updateConventionBodySuiviFinancierLignesItemContributionsItemMontantMax = 9999999999999.99;
+
+export const updateConventionBodySuiviFinancierLignesItemContributionsMax = 301;
+
+export const updateConventionBodySuiviFinancierLignesMax = 500;
+
 
 export const updateConventionBodyDocumentsAjoutesItemObjectPathMax = 512;
 
@@ -855,6 +1011,16 @@ export const updateConventionBodyDocumentsRetiresMax = 500;
 
 
 export const UpdateConventionBody = zod.object({
+  "suiviFinancier": zod.object({
+  "annees": zod.array(zod.number().int().min(updateConventionBodySuiviFinancierAnneesItemMin).max(updateConventionBodySuiviFinancierAnneesItemMax)).max(updateConventionBodySuiviFinancierAnneesMax),
+  "lignes": zod.array(zod.object({
+  "partenaire": zod.string().min(1),
+  "contributions": zod.array(zod.object({
+  "annee": zod.number().int().min(updateConventionBodySuiviFinancierLignesItemContributionsItemAnneeMin).max(updateConventionBodySuiviFinancierLignesItemContributionsItemAnneeMax),
+  "montant": zod.number().min(updateConventionBodySuiviFinancierLignesItemContributionsItemMontantMin).max(updateConventionBodySuiviFinancierLignesItemContributionsItemMontantMax).describe('Montant en MAD')
+})).max(updateConventionBodySuiviFinancierLignesItemContributionsMax)
+})).max(updateConventionBodySuiviFinancierLignesMax)
+}).optional(),
   "version": zod.number().int().min(1),
   "documentsAjoutes": zod.array(zod.object({
   "objectPath": zod.string().min(1).max(updateConventionBodyDocumentsAjoutesItemObjectPathMax),
@@ -895,6 +1061,24 @@ export const UpdateConventionBody = zod.object({
   "commentaires": zod.string().nullish()
 })
 
+export const updateConventionResponseSuiviFinancierAnneesItemMin = 1900;
+export const updateConventionResponseSuiviFinancierAnneesItemMax = 2200;
+
+export const updateConventionResponseSuiviFinancierAnneesMax = 301;
+
+
+export const updateConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMin = 1900;
+export const updateConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMax = 2200;
+
+export const updateConventionResponseSuiviFinancierLignesItemContributionsItemMontantMin = 0;
+export const updateConventionResponseSuiviFinancierLignesItemContributionsItemMontantMax = 9999999999999.99;
+
+export const updateConventionResponseSuiviFinancierLignesItemContributionsMax = 301;
+
+export const updateConventionResponseSuiviFinancierLignesMax = 500;
+
+
+
 export const UpdateConventionResponse = zod.object({
   "id": zod.number().int(),
   "version": zod.number().int(),
@@ -914,6 +1098,16 @@ export const UpdateConventionResponse = zod.object({
   "maitriseOuvrage": zod.array(zod.string()),
   "maitriseOuvrageDeleguee": zod.array(zod.string()),
   "partenaires": zod.array(zod.string()),
+  "suiviFinancier": zod.object({
+  "annees": zod.array(zod.number().int().min(updateConventionResponseSuiviFinancierAnneesItemMin).max(updateConventionResponseSuiviFinancierAnneesItemMax)).max(updateConventionResponseSuiviFinancierAnneesMax),
+  "lignes": zod.array(zod.object({
+  "partenaire": zod.string().min(1),
+  "contributions": zod.array(zod.object({
+  "annee": zod.number().int().min(updateConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMin).max(updateConventionResponseSuiviFinancierLignesItemContributionsItemAnneeMax),
+  "montant": zod.number().min(updateConventionResponseSuiviFinancierLignesItemContributionsItemMontantMin).max(updateConventionResponseSuiviFinancierLignesItemContributionsItemMontantMax).describe('Montant en MAD')
+})).max(updateConventionResponseSuiviFinancierLignesItemContributionsMax)
+})).max(updateConventionResponseSuiviFinancierLignesMax)
+}).optional(),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),

@@ -769,6 +769,36 @@ components:
         name: { type: string }
         addedAt: { type: ["string", "null"], format: date-time }
 
+    ContributionAnnuelle:
+      type: object
+      required: [annee, montant]
+      properties:
+        annee: { type: integer, minimum: 1900, maximum: 2200 }
+        montant: { type: number, minimum: 0, maximum: 9999999999999.99, description: Montant en MAD, deux décimales maximum }
+
+    LigneFinanciere:
+      type: object
+      required: [partenaire, contributions]
+      properties:
+        partenaire: { type: string, minLength: 1 }
+        contributions:
+          type: array
+          maxItems: 301
+          items: { $ref: "#/components/schemas/ContributionAnnuelle" }
+
+    SuiviFinancier:
+      type: object
+      required: [annees, lignes]
+      properties:
+        annees:
+          type: array
+          maxItems: 301
+          items: { type: integer, minimum: 1900, maximum: 2200 }
+        lignes:
+          type: array
+          maxItems: 500
+          items: { $ref: "#/components/schemas/LigneFinanciere" }
+
     Convention:
       type: object
       required: [id, nomConvention, alerte, version, maitriseOuvrage, maitriseOuvrageDeleguee, partenaires, provincesPrefectures, communes]
@@ -801,6 +831,7 @@ components:
         maitriseOuvrage: { type: array, items: { type: string } }
         maitriseOuvrageDeleguee: { type: array, items: { type: string } }
         partenaires: { type: array, items: { type: string } }
+        suiviFinancier: { $ref: "#/components/schemas/SuiviFinancier" }
         provincesPrefectures:
           type: array
           description: Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage
@@ -899,6 +930,7 @@ components:
       type: object
       required: [version]
       properties:
+        suiviFinancier: { $ref: "#/components/schemas/SuiviFinancier" }
         version: { type: integer, minimum: 1 }
         documentsAjoutes:
           type: array

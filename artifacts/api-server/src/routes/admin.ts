@@ -442,6 +442,13 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
           maitrisesOuvrage: sql`CASE WHEN ${conventionsTable.maitrisesOuvrage} IS NULL THEN NULL ELSE array_replace(${conventionsTable.maitrisesOuvrage}, ${current.nom}, ${nom}) END`,
           maitrisesOuvrageDeleguees: sql`CASE WHEN ${conventionsTable.maitrisesOuvrageDeleguees} IS NULL THEN NULL ELSE array_replace(${conventionsTable.maitrisesOuvrageDeleguees}, ${current.nom}, ${nom}) END`,
           partenaires: sql`CASE WHEN ${conventionsTable.partenaires} IS NULL THEN NULL ELSE array_replace(${conventionsTable.partenaires}, ${current.nom}, ${nom}) END`,
+          suiviFinancier: sql`jsonb_set(${conventionsTable.suiviFinancier}, '{lignes}',
+            COALESCE((SELECT jsonb_agg(
+              CASE WHEN ligne->>'partenaire' = ${current.nom}
+                THEN jsonb_set(ligne, '{partenaire}', to_jsonb(${nom}::text))
+                ELSE ligne END ORDER BY position)
+              FROM jsonb_array_elements(${conventionsTable.suiviFinancier}->'lignes')
+                WITH ORDINALITY AS elements(ligne, position)), '[]'::jsonb))`,
           provincesPrefectures: sql`CASE WHEN ${conventionsTable.provincesPrefectures} IS NULL THEN NULL ELSE array_replace(${conventionsTable.provincesPrefectures}, ${current.nom}, ${nom}) END`,
           communes: sql`CASE WHEN ${conventionsTable.communes} IS NULL THEN NULL ELSE array_replace(${conventionsTable.communes}, ${current.nom}, ${nom}) END`,
           updatedAt: new Date(),

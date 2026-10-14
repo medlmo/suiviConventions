@@ -8,6 +8,7 @@
 import type { Alerte } from './alerte';
 import type { ConventionDocument } from './conventionDocument';
 import type { ConventionTypeSession } from './conventionTypeSession';
+import type { SuiviFinancier } from './suiviFinancier';
 
 export interface Convention {
   id: number;
@@ -46,6 +47,7 @@ export interface Convention {
   maitriseOuvrage: string[];
   maitriseOuvrageDeleguee: string[];
   partenaires: string[];
+  suiviFinancier?: SuiviFinancier;
   /** Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
   provincesPrefectures: string[];
   /** Communes du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */

@@ -24,6 +24,14 @@ export type HistoriqueDocument = {
   addedAt: string | null;
 };
 
+export type SuiviFinancier = {
+  annees: number[];
+  lignes: {
+    partenaire: string;
+    contributions: { annee: number; montant: number }[];
+  }[];
+};
+
 export const conventionsTable = pgTable(
   "conventions",
   {
@@ -65,6 +73,8 @@ export const conventionsTable = pgTable(
     maitrisesOuvrage: text("maitrises_ouvrage").array(),
     maitrisesOuvrageDeleguees: text("maitrises_ouvrage_deleguees").array(),
     partenaires: text("partenaires").array(),
+    suiviFinancier: jsonb("suivi_financier").$type<SuiviFinancier>()
+      .notNull().default({ annees: [], lignes: [] }),
 
     // Documents
     documentConvention: text("document_convention"),

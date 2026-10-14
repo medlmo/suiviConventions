@@ -7,8 +7,10 @@
  */
 import type { ConventionDocumentInput } from './conventionDocumentInput';
 import type { ConventionUpdateTypeSession } from './conventionUpdateTypeSession';
+import type { SuiviFinancier } from './suiviFinancier';
 
 export interface ConventionUpdate {
+  suiviFinancier?: SuiviFinancier;
   /** @minimum 1 */
   version: number;
   /** @maxItems 50 */

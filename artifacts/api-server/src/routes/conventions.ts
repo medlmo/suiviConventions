@@ -44,6 +44,7 @@ import {
 import { calculerEcheance } from "../lib/echeances";
 import { preparerHistoriqueDocuments } from "../lib/document-history";
 import { genererFicheTechnique } from "../lib/fiche-technique";
+import { erreurSuiviFinancier, erreurPartenairesFinanciers } from "../lib/suivi-financier";
 import {
   chargerReferentiel,
   chargerReferentielDepuis,
@@ -100,6 +101,10 @@ function normaliserCorps(corps: unknown): { ok: true; valeur: Record<string, unk
   }
 
   const valeur: Record<string, unknown> = { ...(corps as Record<string, unknown>) };
+  if ("suiviFinancier" in valeur) {
+    const erreur = erreurSuiviFinancier(valeur.suiviFinancier);
+    if (erreur) return { ok: false, erreur };
+  }
 
   for (const champ of CHAMPS_DATE_CORPS) {
     if (!(champ in valeur)) continue;
@@ -1018,6 +1023,11 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     const anciennesMoDeleguees = current.maitrisesOuvrageDeleguees ??
       (current.maitriseOuvrageDeleguee ? [current.maitriseOuvrageDeleguee] : []);
     const anciensPartenaires = current.partenaires ?? [];
+    const erreurFinanciere = erreurPartenairesFinanciers(
+      parsed.data.suiviFinancier ?? current.suiviFinancier,
+      (valeurs.partenaires as string[] | undefined) ?? anciensPartenaires,
+    );
+    if (erreurFinanciere) return { status: 400 as const, error: erreurFinanciere };
     const anciennesProvincesPrefectures = current.provincesPrefectures ?? [];
     const anciennesCommunes = current.communes ?? [];
     if (
