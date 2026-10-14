@@ -159,7 +159,6 @@ export default function ConventionDetail() {
   const [uploadsEnCours, setUploadsEnCours] = useState(0);
   const [conflict, setConflict] = useState("");
   const [formRecordId, setFormRecordId] = useState<number | null>(null);
-  const [onglet, setOnglet] = useState<"fiche" | "financier">("fiche");
   const { user } = useAuth();
   const reference = useReferenceData();
 
@@ -334,8 +333,9 @@ export default function ConventionDetail() {
   };
 
   const onInvalid = (erreurs: FieldErrors<FormValues>) => {
-    const autres = Object.keys(erreurs).filter((cle) => cle !== "suiviFinancier");
-    setOnglet(autres.length ? "fiche" : "financier");
+    if (Object.keys(erreurs).every((cle) => cle === "suiviFinancier")) {
+      document.getElementById("suivi-financier")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     toast({ variant: "destructive", title: "Formulaire incomplet", description: "Corrigez les champs signalés avant d’enregistrer." });
   };
 
@@ -450,48 +450,7 @@ export default function ConventionDetail() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
-          <div role="tablist" aria-label="Sections de la convention" className="inline-flex rounded-lg border border-border bg-muted/40 p-1">
-            {([["fiche", "Fiche"], ["financier", "Suivi financier"]] as const).map(([cle, libelle]) => (
-              <button key={cle} id={`tab-${cle}`} type="button" role="tab" aria-selected={onglet === cle}
-                aria-controls={`panel-${cle}`} tabIndex={onglet === cle ? 0 : -1} data-testid={`tab-${cle}`}
-                onKeyDown={(e) => {
-                  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
-                  e.preventDefault();
-                  const cible = e.key === "Home" ? "fiche" : e.key === "End" ? "financier" : cle === "fiche" ? "financier" : "fiche";
-                  setOnglet(cible);
-                  document.getElementById(`tab-${cible}`)?.focus();
-                }}
-                onClick={() => setOnglet(cle)}
-                className={`relative rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${onglet === cle ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-                {libelle}
-                {cle === "financier" && form.formState.errors.suiviFinancier && <span className="ms-2 inline-block h-2 w-2 rounded-full bg-destructive align-middle" />}
-                {cle === "fiche" && Object.keys(form.formState.errors).some((k) => k !== "suiviFinancier") && <span className="ms-2 inline-block h-2 w-2 rounded-full bg-destructive align-middle" />}
-              </button>
-            ))}
-          </div>
           <fieldset disabled={!canEdit || saving} className="space-y-6 min-w-0">
-          <div id="panel-financier" hidden={onglet !== "financier"} role="tabpanel" aria-labelledby="tab-financier">
-            <Card className="shadow-sm">
-              <CardHeader className="bg-muted/30 pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Wallet className="w-5 h-5 text-secondary" />
-                  Suivi financier
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <FormField control={form.control} name="suiviFinancier" render={({ field }) => (
-                  <SuiviFinancierEditor
-                    value={field.value ?? { annees: [], lignes: [] }}
-                    onChange={(v) => form.setValue("suiviFinancier", v, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}
-                    partenairesEligibles={form.watch("partenaires") ?? []}
-                    readOnly={!canEdit}
-                    erreurs={[...new Set(collecterMessages(form.formState.errors.suiviFinancier))]}
-                  />
-                )} />
-              </CardContent>
-            </Card>
-          </div>
-          <div id="panel-fiche" hidden={onglet !== "fiche"} role="tabpanel" aria-labelledby="tab-fiche" className="space-y-6">
           
           {/* Titre Principal Large */}
           <Card className="border-t-4 border-t-primary shadow-md bg-card">
@@ -957,7 +916,25 @@ export default function ConventionDetail() {
 
             </div>
           </div>
-          </div>
+          <Card id="suivi-financier" className="shadow-sm scroll-mt-6">
+            <CardHeader className="bg-muted/30 pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Wallet className="w-5 h-5 text-secondary" />
+                Suivi financier
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <FormField control={form.control} name="suiviFinancier" render={({ field }) => (
+                <SuiviFinancierEditor
+                  value={field.value ?? { annees: [], lignes: [] }}
+                  onChange={(v) => form.setValue("suiviFinancier", v, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}
+                  partenairesEligibles={form.watch("partenaires") ?? []}
+                  readOnly={!canEdit}
+                  erreurs={[...new Set(collecterMessages(form.formState.errors.suiviFinancier))]}
+                />
+              )} />
+            </CardContent>
+          </Card>
           </fieldset>
           {canEdit && (
             <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-5">
