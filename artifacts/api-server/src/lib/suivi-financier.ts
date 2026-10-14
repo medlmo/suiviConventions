@@ -8,21 +8,21 @@ const anneeValide = (value: unknown): value is number =>
 /** Validate raw JSON before generated numeric coercions can turn blank amounts into zero. */
 export function erreurSuiviFinancier(value: unknown): string | null {
   if (!objet(value) || !Array.isArray(value.annees) || !Array.isArray(value.lignes)) {
-    return "Le suivi financier doit contenir une liste d'années et de partenaires.";
+    return "Le montage financier doit contenir une liste d'années et de partenaires.";
   }
   const { annees, lignes } = value;
   if (annees.length > 301 || annees.some(annee => !anneeValide(annee)) ||
       new Set(annees).size !== annees.length) {
-    return "Les années du suivi financier doivent être uniques, entre 1900 et 2200.";
+    return "Les années du montage financier doivent être uniques, entre 1900 et 2200.";
   }
-  if (lignes.length > 500) return "Le suivi financier ne peut pas dépasser 500 partenaires.";
+  if (lignes.length > 500) return "Le montage financier ne peut pas dépasser 500 partenaires.";
   const partenaires = new Set<string>();
   for (const ligne of lignes) {
     if (!objet(ligne) || typeof ligne.partenaire !== "string" || !ligne.partenaire.trim() ||
         ligne.partenaire !== ligne.partenaire.trim() || !Array.isArray(ligne.contributions)) {
       return "Chaque ligne financière doit désigner un partenaire et ses contributions.";
     }
-    if (partenaires.has(ligne.partenaire)) return "Un partenaire ne peut figurer qu'une seule fois dans le suivi financier.";
+    if (partenaires.has(ligne.partenaire)) return "Un partenaire ne peut figurer qu'une seule fois dans le montage financier.";
     partenaires.add(ligne.partenaire);
     if (ligne.contributions.length > 301) return "Trop de contributions pour un partenaire.";
     const presentes = new Set<number>();
@@ -44,6 +44,6 @@ export function erreurSuiviFinancier(value: unknown): string | null {
 
 export function erreurPartenairesFinanciers(suivi: SuiviFinancier, partenaires: string[]): string | null {
   return suivi.lignes.some(ligne => !partenaires.includes(ligne.partenaire))
-    ? "Un partenaire du suivi financier ne figure plus dans la convention. Rétablissez-le ou retirez explicitement sa ligne financière avant d'enregistrer."
+    ? "Un partenaire du montage financier ne figure plus dans la convention. Rétablissez-le ou retirez explicitement sa ligne financière avant d'enregistrer."
     : null;
 }

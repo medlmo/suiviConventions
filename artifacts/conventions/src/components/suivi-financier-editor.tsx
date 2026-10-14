@@ -154,7 +154,7 @@ export function SuiviFinancierEditor({ value, onChange, partenairesEligibles, re
 
       {value.lignes.length === 0 && annees.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground">
-          Aucun suivi financier renseigné.
+          Aucun montage financier renseigné.
           {!readOnly && " Ajoutez des années et des partenaires (issus de la fiche) pour saisir les contributions."}
         </div>
       ) : (

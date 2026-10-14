@@ -920,7 +920,7 @@ export default function ConventionDetail() {
             <CardHeader className="bg-muted/30 pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Wallet className="w-5 h-5 text-secondary" />
-                Suivi financier
+                Montage financier
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
