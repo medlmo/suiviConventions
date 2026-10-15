@@ -132,9 +132,6 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
           <Landmark className="w-5 h-5 text-secondary" />
           Situation des versements
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Versements de la Région Souss-Massa uniquement, par année. Les montants programmés sont saisis ici, indépendamment du montage financier.
-        </p>
       </CardHeader>
       <CardContent className="pt-6 space-y-4">
         {erreurs.length > 0 && (
