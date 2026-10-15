@@ -799,6 +799,15 @@ components:
           maxItems: 500
           items: { $ref: "#/components/schemas/LigneFinanciere" }
 
+    SituationVersementAnnuelle:
+      type: object
+      required: [annee, montantProgramme, montantVerse, dateDernierVersement]
+      properties:
+        annee: { type: integer, minimum: 1900, maximum: 2200 }
+        montantProgramme: { type: number, minimum: 0, maximum: 9999999999999.99, description: Montant annuel programmé par la Région Souss-Massa en MAD, saisi indépendamment du montage financier }
+        montantVerse: { type: number, minimum: 0, maximum: 9999999999999.99, description: Montant annuel effectivement versé par la Région Souss-Massa en MAD }
+        dateDernierVersement: { type: ["string", "null"], format: date, description: Date réelle du dernier versement, obligatoire si le montant versé est positif }
+
     AvancementPhysiqueInput:
       type: object
       required: [dateConstat, taux]
@@ -851,6 +860,11 @@ components:
         maitriseOuvrageDeleguee: { type: array, items: { type: string } }
         partenaires: { type: array, items: { type: string } }
         suiviFinancier: { $ref: "#/components/schemas/SuiviFinancier" }
+        situationVersements:
+          type: array
+          maxItems: 301
+          description: Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.
+          items: { $ref: "#/components/schemas/SituationVersementAnnuelle" }
         avancementPhysiqueHistorique:
           type: array
           description: Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent.
@@ -954,6 +968,11 @@ components:
       required: [version]
       properties:
         suiviFinancier: { $ref: "#/components/schemas/SuiviFinancier" }
+        situationVersements:
+          type: array
+          maxItems: 301
+          description: Remplace la situation annuelle de la Région. Une liste vide efface les lignes, une clé absente les préserve.
+          items: { $ref: "#/components/schemas/SituationVersementAnnuelle" }
         avancementPhysiqueAjoute:
           description: Ajoute un constat sans modifier les précédents, uniquement pour les infrastructures et prestations.
           $ref: "#/components/schemas/AvancementPhysiqueInput"

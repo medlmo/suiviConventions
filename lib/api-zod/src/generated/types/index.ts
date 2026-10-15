@@ -60,6 +60,7 @@ export * from './referenceDivision';
 export * from './referenceService';
 export * from './resumeAlertes';
 export * from './role';
+export * from './situationVersementAnnuelle';
 export * from './storedDocument';
 export * from './suiviFinancier';
 export * from './uploadUrl';

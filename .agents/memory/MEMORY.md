@@ -20,3 +20,4 @@
 - [Limites d'audit App Storage](app-storage-audit-limitations.md) — la garantie générale de confidentialité ne révèle pas l'IAM/les ACL effectifs d'un bucket donné.
 - [Suivi financier](suivi-financier-metier.md) — tableau annuel dans chaque fiche ; partenaires propres à la convention et années variables.
 - [Avancement physique](avancement-physique-metier.md) — volet pour infrastructures et prestations ; constats datés, taux estimé et historique conservé.
+- [Situation des versements](situation-versements-metier.md) — Région Souss-Massa uniquement, sans partenaires ; programmé annuel indépendant du Montage financier.

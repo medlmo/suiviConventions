@@ -46,6 +46,7 @@ import { preparerHistoriqueDocuments } from "../lib/document-history";
 import { genererFicheTechnique } from "../lib/fiche-technique";
 import { erreurSuiviFinancier, erreurPartenairesFinanciers } from "../lib/suivi-financier";
 import { creerConstatAvancement, erreurAvancementPhysique, natureAvecAvancement } from "../lib/avancement-physique";
+import { erreurSituationVersements } from "../lib/situation-versements";
 import {
   chargerReferentiel,
   chargerReferentielDepuis,
@@ -102,6 +103,10 @@ function normaliserCorps(corps: unknown): { ok: true; valeur: Record<string, unk
   }
 
   const valeur: Record<string, unknown> = { ...(corps as Record<string, unknown>) };
+  if ("situationVersements" in valeur) {
+    const erreur = erreurSituationVersements(valeur.situationVersements);
+    if (erreur) return { ok: false, erreur };
+  }
   if ("avancementPhysiqueHistorique" in valeur) {
     return { ok: false, erreur: "L'historique de l'avancement physique ne peut pas être remplacé. Ajoutez un nouveau constat." };
   }

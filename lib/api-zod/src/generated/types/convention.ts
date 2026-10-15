@@ -9,6 +9,7 @@ import type { Alerte } from './alerte';
 import type { AvancementPhysiqueEntree } from './avancementPhysiqueEntree';
 import type { ConventionDocument } from './conventionDocument';
 import type { ConventionTypeSession } from './conventionTypeSession';
+import type { SituationVersementAnnuelle } from './situationVersementAnnuelle';
 import type { SuiviFinancier } from './suiviFinancier';
 
 export interface Convention {
@@ -49,6 +50,11 @@ export interface Convention {
   maitriseOuvrageDeleguee: string[];
   partenaires: string[];
   suiviFinancier?: SuiviFinancier;
+  /**
+     * Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.
+     * @maxItems 301
+     */
+  situationVersements?: SituationVersementAnnuelle[];
   /** Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent. */
   avancementPhysiqueHistorique?: AvancementPhysiqueEntree[];
   /** Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */

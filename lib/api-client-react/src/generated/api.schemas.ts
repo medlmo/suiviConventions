@@ -210,6 +210,31 @@ export interface SuiviFinancier {
   lignes: LigneFinanciere[];
 }
 
+export interface SituationVersementAnnuelle {
+  /**
+     * @minimum 1900
+     * @maximum 2200
+     */
+  annee: number;
+  /**
+     * Montant annuel programmé par la Région Souss-Massa en MAD
+     * @minimum 0
+     * @maximum 9999999999999.99
+     */
+  montantProgramme: number;
+  /**
+     * Montant annuel effectivement versé par la Région Souss-Massa en MAD
+     * @minimum 0
+     * @maximum 9999999999999.99
+     */
+  montantVerse: number;
+  /**
+     * Date réelle du dernier versement
+     * @nullable
+     */
+  dateDernierVersement: string | null;
+}
+
 export interface AvancementPhysiqueInput {
   /** Date de constat de l'état d'exécution */
   dateConstat: string;
@@ -289,6 +314,11 @@ export interface Convention {
   maitriseOuvrageDeleguee: string[];
   partenaires: string[];
   suiviFinancier?: SuiviFinancier;
+  /**
+     * Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.
+     * @maxItems 301
+     */
+  situationVersements?: SituationVersementAnnuelle[];
   /** Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent. */
   avancementPhysiqueHistorique?: AvancementPhysiqueEntree[];
   /** Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
@@ -430,6 +460,11 @@ export const ConventionUpdateTypeSession = {
 
 export interface ConventionUpdate {
   suiviFinancier?: SuiviFinancier;
+  /**
+     * Remplace la situation annuelle de la Région. Une liste vide efface les lignes, une clé absente les préserve.
+     * @maxItems 301
+     */
+  situationVersements?: SituationVersementAnnuelle[];
   /** Ajoute un constat sans modifier les précédents, uniquement pour les infrastructures et prestations. */
   avancementPhysiqueAjoute?: AvancementPhysiqueInput;
   /** @minimum 1 */

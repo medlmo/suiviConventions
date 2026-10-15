@@ -63,6 +63,7 @@ export function versApi(ligne: LigneConvention) {
       (ligne.maitriseOuvrageDeleguee ? [ligne.maitriseOuvrageDeleguee] : []),
     partenaires: ligne.partenaires ?? [],
     suiviFinancier: ligne.suiviFinancier ?? { annees: [], lignes: [] },
+    situationVersements: ligne.situationVersements ?? [],
     avancementPhysiqueHistorique: ligne.avancementPhysiqueHistorique ?? [],
     provincesPrefectures: ligne.provincesPrefectures ?? [],
     communes: ligne.communes ?? [],
@@ -143,7 +144,15 @@ type ChampsEcrivables = Partial<
     Record<(typeof CHAMPS_LISTE_TEXTE)[number], string[] | null | undefined> &
     Record<(typeof CHAMPS_DATE)[number], string | Date | null> &
     Record<(typeof CHAMPS_MONTANT)[number], number | null>
-> & { suiviFinancier?: SuiviFinancier };
+> & {
+  suiviFinancier?: SuiviFinancier;
+  situationVersements?: {
+    annee: number;
+    montantProgramme: number;
+    montantVerse: number;
+    dateDernierVersement: string | Date | null;
+  }[];
+};
 
 /**
  * Les schémas générés depuis l'OpenAPI coercent les `format: date` en objets
@@ -170,6 +179,12 @@ function versJourCalendaire(valeur: string | Date | null | undefined): string | 
 export function versColonnes(corps: ChampsEcrivables): Record<string, unknown> {
   const valeurs: Record<string, unknown> = {};
   if (corps.suiviFinancier !== undefined) valeurs.suiviFinancier = corps.suiviFinancier;
+  if (corps.situationVersements !== undefined) {
+    valeurs.situationVersements = corps.situationVersements.map(ligne => ({
+      ...ligne,
+      dateDernierVersement: versJourCalendaire(ligne.dateDernierVersement),
+    })).sort((a, b) => a.annee - b.annee);
+  }
 
   for (const champ of CHAMPS_TEXTE) {
     if (!(champ in corps)) continue;

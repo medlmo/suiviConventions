@@ -19,6 +19,7 @@ import { DocumentHistoryField } from "@/components/document-history-field";
 import { SuiviFinancierEditor, parseMontant, versApi, versBrouillon } from "@/components/suivi-financier-editor";
 import type { FieldErrors } from "react-hook-form";
 import { AvancementPhysiqueVolet, COMMENTAIRE_MAX, dateCalendaireValide, natureAvancementEligible, parseTaux } from "@/components/avancement-physique-volet";
+import { SituationVersementsVolet, erreursVersements, versApiVersements, versBrouillonVersements } from "@/components/situation-versements-volet";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -105,12 +106,21 @@ const conventionSchema = z.object({
     annees: z.array(z.number()).max(301),
     lignes: z.array(z.object({ partenaire: z.string(), montants: z.record(z.string()) })).max(500),
   }).default({ annees: [], lignes: [] }),
+  situationVersements: z.array(z.object({
+    annee: z.number(),
+    montantProgramme: z.string(),
+    montantVerse: z.string(),
+    dateDernierVersement: z.string(),
+  })).max(301).default([]),
   avancementPhysiqueAjoute: z.object({
     dateConstat: z.string(),
     taux: z.string(),
     commentaire: z.string(),
   }).nullable().default(null),
 }).superRefine((valeurs, contexte) => {
+  for (const message of erreursVersements(valeurs.situationVersements)) {
+    contexte.addIssue({ code: "custom", path: ["situationVersements"], message });
+  }
   const av = valeurs.avancementPhysiqueAjoute;
   if (av) {
     if (!natureAvancementEligible(valeurs.nature)) contexte.addIssue({ code: "custom", path: ["avancementPhysiqueAjoute", "racine"], message: "Un constat d'avancement physique est en attente alors que la nature du projet ne le permet plus : annulez-le ou rétablissez la nature." });
@@ -258,6 +268,7 @@ export default function ConventionDetail() {
         documentsRetires: [],
         commentaires: convention.commentaires,
         suiviFinancier: versBrouillon(convention.suiviFinancier),
+        situationVersements: versBrouillonVersements(convention.situationVersements),
         avancementPhysiqueAjoute: null,
       }, { keepDirtyValues: sameRecord });
       setFormRecordId(id);
@@ -312,6 +323,7 @@ export default function ConventionDetail() {
       Object.entries(data).map(([k, v]) => [k, v === "" ? null : v])
     ) as Record<string, unknown>;
     cleanData.suiviFinancier = versApi(data.suiviFinancier);
+    cleanData.situationVersements = versApiVersements(data.situationVersements);
     if (echeanceCalculee) cleanData.prochaineEcheance = echeanceCalculee.date;
     delete cleanData.avancementPhysiqueAjoute;
     const av = data.avancementPhysiqueAjoute;
@@ -357,7 +369,9 @@ export default function ConventionDetail() {
   };
 
   const onInvalid = (erreurs: FieldErrors<FormValues>) => {
-    if (Object.keys(erreurs).every((cle) => cle === "suiviFinancier")) {
+    if (Object.keys(erreurs).every((cle) => cle === "situationVersements")) {
+      document.getElementById("situation-versements")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (Object.keys(erreurs).every((cle) => cle === "suiviFinancier")) {
       document.getElementById("suivi-financier")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else if (Object.keys(erreurs).every((cle) => cle === "avancementPhysiqueAjoute")) {
       document.getElementById(natureAvancementEligible(form.getValues("nature")) ? "avancement-physique" : "avancement-physique-alerte")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -961,6 +975,14 @@ export default function ConventionDetail() {
               )} />
             </CardContent>
           </Card>
+          <FormField control={form.control} name="situationVersements" render={({ field }) => (
+            <SituationVersementsVolet
+              value={field.value ?? []}
+              onChange={(v) => form.setValue("situationVersements", v, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}
+              readOnly={!canEdit}
+              erreurs={[...new Set(collecterMessages(form.formState.errors.situationVersements))]}
+            />
+          )} />
           {natureAvancementEligible(nature) ? (
             <FormField control={form.control} name="avancementPhysiqueAjoute" render={({ field }) => {
               const e = form.formState.errors.avancementPhysiqueAjoute as Record<string, { message?: string }> | undefined;
