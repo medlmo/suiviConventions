@@ -19,3 +19,4 @@
 - [Protection documentaire](protection-documents.md) — analyse au dépôt seulement ; aucun scan antivirus au téléchargement, les fichiers déjà rejetés restent bloqués.
 - [Limites d'audit App Storage](app-storage-audit-limitations.md) — la garantie générale de confidentialité ne révèle pas l'IAM/les ACL effectifs d'un bucket donné.
 - [Suivi financier](suivi-financier-metier.md) — tableau annuel dans chaque fiche ; partenaires propres à la convention et années variables.
+- [Avancement physique](avancement-physique-metier.md) — volet pour infrastructures et prestations ; constats datés, taux estimé et historique conservé.

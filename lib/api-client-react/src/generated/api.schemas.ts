@@ -210,6 +210,36 @@ export interface SuiviFinancier {
   lignes: LigneFinanciere[];
 }
 
+export interface AvancementPhysiqueInput {
+  /** Date de constat de l'état d'exécution */
+  dateConstat: string;
+  /**
+     * Taux estimé en pourcentage
+     * @minimum 0
+     * @maximum 100
+     */
+  taux: number;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  commentaire?: string | null;
+}
+
+export interface AvancementPhysiqueEntree {
+  id: string;
+  dateConstat: string;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  taux: number;
+  /** @nullable */
+  commentaire: string | null;
+  enregistreLe: string;
+  auteur: string;
+}
+
 /**
  * @nullable
  */
@@ -259,6 +289,8 @@ export interface Convention {
   maitriseOuvrageDeleguee: string[];
   partenaires: string[];
   suiviFinancier?: SuiviFinancier;
+  /** Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent. */
+  avancementPhysiqueHistorique?: AvancementPhysiqueEntree[];
   /** Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
   provincesPrefectures: string[];
   /** Communes du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
@@ -398,6 +430,8 @@ export const ConventionUpdateTypeSession = {
 
 export interface ConventionUpdate {
   suiviFinancier?: SuiviFinancier;
+  /** Ajoute un constat sans modifier les précédents, uniquement pour les infrastructures et prestations. */
+  avancementPhysiqueAjoute?: AvancementPhysiqueInput;
   /** @minimum 1 */
   version: number;
   /** @maxItems 50 */

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Alerte } from './alerte';
+import type { AvancementPhysiqueEntree } from './avancementPhysiqueEntree';
 import type { ConventionDocument } from './conventionDocument';
 import type { ConventionTypeSession } from './conventionTypeSession';
 import type { SuiviFinancier } from './suiviFinancier';
@@ -48,6 +49,8 @@ export interface Convention {
   maitriseOuvrageDeleguee: string[];
   partenaires: string[];
   suiviFinancier?: SuiviFinancier;
+  /** Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent. */
+  avancementPhysiqueHistorique?: AvancementPhysiqueEntree[];
   /** Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */
   provincesPrefectures: string[];
   /** Communes du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage */

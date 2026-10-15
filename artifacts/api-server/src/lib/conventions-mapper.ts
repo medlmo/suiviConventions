@@ -63,6 +63,7 @@ export function versApi(ligne: LigneConvention) {
       (ligne.maitriseOuvrageDeleguee ? [ligne.maitriseOuvrageDeleguee] : []),
     partenaires: ligne.partenaires ?? [],
     suiviFinancier: ligne.suiviFinancier ?? { annees: [], lignes: [] },
+    avancementPhysiqueHistorique: ligne.avancementPhysiqueHistorique ?? [],
     provincesPrefectures: ligne.provincesPrefectures ?? [],
     communes: ligne.communes ?? [],
     prochainComite: ligne.prochainComite,

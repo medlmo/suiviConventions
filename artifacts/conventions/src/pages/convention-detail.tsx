@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DocumentHistoryField } from "@/components/document-history-field";
 import { SuiviFinancierEditor, parseMontant, versApi, versBrouillon } from "@/components/suivi-financier-editor";
 import type { FieldErrors } from "react-hook-form";
+import { AvancementPhysiqueVolet, COMMENTAIRE_MAX, dateCalendaireValide, natureAvancementEligible, parseTaux } from "@/components/avancement-physique-volet";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ import {
 import { useReferenceData } from "@/hooks/use-reference-data";
 import { calculerEcheance } from "@/lib/echeances";
 import { AlerteBadge } from "@/components/alerte-badge";
-import { ArrowLeft, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet, RefreshCw, WifiOff } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/utils";
 import { format } from "date-fns";
@@ -104,7 +105,20 @@ const conventionSchema = z.object({
     annees: z.array(z.number()).max(301),
     lignes: z.array(z.object({ partenaire: z.string(), montants: z.record(z.string()) })).max(500),
   }).default({ annees: [], lignes: [] }),
+  avancementPhysiqueAjoute: z.object({
+    dateConstat: z.string(),
+    taux: z.string(),
+    commentaire: z.string(),
+  }).nullable().default(null),
 }).superRefine((valeurs, contexte) => {
+  const av = valeurs.avancementPhysiqueAjoute;
+  if (av) {
+    if (!natureAvancementEligible(valeurs.nature)) contexte.addIssue({ code: "custom", path: ["avancementPhysiqueAjoute", "racine"], message: "Un constat d'avancement physique est en attente alors que la nature du projet ne le permet plus : annulez-le ou rétablissez la nature." });
+    if (!dateCalendaireValide(av.dateConstat)) contexte.addIssue({ code: "custom", path: ["avancementPhysiqueAjoute", "dateConstat"], message: "Saisissez une date de constat valide." });
+    if (!av.taux.trim()) contexte.addIssue({ code: "custom", path: ["avancementPhysiqueAjoute", "taux"], message: "Le taux est requis." });
+    else if (parseTaux(av.taux) === null) contexte.addIssue({ code: "custom", path: ["avancementPhysiqueAjoute", "taux"], message: "Taux entre 0 et 100, 2 décimales maximum." });
+    if (av.commentaire.length > COMMENTAIRE_MAX) contexte.addIssue({ code: "custom", path: ["avancementPhysiqueAjoute", "commentaire"], message: `Commentaire limité à ${COMMENTAIRE_MAX} caractères.` });
+  }
   const suivi = valeurs.suiviFinancier;
   const erreur = (message: string) => contexte.addIssue({ code: "custom", path: ["suiviFinancier"], message });
   if (suivi.annees.some((a) => !Number.isInteger(a) || a < 1900 || a > 2200)) erreur("Les années doivent être des entiers entre 1900 et 2200.");
@@ -244,6 +258,7 @@ export default function ConventionDetail() {
         documentsRetires: [],
         commentaires: convention.commentaires,
         suiviFinancier: versBrouillon(convention.suiviFinancier),
+        avancementPhysiqueAjoute: null,
       }, { keepDirtyValues: sameRecord });
       setFormRecordId(id);
     }
@@ -298,6 +313,14 @@ export default function ConventionDetail() {
     ) as Record<string, unknown>;
     cleanData.suiviFinancier = versApi(data.suiviFinancier);
     if (echeanceCalculee) cleanData.prochaineEcheance = echeanceCalculee.date;
+    delete cleanData.avancementPhysiqueAjoute;
+    const av = data.avancementPhysiqueAjoute;
+    if (av) {
+      const taux = parseTaux(av.taux);
+      if (!natureAvancementEligible(data.nature) || taux === null || !dateCalendaireValide(av.dateConstat)) return;
+      const commentaire = av.commentaire.trim();
+      cleanData.avancementPhysiqueAjoute = { dateConstat: av.dateConstat, taux, commentaire: commentaire || null };
+    }
 
     setSaving(true); setConflict("");
     try {
@@ -308,6 +331,7 @@ export default function ConventionDetail() {
           ...data,
           documentsAjoutes: [],
           documentsRetires: [],
+          avancementPhysiqueAjoute: null,
           pv: updatedConvention.pv,
           documentConvention: updatedConvention.documentConvention,
           prochaineEcheance: updatedConvention.prochaineEcheance?.split("T")[0] ?? null,
@@ -335,6 +359,8 @@ export default function ConventionDetail() {
   const onInvalid = (erreurs: FieldErrors<FormValues>) => {
     if (Object.keys(erreurs).every((cle) => cle === "suiviFinancier")) {
       document.getElementById("suivi-financier")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (Object.keys(erreurs).every((cle) => cle === "avancementPhysiqueAjoute")) {
+      document.getElementById(natureAvancementEligible(form.getValues("nature")) ? "avancement-physique" : "avancement-physique-alerte")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     toast({ variant: "destructive", title: "Formulaire incomplet", description: "Corrigez les champs signalés avant d’enregistrer." });
   };
@@ -935,6 +961,25 @@ export default function ConventionDetail() {
               )} />
             </CardContent>
           </Card>
+          {natureAvancementEligible(nature) ? (
+            <FormField control={form.control} name="avancementPhysiqueAjoute" render={({ field }) => {
+              const e = form.formState.errors.avancementPhysiqueAjoute as Record<string, { message?: string }> | undefined;
+              return (
+                <AvancementPhysiqueVolet
+                  historique={convention.avancementPhysiqueHistorique ?? []}
+                  brouillon={canEdit ? field.value ?? null : null}
+                  onChange={(v) => form.setValue("avancementPhysiqueAjoute", v, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}
+                  readOnly={!canEdit}
+                  erreurs={{ dateConstat: e?.dateConstat?.message, taux: e?.taux?.message, commentaire: e?.commentaire?.message }}
+                />
+              );
+            }} />
+          ) : canEdit && form.watch("avancementPhysiqueAjoute") ? (
+            <div id="avancement-physique-alerte" role="alert" className="scroll-mt-6 rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex flex-wrap items-center justify-between gap-3">
+              <span className="flex items-start gap-2 text-sm text-destructive"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />Un constat d'avancement physique non enregistré est en attente, mais la nature du projet ne le permet plus. Annulez-le ou rétablissez la nature Infrastructure ou Prestations pour enregistrer.</span>
+              <Button type="button" variant="outline" size="sm" data-testid="button-annuler-avancement-ineligible" onClick={() => form.setValue("avancementPhysiqueAjoute", null, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}>Annuler le constat en attente</Button>
+            </div>
+          ) : null}
           </fieldset>
           {canEdit && (
             <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-5">

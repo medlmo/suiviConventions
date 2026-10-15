@@ -45,6 +45,7 @@ import { calculerEcheance } from "../lib/echeances";
 import { preparerHistoriqueDocuments } from "../lib/document-history";
 import { genererFicheTechnique } from "../lib/fiche-technique";
 import { erreurSuiviFinancier, erreurPartenairesFinanciers } from "../lib/suivi-financier";
+import { creerConstatAvancement, erreurAvancementPhysique, natureAvecAvancement } from "../lib/avancement-physique";
 import {
   chargerReferentiel,
   chargerReferentielDepuis,
@@ -101,6 +102,13 @@ function normaliserCorps(corps: unknown): { ok: true; valeur: Record<string, unk
   }
 
   const valeur: Record<string, unknown> = { ...(corps as Record<string, unknown>) };
+  if ("avancementPhysiqueHistorique" in valeur) {
+    return { ok: false, erreur: "L'historique de l'avancement physique ne peut pas être remplacé. Ajoutez un nouveau constat." };
+  }
+  if ("avancementPhysiqueAjoute" in valeur) {
+    const erreur = erreurAvancementPhysique(valeur.avancementPhysiqueAjoute);
+    if (erreur) return { ok: false, erreur };
+  }
   if ("suiviFinancier" in valeur) {
     const erreur = erreurSuiviFinancier(valeur.suiviFinancier);
     if (erreur) return { ok: false, erreur };
@@ -1018,6 +1026,16 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       .for("update");
     if (!current || !accessible(current, user, reference)) return { status: 404 as const };
     if (current.version !== parsed.data.version) return { status: 409 as const };
+    if (parsed.data.avancementPhysiqueAjoute) {
+      const natureFinale = Object.hasOwn(valeurs, "nature") ? valeurs.nature : current.nature;
+      if (!natureAvecAvancement(natureFinale)) {
+        return { status: 400 as const, error: "L'avancement physique est réservé aux projets de nature Infrastructure ou Prestations." };
+      }
+      valeurs.avancementPhysiqueHistorique = [
+        ...(current.avancementPhysiqueHistorique ?? []),
+        creerConstatAvancement(parsed.data.avancementPhysiqueAjoute, user.username),
+      ];
+    }
 
     const anciennesMo = current.maitrisesOuvrage ?? (current.maitriseOuvrage ? [current.maitriseOuvrage] : []);
     const anciennesMoDeleguees = current.maitrisesOuvrageDeleguees ??

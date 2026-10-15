@@ -799,6 +799,25 @@ components:
           maxItems: 500
           items: { $ref: "#/components/schemas/LigneFinanciere" }
 
+    AvancementPhysiqueInput:
+      type: object
+      required: [dateConstat, taux]
+      properties:
+        dateConstat: { type: string, format: date, description: Date de constat de l'état d'exécution }
+        taux: { type: number, minimum: 0, maximum: 100, description: Taux estimé en pourcentage, deux décimales maximum }
+        commentaire: { type: ["string", "null"], maxLength: 2000 }
+
+    AvancementPhysiqueEntree:
+      type: object
+      required: [id, dateConstat, taux, commentaire, enregistreLe, auteur]
+      properties:
+        id: { type: string }
+        dateConstat: { type: string, format: date }
+        taux: { type: number, minimum: 0, maximum: 100 }
+        commentaire: { type: ["string", "null"] }
+        enregistreLe: { type: string, format: date-time }
+        auteur: { type: string }
+
     Convention:
       type: object
       required: [id, nomConvention, alerte, version, maitriseOuvrage, maitriseOuvrageDeleguee, partenaires, provincesPrefectures, communes]
@@ -832,6 +851,10 @@ components:
         maitriseOuvrageDeleguee: { type: array, items: { type: string } }
         partenaires: { type: array, items: { type: string } }
         suiviFinancier: { $ref: "#/components/schemas/SuiviFinancier" }
+        avancementPhysiqueHistorique:
+          type: array
+          description: Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent.
+          items: { $ref: "#/components/schemas/AvancementPhysiqueEntree" }
         provincesPrefectures:
           type: array
           description: Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d'ouvrage
@@ -931,6 +954,9 @@ components:
       required: [version]
       properties:
         suiviFinancier: { $ref: "#/components/schemas/SuiviFinancier" }
+        avancementPhysiqueAjoute:
+          description: Ajoute un constat sans modifier les précédents, uniquement pour les infrastructures et prestations.
+          $ref: "#/components/schemas/AvancementPhysiqueInput"
         version: { type: integer, minimum: 1 }
         documentsAjoutes:
           type: array

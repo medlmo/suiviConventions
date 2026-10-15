@@ -442,6 +442,9 @@ export const listConventionsResponseItemsItemSuiviFinancierLignesItemContributio
 
 export const listConventionsResponseItemsItemSuiviFinancierLignesMax = 500;
 
+export const listConventionsResponseItemsItemAvancementPhysiqueHistoriqueItemTauxMin = 0;
+export const listConventionsResponseItemsItemAvancementPhysiqueHistoriqueItemTauxMax = 100;
+
 
 
 export const ListConventionsResponse = zod.object({
@@ -474,6 +477,14 @@ export const ListConventionsResponse = zod.object({
 })).max(listConventionsResponseItemsItemSuiviFinancierLignesItemContributionsMax)
 })).max(listConventionsResponseItemsItemSuiviFinancierLignesMax)
 }).optional(),
+  "avancementPhysiqueHistorique": zod.array(zod.object({
+  "id": zod.string(),
+  "dateConstat": zod.coerce.date(),
+  "taux": zod.number().min(listConventionsResponseItemsItemAvancementPhysiqueHistoriqueItemTauxMin).max(listConventionsResponseItemsItemAvancementPhysiqueHistoriqueItemTauxMax),
+  "commentaire": zod.string().nullable(),
+  "enregistreLe": zod.coerce.date(),
+  "auteur": zod.string()
+})).optional().describe('Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent.'),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -578,6 +589,9 @@ export const createConventionResponseSuiviFinancierLignesItemContributionsMax = 
 
 export const createConventionResponseSuiviFinancierLignesMax = 500;
 
+export const createConventionResponseAvancementPhysiqueHistoriqueItemTauxMin = 0;
+export const createConventionResponseAvancementPhysiqueHistoriqueItemTauxMax = 100;
+
 
 
 export const CreateConventionResponse = zod.object({
@@ -609,6 +623,14 @@ export const CreateConventionResponse = zod.object({
 })).max(createConventionResponseSuiviFinancierLignesItemContributionsMax)
 })).max(createConventionResponseSuiviFinancierLignesMax)
 }).optional(),
+  "avancementPhysiqueHistorique": zod.array(zod.object({
+  "id": zod.string(),
+  "dateConstat": zod.coerce.date(),
+  "taux": zod.number().min(createConventionResponseAvancementPhysiqueHistoriqueItemTauxMin).max(createConventionResponseAvancementPhysiqueHistoriqueItemTauxMax),
+  "commentaire": zod.string().nullable(),
+  "enregistreLe": zod.coerce.date(),
+  "auteur": zod.string()
+})).optional().describe('Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent.'),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -695,6 +717,9 @@ export const listAlertesResponseSuiviFinancierLignesItemContributionsMax = 301;
 
 export const listAlertesResponseSuiviFinancierLignesMax = 500;
 
+export const listAlertesResponseAvancementPhysiqueHistoriqueItemTauxMin = 0;
+export const listAlertesResponseAvancementPhysiqueHistoriqueItemTauxMax = 100;
+
 
 
 export const ListAlertesResponseItem = zod.object({
@@ -726,6 +751,14 @@ export const ListAlertesResponseItem = zod.object({
 })).max(listAlertesResponseSuiviFinancierLignesItemContributionsMax)
 })).max(listAlertesResponseSuiviFinancierLignesMax)
 }).optional(),
+  "avancementPhysiqueHistorique": zod.array(zod.object({
+  "id": zod.string(),
+  "dateConstat": zod.coerce.date(),
+  "taux": zod.number().min(listAlertesResponseAvancementPhysiqueHistoriqueItemTauxMin).max(listAlertesResponseAvancementPhysiqueHistoriqueItemTauxMax),
+  "commentaire": zod.string().nullable(),
+  "enregistreLe": zod.coerce.date(),
+  "auteur": zod.string()
+})).optional().describe('Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent.'),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -790,6 +823,9 @@ export const getAgendaResponseConventionsItemSuiviFinancierLignesItemContributio
 
 export const getAgendaResponseConventionsItemSuiviFinancierLignesMax = 500;
 
+export const getAgendaResponseConventionsItemAvancementPhysiqueHistoriqueItemTauxMin = 0;
+export const getAgendaResponseConventionsItemAvancementPhysiqueHistoriqueItemTauxMax = 100;
+
 
 
 export const GetAgendaResponseItem = zod.object({
@@ -825,6 +861,14 @@ export const GetAgendaResponseItem = zod.object({
 })).max(getAgendaResponseConventionsItemSuiviFinancierLignesItemContributionsMax)
 })).max(getAgendaResponseConventionsItemSuiviFinancierLignesMax)
 }).optional(),
+  "avancementPhysiqueHistorique": zod.array(zod.object({
+  "id": zod.string(),
+  "dateConstat": zod.coerce.date(),
+  "taux": zod.number().min(getAgendaResponseConventionsItemAvancementPhysiqueHistoriqueItemTauxMin).max(getAgendaResponseConventionsItemAvancementPhysiqueHistoriqueItemTauxMax),
+  "commentaire": zod.string().nullable(),
+  "enregistreLe": zod.coerce.date(),
+  "auteur": zod.string()
+})).optional().describe('Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent.'),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -910,6 +954,9 @@ export const getConventionResponseSuiviFinancierLignesItemContributionsMax = 301
 
 export const getConventionResponseSuiviFinancierLignesMax = 500;
 
+export const getConventionResponseAvancementPhysiqueHistoriqueItemTauxMin = 0;
+export const getConventionResponseAvancementPhysiqueHistoriqueItemTauxMax = 100;
+
 
 
 export const GetConventionResponse = zod.object({
@@ -941,6 +988,14 @@ export const GetConventionResponse = zod.object({
 })).max(getConventionResponseSuiviFinancierLignesItemContributionsMax)
 })).max(getConventionResponseSuiviFinancierLignesMax)
 }).optional(),
+  "avancementPhysiqueHistorique": zod.array(zod.object({
+  "id": zod.string(),
+  "dateConstat": zod.coerce.date(),
+  "taux": zod.number().min(getConventionResponseAvancementPhysiqueHistoriqueItemTauxMin).max(getConventionResponseAvancementPhysiqueHistoriqueItemTauxMax),
+  "commentaire": zod.string().nullable(),
+  "enregistreLe": zod.coerce.date(),
+  "auteur": zod.string()
+})).optional().describe('Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent.'),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
@@ -999,6 +1054,11 @@ export const updateConventionBodySuiviFinancierLignesItemContributionsMax = 301;
 
 export const updateConventionBodySuiviFinancierLignesMax = 500;
 
+export const updateConventionBodyAvancementPhysiqueAjouteTauxMin = 0;
+export const updateConventionBodyAvancementPhysiqueAjouteTauxMax = 100;
+
+export const updateConventionBodyAvancementPhysiqueAjouteCommentaireMax = 2000;
+
 
 export const updateConventionBodyDocumentsAjoutesItemObjectPathMax = 512;
 
@@ -1021,6 +1081,11 @@ export const UpdateConventionBody = zod.object({
 })).max(updateConventionBodySuiviFinancierLignesItemContributionsMax)
 })).max(updateConventionBodySuiviFinancierLignesMax)
 }).optional(),
+  "avancementPhysiqueAjoute": zod.object({
+  "dateConstat": zod.coerce.date().describe('Date de constat de l\'état d\'exécution'),
+  "taux": zod.number().min(updateConventionBodyAvancementPhysiqueAjouteTauxMin).max(updateConventionBodyAvancementPhysiqueAjouteTauxMax).describe('Taux estimé en pourcentage'),
+  "commentaire": zod.string().max(updateConventionBodyAvancementPhysiqueAjouteCommentaireMax).nullish()
+}).optional().describe('Ajoute un constat sans modifier les précédents, uniquement pour les infrastructures et prestations.'),
   "version": zod.number().int().min(1),
   "documentsAjoutes": zod.array(zod.object({
   "objectPath": zod.string().min(1).max(updateConventionBodyDocumentsAjoutesItemObjectPathMax),
@@ -1077,6 +1142,9 @@ export const updateConventionResponseSuiviFinancierLignesItemContributionsMax = 
 
 export const updateConventionResponseSuiviFinancierLignesMax = 500;
 
+export const updateConventionResponseAvancementPhysiqueHistoriqueItemTauxMin = 0;
+export const updateConventionResponseAvancementPhysiqueHistoriqueItemTauxMax = 100;
+
 
 
 export const UpdateConventionResponse = zod.object({
@@ -1108,6 +1176,14 @@ export const UpdateConventionResponse = zod.object({
 })).max(updateConventionResponseSuiviFinancierLignesItemContributionsMax)
 })).max(updateConventionResponseSuiviFinancierLignesMax)
 }).optional(),
+  "avancementPhysiqueHistorique": zod.array(zod.object({
+  "id": zod.string(),
+  "dateConstat": zod.coerce.date(),
+  "taux": zod.number().min(updateConventionResponseAvancementPhysiqueHistoriqueItemTauxMin).max(updateConventionResponseAvancementPhysiqueHistoriqueItemTauxMax),
+  "commentaire": zod.string().nullable(),
+  "enregistreLe": zod.coerce.date(),
+  "auteur": zod.string()
+})).optional().describe('Historique conservé, même si la nature du projet change. Le taux courant est le constat le plus récent.'),
   "provincesPrefectures": zod.array(zod.string()).describe('Provinces et préfectures du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),

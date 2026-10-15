@@ -16,6 +16,8 @@ export * from './auditEventAfter';
 export * from './auditEventBefore';
 export * from './auditPage';
 export * from './authUser';
+export * from './avancementPhysiqueEntree';
+export * from './avancementPhysiqueInput';
 export * from './completeUploadInput';
 export * from './compteurAlerte';
 export * from './compteurAlerteCouleur';

@@ -32,6 +32,15 @@ export type SuiviFinancier = {
   }[];
 };
 
+export type HistoriqueAvancementPhysique = {
+  id: string;
+  dateConstat: string;
+  taux: number;
+  commentaire: string | null;
+  enregistreLe: string;
+  auteur: string;
+};
+
 export const conventionsTable = pgTable(
   "conventions",
   {
@@ -75,6 +84,8 @@ export const conventionsTable = pgTable(
     partenaires: text("partenaires").array(),
     suiviFinancier: jsonb("suivi_financier").$type<SuiviFinancier>()
       .notNull().default({ annees: [], lignes: [] }),
+    avancementPhysiqueHistorique: jsonb("avancement_physique_historique")
+      .$type<HistoriqueAvancementPhysique[]>().notNull().default([]),
 
     // Documents
     documentConvention: text("document_convention"),
