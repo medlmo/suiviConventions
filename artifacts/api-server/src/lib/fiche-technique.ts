@@ -27,6 +27,151 @@ function montant(value?: number | null): string {
   }).format(value);
 }
 
+function montantCentimes(value: number): bigint {
+  return BigInt(Math.round(value * 100));
+}
+
+function formaterCentimes(value: bigint): string {
+  const entier = new Intl.NumberFormat("fr-MA", { maximumFractionDigits: 0 }).format(value / 100n);
+  return `${entier},${String(value % 100n).padStart(2, "0")}`;
+}
+
+function celluleMontage(
+  value: string,
+  width: number,
+  options: { fill?: string; color?: string; bold?: boolean; center?: boolean } = {},
+): TableCell {
+  const rtl = /[\u0600-\u06FF]/u.test(value);
+  return new TableCell({
+    width: { size: width, type: WidthType.DXA },
+    ...(options.fill ? { shading: { fill: options.fill } } : {}),
+    margins: { top: 90, bottom: 80, left: 100, right: 100 },
+    verticalAlign: VerticalAlign.CENTER,
+    children: [new Paragraph({
+      bidirectional: rtl,
+      alignment: rtl ? AlignmentType.RIGHT : options.center ? AlignmentType.CENTER : AlignmentType.LEFT,
+      spacing: { before: 0, after: 0, line: 240 },
+      children: [new TextRun({
+        text: value,
+        font: "Arial",
+        size: 18,
+        bold: options.bold ?? false,
+        color: options.color ?? NAVY,
+        rightToLeft: rtl,
+      })],
+    })],
+  });
+}
+
+function ligneEnteteMontage(columnSpan = 1): TableRow {
+  return new TableRow({
+    cantSplit: true,
+    children: [new TableCell({
+      columnSpan,
+      shading: { fill: NAVY },
+      margins: { top: 110, bottom: 90, left: 140, right: 140 },
+      children: [new Paragraph({
+        keepNext: true,
+        spacing: { after: 0 },
+        children: [new TextRun({ text: "06  MONTAGE FINANCIER (MAD)", bold: true, size: 21, color: "FFFFFF" })],
+      })],
+    })],
+  });
+}
+
+function tableauxMontage(convention: ConventionApi): Table[] {
+  const suivi = convention.suiviFinancier;
+  const annees = [...new Set(suivi?.annees ?? [])].filter(Number.isInteger).sort((a, b) => b - a);
+  const lignes = suivi?.lignes ?? [];
+  const borders = {
+    top: RULE, bottom: RULE, left: RULE, right: RULE,
+    insideHorizontal: RULE, insideVertical: RULE,
+  };
+
+  if (annees.length === 0 || lignes.length === 0) {
+    const message = annees.length === 0
+      ? "Aucune année de contribution n'a été renseignée."
+      : "Aucun partenaire n'a été ajouté au montage financier.";
+    return [new Table({
+      width: { size: WIDTH, type: WidthType.DXA },
+      layout: TableLayoutType.FIXED,
+      columnWidths: [WIDTH],
+      borders,
+      rows: [
+        ligneEnteteMontage(),
+        new TableRow({ cantSplit: true, children: [celluleMontage(message, WIDTH, { fill: LIGHT })] }),
+      ],
+    })];
+  }
+
+  const tableaux: Table[] = [];
+  const tailleBloc = 5;
+  for (let debut = 0; debut < annees.length; debut += tailleBloc) {
+    const anneesBloc = annees.slice(debut, debut + tailleBloc);
+    const largeurPartenaire = 3000;
+    const largeurAnnee = Math.floor((WIDTH - largeurPartenaire) / anneesBloc.length);
+    const largeurs = [largeurPartenaire, ...anneesBloc.map(() => largeurAnnee)];
+    largeurs[largeurs.length - 1] = WIDTH - largeurs.slice(0, -1).reduce((total, largeur) => total + largeur, 0);
+    const rows: TableRow[] = [];
+
+    if (debut === 0) rows.push(ligneEnteteMontage(anneesBloc.length + 1));
+    rows.push(new TableRow({
+      cantSplit: true,
+      children: [
+        celluleMontage("Partenaire", largeurPartenaire, { fill: LIGHT, bold: true }),
+        ...anneesBloc.map((annee, index) =>
+          celluleMontage(String(annee), largeurs[index + 1]!, { fill: LIGHT, bold: true, center: true })),
+      ],
+    }));
+
+    for (const ligne of lignes) {
+      const contributions = new Map(ligne.contributions.map(({ annee, montant }) => [annee, montant]));
+      rows.push(new TableRow({
+        cantSplit: true,
+        children: [
+          celluleMontage(ligne.partenaire, largeurPartenaire),
+          ...anneesBloc.map((annee, index) => {
+            const value = contributions.get(annee);
+            return celluleMontage(
+              value === undefined ? "—" : montant(value),
+              largeurs[index + 1]!,
+              { center: true },
+            );
+          }),
+        ],
+      }));
+    }
+
+    rows.push(new TableRow({
+      cantSplit: true,
+      children: [
+        celluleMontage("Total général", largeurPartenaire, { fill: LIGHT, bold: true }),
+        ...anneesBloc.map((annee, index) => {
+          const montants = lignes.flatMap(ligne => {
+            const value = ligne.contributions.find(contribution => contribution.annee === annee)?.montant;
+            return value === undefined ? [] : [montantCentimes(value)];
+          });
+          const total = montants.length ? montants.reduce((sum, value) => sum + value, 0n) : null;
+          return celluleMontage(
+            total === null ? "—" : formaterCentimes(total),
+            largeurs[index + 1]!,
+            { fill: LIGHT, bold: true, center: true },
+          );
+        }),
+      ],
+    }));
+
+    tableaux.push(new Table({
+      width: { size: WIDTH, type: WidthType.DXA },
+      layout: TableLayoutType.FIXED,
+      columnWidths: largeurs,
+      borders,
+      rows,
+    }));
+  }
+  return tableaux;
+}
+
 function texte(value: string, bold = false, color = NAVY): Paragraph {
   const rtl = /[\u0600-\u06FF]/u.test(value);
   return new Paragraph({
@@ -134,6 +279,7 @@ export async function genererFicheTechnique(convention: ConventionApi): Promise<
           borders: { top: RULE, bottom: RULE, left: RULE, right: RULE, insideHorizontal: RULE, insideVertical: RULE },
           rows,
         }),
+        ...tableauxMontage(convention),
       ],
     }],
   }));

@@ -9,6 +9,12 @@ La fiche technique Word est un export des informations actuellement enregistrée
 
 **How to apply:** Préserver cette séparation entre export et archivage. N'archiver une fiche générée dans les documents que sur demande distincte.
 
+La fiche Word doit inclure le tableau du « Montage financier » enregistré sur la convention, avec les colonnes d'années, les partenaires et les totaux annuels.
+
+**Why:** L'utilisateur a demandé explicitement la présence du montage financier dans la fiche technique Word de chaque convention.
+
+**How to apply:** Lire `suiviFinancier` dans les données de la convention pour produire l'export. Garder les années et montants enregistrés tels quels et inclure une indication explicite si aucun suivi n'existe.
+
 Pour embarquer une image dans le serveur compilé, privilégier le chargement base64 avec décodage par Buffer plutôt que le chargement binaire natif d'esbuild.
 
 **Why:** Le chargement binaire a produit un appel à Uint8Array.fromBase64, absent du runtime Node de ce projet, et a empêché la génération du document malgré un contrôle TypeScript réussi.
