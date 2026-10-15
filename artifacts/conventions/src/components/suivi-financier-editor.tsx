@@ -251,7 +251,6 @@ export function SuiviFinancierEditor({ value, onChange, partenairesEligibles, re
           </table>
         </div>
       )}
-      <p className="text-xs text-muted-foreground">Montants en MAD, 2 décimales maximum. Une cellule vide reste « non renseignée » ; saisissez 0 pour une contribution nulle.</p>
 
       <AlertDialog open={!!confirmation} onOpenChange={(o) => { if (!o) setConfirmation(null); }}>
         <AlertDialogContent>

@@ -248,10 +248,6 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
             </table>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">
-          Montants en MAD, 2 décimales maximum ; saisissez 0 pour un montant nul. Taux = versé ÷ programmé × 100.
-          La date du dernier versement est requise dès qu'un montant a été versé et doit rester vide sinon.
-        </p>
 
         <AlertDialog open={confirmation !== null} onOpenChange={(o) => { if (!o) setConfirmation(null); }}>
           <AlertDialogContent>
