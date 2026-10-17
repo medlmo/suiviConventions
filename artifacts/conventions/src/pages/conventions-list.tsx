@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/utils";
 import { useAuth, errorMessage } from "@/hooks/use-auth";
+import { PartenaireMultiSelect } from "@/components/partenaire-multi-select";
 
 export default function ConventionsList() {
   const { user } = useAuth();
@@ -25,7 +26,7 @@ export default function ConventionsList() {
   const [q, setQ] = useState("");
   const [alerte, setAlerte] = useState<NiveauAlerte | undefined>();
   const [rattachement, setRattachement] = useState<string | undefined>();
-  const [partenaire, setPartenaire] = useState<string | undefined>();
+  const [partenaires, setPartenaires] = useState<string[]>([]);
   const [statutConvention, setStatutConvention] = useState<string | undefined>();
   const [tri, setTri] = useState<ListConventionsTri>("urgence");
   // Urgence ascendante = les retards en tête (rang 0), « À qualifier » en fin.
@@ -37,7 +38,7 @@ export default function ConventionsList() {
     q: q || undefined,
     alerte,
     rattachement: rattachement === "all" ? undefined : rattachement,
-    partenaire: partenaire === "all" ? undefined : partenaire,
+    partenaires: partenaires.length ? partenaires : undefined,
     statutConvention: statutConvention === "all" ? undefined : statutConvention,
     tri,
     ordre,
@@ -59,7 +60,7 @@ export default function ConventionsList() {
     if (q) params.append("q", q);
     if (alerte) params.append("alerte", alerte);
     if (rattachement && rattachement !== "all") params.append("rattachement", rattachement);
-    if (partenaire && partenaire !== "all") params.append("partenaire", partenaire);
+    partenaires.forEach((partenaire) => params.append("partenaires", partenaire));
     if (statutConvention && statutConvention !== "all") params.append("statutConvention", statutConvention);
     if (tri) params.append("tri", tri);
     if (ordre) params.append("ordre", ordre);
@@ -155,24 +156,18 @@ export default function ConventionsList() {
               )}
 
               {(options?.partenaires.length ?? 0) > 0 && (
-              <Select value={partenaire || "all"} onValueChange={(v) => { setPartenaire(v === "all" ? undefined : v); setPage(1); }}>
-                <SelectTrigger className="w-[200px] h-10 [&>span]:truncate" data-testid="select-filter-partner">
-                  <SelectValue placeholder="Partenaire" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les partenaires</SelectItem>
-                  {options?.partenaires.map(nom => (
-                    <SelectItem key={nom} value={nom}>{nom}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <PartenaireMultiSelect
+                  options={options?.partenaires ?? []}
+                  selected={partenaires}
+                  onChange={(next) => { setPartenaires(next); setPage(1); }}
+                />
               )}
 
-              {(q || alerte || rattachement || partenaire || statutConvention) && (
+              {(q || alerte || rattachement || partenaires.length > 0 || statutConvention) && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setPartenaire(undefined); setStatutConvention(undefined); setPage(1); }}
+                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setPartenaires([]); setStatutConvention(undefined); setPage(1); }}
                   className="h-10 w-10 text-muted-foreground hover:text-destructive"
                   title="Effacer les filtres"
                 >

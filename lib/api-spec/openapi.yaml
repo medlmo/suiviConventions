@@ -394,10 +394,14 @@ paths:
           in: query
           description: Recherche texte dans les conventions, responsables, porteurs de projet, maîtrises d'ouvrage, partenaires et territoires. Supporte l'arabe.
           schema: { type: string }
-        - name: partenaire
+        - name: partenaires
           in: query
-          description: Filtre les conventions associées à un partenaire précis.
-          schema: { type: string }
+          description: Filtre les conventions associées à au moins un des partenaires sélectionnés.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string }
         - name: alerte
           in: query
           description: Filtre sur le niveau d'alerte recalculé

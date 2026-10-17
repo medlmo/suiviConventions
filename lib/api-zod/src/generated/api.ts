@@ -414,7 +414,7 @@ export const listConventionsQueryOrdreDefault = `asc`;
 
 export const ListConventionsQueryParams = zod.object({
   "q": zod.coerce.string().optional().describe('Recherche texte dans les conventions, responsables, porteurs de projet, maîtrises d\'ouvrage, partenaires et territoires. Supporte l\'arabe.'),
-  "partenaire": zod.coerce.string().optional().describe('Filtre les conventions associées à un partenaire précis.'),
+  "partenaires": zod.array(zod.coerce.string()).optional().describe('Filtre les conventions associées à au moins un des partenaires sélectionnés.'),
   "alerte": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).optional().describe('Filtre sur le niveau d\'alerte recalculé'),
   "statutConvention": zod.coerce.string().optional(),
   "rattachement": zod.coerce.string().optional(),

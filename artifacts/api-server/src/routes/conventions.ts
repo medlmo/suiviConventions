@@ -175,7 +175,7 @@ interface FiltresListe {
   alerte?: string;
   statutConvention?: string;
   rattachement?: string;
-  partenaire?: string;
+  partenaires?: string[];
   responsableProjet?: string;
   natureFonds?: string;
   decision?: string;
@@ -219,8 +219,9 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
   if (filtres.rattachement) {
     conditions.push(eq(conventionsTable.rattachement, filtres.rattachement));
   }
-  if (filtres.partenaire) {
-    conditions.push(sql`${conventionsTable.partenaires} @> ARRAY[${filtres.partenaire}]::text[]`);
+  if (filtres.partenaires?.length) {
+    const valeurs = sql.join(filtres.partenaires.map((partenaire) => sql`${partenaire}`), sql`, `);
+    conditions.push(sql`${conventionsTable.partenaires} && ARRAY[${valeurs}]::text[]`);
   }
   if (filtres.responsableProjet) {
     conditions.push(eq(conventionsTable.responsableProjet, filtres.responsableProjet));
@@ -407,7 +408,11 @@ function construireTri(tri: string, ordre: string): SQL[] {
 }
 
 router.get("/conventions", async (req, res): Promise<void> => {
-  const query = ListConventionsQueryParams.safeParse(req.query);
+  const partenaires = req.query.partenaires;
+  const query = ListConventionsQueryParams.safeParse({
+    ...req.query,
+    partenaires: partenaires === undefined ? undefined : Array.isArray(partenaires) ? partenaires : [partenaires],
+  });
   if (!query.success) {
     res.status(400).json({ error: query.error.message });
     return;
@@ -622,7 +627,11 @@ router.get("/conventions/options-filtres", async (req, res): Promise<void> => {
  * acceptés, sans pagination.
  */
 router.get("/conventions/export", async (req, res): Promise<void> => {
-  const query = ListConventionsQueryParams.safeParse(req.query);
+  const partenaires = req.query.partenaires;
+  const query = ListConventionsQueryParams.safeParse({
+    ...req.query,
+    partenaires: partenaires === undefined ? undefined : Array.isArray(partenaires) ? partenaires : [partenaires],
+  });
   if (!query.success) {
     res.status(400).json({ error: query.error.message });
     return;

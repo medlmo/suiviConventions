@@ -15,9 +15,9 @@ export type ListConventionsParams = {
  */
 q?: string;
 /**
- * Filtre les conventions associées à un partenaire précis.
+ * Filtre les conventions associées à au moins un des partenaires sélectionnés.
  */
-partenaire?: string;
+partenaires?: string[];
 /**
  * Filtre sur le niveau d'alerte recalculé
  */
