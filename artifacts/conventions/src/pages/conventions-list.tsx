@@ -32,7 +32,7 @@ export default function ConventionsList() {
 
   const { data, isLoading, isError, error, refetch } = useListConventions({
     page,
-    pageSize: 20,
+    pageSize: 25,
     q: q || undefined,
     alerte,
     rattachement: rattachement === "all" ? undefined : rattachement,
