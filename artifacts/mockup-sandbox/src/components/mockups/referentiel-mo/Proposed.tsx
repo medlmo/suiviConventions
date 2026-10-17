@@ -7,11 +7,14 @@ import {
   ChevronDown,
   CircleHelp,
   FileText,
+  FolderTree,
   Landmark,
+  Layers3,
   Pencil,
   Plus,
   Search,
   X,
+  Waypoints,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -56,27 +59,148 @@ const initialMaitrises = [
   "مؤسسة التعاون بين الجماعات",
 ];
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 20;
 
 type Draft = { id: number | null; nom: string };
+
+function normalizeSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase("fr")
+    .replace(/[یىئ]/g, "ي")
+    .replace(/ک/g, "ك")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ؤ/g, "و")
+    .replace(/[\u0640\u064B-\u0655\u0670]/g, "");
+}
+
+function OrganigrammePreview() {
+  return (
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
+      <Card className="overflow-hidden rounded-xl border-[#dce2e2] bg-[#fffefa] shadow-[0_2px_10px_rgba(34,54,70,.035)]">
+        <div className="border-b border-[#e3e7e5] px-5 py-5 sm:px-7">
+          <div className="flex items-center gap-2">
+            <FolderTree className="h-4 w-4 text-[#8c702f]" />
+            <h2 className="text-base font-semibold text-[#263e52]">Organigramme</h2>
+          </div>
+          <p className="mt-1 text-xs text-[#78858b]">Directions, divisions et services.</p>
+        </div>
+
+        <div className="space-y-4 p-5 sm:p-7">
+          <section className="overflow-hidden rounded-lg border border-[#e1e6e3]">
+            <div className="bg-[#f8f8f4] px-4 py-3">
+              <h3 className="text-sm font-semibold text-[#30495c]">Direction générale des services</h3>
+              <p className="mt-1 text-xs text-[#78858b]">Services directement rattachés</p>
+            </div>
+            <div className="grid gap-2 p-4 sm:grid-cols-2">
+              {["Coopération", "Juridique"].map((service) => (
+                <div key={service} className="flex items-center gap-2 rounded-md bg-[#f8f8f4] px-3 py-2.5 text-sm text-[#526875]">
+                  <Waypoints className="h-3.5 w-3.5 shrink-0 text-[#a17c37]" />
+                  <span dir="auto">{service}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {[
+            {
+              direction: "Direction de l’aménagement du territoire",
+              divisions: [
+                {
+                  nom: "Études et planification",
+                  services: ["Urbanisme", "Suivi des projets"],
+                },
+                {
+                  nom: "Développement territorial",
+                  services: ["Coordination territoriale"],
+                },
+              ],
+            },
+            {
+              direction: "Direction des finances",
+              divisions: [
+                {
+                  nom: "Budget et programmation",
+                  services: ["Préparation budgétaire", "Suivi financier"],
+                },
+              ],
+            },
+          ].map((direction) => (
+            <section key={direction.direction} className="overflow-hidden rounded-lg border border-[#e1e6e3]">
+              <div className="flex items-center gap-2 bg-[#f8f8f4] px-4 py-3">
+                <Building2 className="h-4 w-4 shrink-0 text-[#315a79]" />
+                <h3 className="text-sm font-semibold text-[#30495c]" dir="auto">{direction.direction}</h3>
+              </div>
+              <div className="space-y-3 p-4">
+                {direction.divisions.map((division) => (
+                  <div key={division.nom} className="border-l-2 border-[#b48b3e]/50 pl-3">
+                    <div className="flex items-center gap-2 text-sm font-medium text-[#526875]">
+                      <Layers3 className="h-3.5 w-3.5 shrink-0 text-[#a17c37]" />
+                      <span dir="auto">{division.nom}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2 pl-5">
+                      {division.services.map((service) => (
+                        <span key={service} className="inline-flex items-center gap-1.5 rounded-md border border-[#e5e9e5] px-2.5 py-1.5 text-xs text-[#687985]">
+                          <Waypoints className="h-3 w-3 text-[#89979a]" />
+                          <span dir="auto">{service}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </Card>
+
+      <aside>
+        <Card className="rounded-xl border-[#dce2e2] bg-[#fffefa] p-5 shadow-[0_2px_10px_rgba(34,54,70,.035)]">
+          <div className="mb-4 flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f3ead7] text-[#9b772f]">
+              <Building2 className="h-4 w-4" />
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-[.1em] text-[#546a77]">Vue d’ensemble</span>
+          </div>
+          <p className="font-['Outfit'] text-lg font-semibold text-[#294b67]">Structure régionale</p>
+          <div className="my-4 h-px bg-[#e7e9e4]" />
+          <p className="text-xs leading-5 text-[#65757c]">
+            L’organigramme reste dans son propre espace. Le catalogue des maîtrises d’ouvrage se consulte séparément.
+          </p>
+          <div className="mt-4 flex items-center gap-2 border-t border-[#e7e9e4] pt-3 text-[10px] font-medium text-[#78868a]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#b48b3e]" />
+            Référentiel régional · Souss-Massa
+          </div>
+        </Card>
+        <p className="mt-3 px-1 text-[10px] leading-4 text-[#899397]">
+          Aperçu illustratif de l’organigramme, sans modification des données.
+        </p>
+      </aside>
+    </div>
+  );
+}
 
 export function Proposed() {
   const [items, setItems] = useState(() => initialMaitrises.map((nom, index) => ({ id: index + 1, nom })));
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [activeSection, setActiveSection] = useState<"organisation" | "maitrises-ouvrage">("maitrises-ouvrage");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [savedMessage, setSavedMessage] = useState("");
 
   const filtered = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase("fr");
+    const term = normalizeSearchText(search.trim());
     return items
-      .filter((item) => !term || item.nom.toLocaleLowerCase("fr").includes(term))
+      .filter((item) => !term || normalizeSearchText(item.nom).includes(term))
       .sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
   }, [items, search]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const visibleItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const rangeStart = filtered.length ? (page - 1) * PAGE_SIZE + 1 : 0;
-  const rangeEnd = Math.min(page * PAGE_SIZE, filtered.length);
+  const currentPage = Math.min(page, pageCount);
+  const visibleItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const rangeStart = filtered.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
+  const rangeEnd = Math.min(currentPage * PAGE_SIZE, filtered.length);
 
   const openDraft = (item?: { id: number; nom: string }) => {
     setSavedMessage("");
@@ -118,21 +242,51 @@ export function Proposed() {
               <span className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#9a7530]">Référentiel partagé</span>
             </div>
             <h1 className="font-['Outfit'] text-[30px] font-semibold leading-tight tracking-[-.035em] text-[#1e3448] sm:text-[36px]">
-              Maîtrises d’ouvrage
+              Référentiel
             </h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-[#657581]">
-              Un catalogue unique, utilisé dans les conventions et les comptes agents.
+              Organigramme et maîtrises d’ouvrage consultés dans deux espaces distincts.
             </p>
           </div>
-          <Button
-            className="h-10 shrink-0 bg-[#244c6d] px-4 text-white shadow-sm hover:bg-[#193d5b]"
-            onClick={() => openDraft()}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Ajouter une maîtrise
-          </Button>
+          {activeSection === "maitrises-ouvrage" && (
+            <Button
+              type="button"
+              data-testid="button-add-maitrise"
+              className="h-10 shrink-0 bg-[#244c6d] px-4 text-white shadow-sm hover:bg-[#193d5b]"
+              onClick={() => openDraft()}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter une maîtrise
+            </Button>
+          )}
         </header>
 
+        <div role="group" aria-label="Sections du référentiel" className="mb-6 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant={activeSection === "organisation" ? "default" : "outline"}
+            data-testid="button-view-organisation"
+            aria-pressed={activeSection === "organisation"}
+            onClick={() => setActiveSection("organisation")}
+            className={activeSection === "organisation" ? "bg-[#244c6d] text-white hover:bg-[#193d5b]" : "border-[#d9e0df] bg-[#fffefa] text-[#526875]"}
+          >
+            <FolderTree className="mr-2 h-4 w-4" />
+            Organigramme
+          </Button>
+          <Button
+            type="button"
+            variant={activeSection === "maitrises-ouvrage" ? "default" : "outline"}
+            data-testid="button-view-maitrises"
+            aria-pressed={activeSection === "maitrises-ouvrage"}
+            onClick={() => setActiveSection("maitrises-ouvrage")}
+            className={activeSection === "maitrises-ouvrage" ? "bg-[#244c6d] text-white hover:bg-[#193d5b]" : "border-[#d9e0df] bg-[#fffefa] text-[#526875]"}
+          >
+            <Building2 className="mr-2 h-4 w-4" />
+            Maîtrises d’ouvrage
+          </Button>
+        </div>
+
+        {activeSection === "organisation" ? <OrganigrammePreview /> : (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
           <Card className="overflow-hidden rounded-xl border-[#dce2e2] bg-[#fffefa] shadow-[0_2px_10px_rgba(34,54,70,.035)]">
             <div className="border-b border-[#e3e7e5] px-5 py-5 sm:px-7">
@@ -145,6 +299,7 @@ export function Proposed() {
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#87939a]" />
                   <Input
                     value={search}
+                    data-testid="input-search-maitrise"
                     onChange={(event) => {
                       setSearch(event.target.value);
                       setPage(1);
@@ -156,6 +311,7 @@ export function Proposed() {
                   {search && (
                     <button
                       type="button"
+                      data-testid="button-clear-maitrise-search"
                       onClick={() => {
                         setSearch("");
                         setPage(1);
@@ -171,7 +327,7 @@ export function Proposed() {
 
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs text-[#687985]" aria-live="polite">
-                  <span className="font-semibold text-[#294b67]">{filtered.length}</span>
+                  <span className="font-semibold text-[#294b67]" data-testid="text-maitrise-count">{filtered.length}</span>
                   {" "}{filtered.length === 1 ? "résultat" : "résultats"}
                   {search && <span> pour « {search} »</span>}
                 </p>
@@ -196,7 +352,7 @@ export function Proposed() {
                         className="group grid grid-cols-[32px_minmax(0,1fr)_40px] items-center gap-3 px-5 py-[13px] transition-colors hover:bg-[#f8f8f3] sm:grid-cols-[36px_minmax(0,1fr)_92px] sm:px-7"
                       >
                         <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#eef1ef] font-mono text-[10px] text-[#718087]">
-                          {String((page - 1) * PAGE_SIZE + index + 1).padStart(2, "0")}
+                          {String((currentPage - 1) * PAGE_SIZE + index + 1).padStart(2, "0")}
                         </span>
                         <div className="min-w-0">
                           <span className="block text-[13px] font-medium leading-5 text-[#30495c]" dir="auto">{item.nom}</span>
@@ -205,6 +361,7 @@ export function Proposed() {
                           type="button"
                           variant="ghost"
                           size="sm"
+                          data-testid={`button-rename-maitrise-${item.id}`}
                           aria-label={`Renommer ${item.nom}`}
                           onClick={() => openDraft(item)}
                           className="h-8 w-8 justify-self-end rounded-md text-[#6d7c82] hover:bg-[#eaf0f1] hover:text-[#244c6d] sm:w-auto sm:px-2.5"
@@ -225,34 +382,52 @@ export function Proposed() {
                   <p className="mt-1.5 max-w-xs text-xs leading-5 text-[#78858b]">
                     Essayez un autre terme ou effacez la recherche pour parcourir le catalogue.
                   </p>
-                  <Button variant="outline" size="sm" className="mt-4 border-[#d9e0df]" onClick={() => setSearch("")}>Effacer la recherche</Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    data-testid="button-clear-maitrise-search-empty"
+                    className="mt-4 border-[#d9e0df]"
+                    onClick={() => {
+                      setSearch("");
+                      setPage(1);
+                    }}
+                  >
+                    Effacer la recherche
+                  </Button>
                 </div>
               )}
             </div>
 
             <footer className="flex flex-col gap-3 border-t border-[#e3e7e5] bg-[#fbfbf8] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
               <p className="text-xs text-[#7a878c]">
-                {rangeStart}–{rangeEnd} sur {filtered.length} entrée{filtered.length > 1 ? "s" : ""}
+                <span data-testid="text-maitrise-page-range">
+                  {rangeStart}–{rangeEnd} sur {filtered.length} entrée{filtered.length > 1 ? "s" : ""}
+                </span>
                 <span className="ml-1 text-[#9aa3a4]">· catalogue complet : {items.length}</span>
               </p>
               <nav aria-label="Pagination du catalogue" className="flex items-center gap-1 self-end sm:self-auto">
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  type="button"
+                  data-testid="button-previous-maitrise-page"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage((current) => Math.max(1, Math.min(current, pageCount) - 1))}
                   className="h-8 border-[#dce2e1] px-2.5 text-[#536b79]"
                 >
                   <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Précédent
                 </Button>
                 <span className="min-w-[76px] px-2 text-center font-mono text-[11px] text-[#61727c]">
-                  {page} <span className="text-[#a3aaa8]">/</span> {pageCount}
+                  {currentPage} <span className="text-[#a3aaa8]">/</span> {pageCount}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={page >= pageCount}
-                  onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                  type="button"
+                  data-testid="button-next-maitrise-page"
+                  disabled={currentPage >= pageCount}
+                  onClick={() => setPage((current) => Math.min(pageCount, Math.min(current, pageCount) + 1))}
                   className="h-8 border-[#dce2e1] px-2.5 text-[#536b79]"
                 >
                   Suivant <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -297,6 +472,7 @@ export function Proposed() {
             </div>
           </aside>
         </div>
+        )}
         {savedMessage && (
           <div role="status" className="fixed bottom-5 right-5 z-20 flex items-center gap-2 rounded-lg border border-[#cbdcd2] bg-[#f3f8f4] px-4 py-3 text-xs font-medium text-[#315e48] shadow-lg">
             <Check className="h-4 w-4" /> {savedMessage}
