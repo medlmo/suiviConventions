@@ -5,8 +5,6 @@ import {
   Building2,
   Check,
   ChevronDown,
-  CircleHelp,
-  FileText,
   FolderTree,
   Landmark,
   Layers3,
@@ -78,7 +76,7 @@ function normalizeSearchText(value: string) {
 
 function OrganigrammePreview() {
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
+    <div>
       <Card className="overflow-hidden rounded-xl border-[#dce2e2] bg-[#fffefa] shadow-[0_2px_10px_rgba(34,54,70,.035)]">
         <div className="border-b border-[#e3e7e5] px-5 py-5 sm:px-7">
           <div className="flex items-center gap-2">
@@ -156,28 +154,6 @@ function OrganigrammePreview() {
         </div>
       </Card>
 
-      <aside>
-        <Card className="rounded-xl border-[#dce2e2] bg-[#fffefa] p-5 shadow-[0_2px_10px_rgba(34,54,70,.035)]">
-          <div className="mb-4 flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f3ead7] text-[#9b772f]">
-              <Building2 className="h-4 w-4" />
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-[.1em] text-[#546a77]">Vue d’ensemble</span>
-          </div>
-          <p className="font-['Outfit'] text-lg font-semibold text-[#294b67]">Structure régionale</p>
-          <div className="my-4 h-px bg-[#e7e9e4]" />
-          <p className="text-xs leading-5 text-[#65757c]">
-            L’organigramme reste dans son propre espace. Le catalogue des maîtrises d’ouvrage se consulte séparément.
-          </p>
-          <div className="mt-4 flex items-center gap-2 border-t border-[#e7e9e4] pt-3 text-[10px] font-medium text-[#78868a]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#b48b3e]" />
-            Référentiel régional · Souss-Massa
-          </div>
-        </Card>
-        <p className="mt-3 px-1 text-[10px] leading-4 text-[#899397]">
-          Aperçu illustratif de l’organigramme, sans modification des données.
-        </p>
-      </aside>
     </div>
   );
 }
@@ -287,7 +263,7 @@ export function Proposed() {
         </div>
 
         {activeSection === "organisation" ? <OrganigrammePreview /> : (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
+        <div>
           <Card className="overflow-hidden rounded-xl border-[#dce2e2] bg-[#fffefa] shadow-[0_2px_10px_rgba(34,54,70,.035)]">
             <div className="border-b border-[#e3e7e5] px-5 py-5 sm:px-7">
               <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -436,41 +412,6 @@ export function Proposed() {
             </footer>
           </Card>
 
-          <aside className="space-y-4">
-            <Card className="rounded-xl border-[#dce2e2] bg-[#fffefa] p-5 shadow-[0_2px_10px_rgba(34,54,70,.035)]">
-              <div className="mb-4 flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f3ead7] text-[#9b772f]">
-                  <Building2 className="h-4 w-4" />
-                </span>
-                <span className="text-xs font-semibold uppercase tracking-[.1em] text-[#546a77]">Vue d’ensemble</span>
-              </div>
-              <p className="font-['Outfit'] text-[34px] font-semibold leading-none tracking-[-.04em] text-[#294b67]">{items.length}</p>
-              <p className="mt-2 text-xs text-[#78858b]">organismes référencés</p>
-              <div className="my-4 h-px bg-[#e7e9e4]" />
-              <div className="flex items-start gap-2.5 text-xs leading-5 text-[#65757c]">
-                <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#a17c37]" />
-                <p>Les entrées servent aux deux champs « Maîtrise d’ouvrage » des conventions.</p>
-              </div>
-            </Card>
-
-            <Card className="overflow-hidden rounded-xl border-[#dce2e2] bg-[#edf1f1] shadow-none">
-              <div className="flex items-center gap-2 border-b border-[#dbe2e1] px-4 py-3">
-                <CircleHelp className="h-4 w-4 text-[#8c702f]" />
-                <h3 className="text-xs font-semibold text-[#40596b]">À propos de cette liste</h3>
-              </div>
-              <div className="space-y-3 px-4 py-4 text-xs leading-5 text-[#62737a]">
-                <p>La recherche parcourt les noms complets. Les résultats sont classés par ordre alphabétique.</p>
-                <p>Pour corriger une entrée existante, utilisez <span className="font-semibold text-[#40596b]">Renommer</span>. Les suppressions ne sont pas disponibles ici.</p>
-              </div>
-              <div className="flex items-center gap-2 border-t border-[#dbe2e1] px-4 py-3 text-[10px] font-medium text-[#78868a]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#b48b3e]" />
-                Référentiel régional · Souss-Massa
-              </div>
-            </Card>
-            <div className="px-1 text-[10px] leading-4 text-[#899397]">
-              Échantillon statique illustratif · les modifications restent locales à cette maquette.
-            </div>
-          </aside>
         </div>
         )}
         {savedMessage && (
