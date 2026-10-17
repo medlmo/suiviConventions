@@ -413,7 +413,8 @@ export const listConventionsQueryTriDefault = `urgence`;
 export const listConventionsQueryOrdreDefault = `asc`;
 
 export const ListConventionsQueryParams = zod.object({
-  "q": zod.coerce.string().optional().describe('Recherche texte (nom de convention, responsable, porteur de projet, maîtrise d\'ouvrage). Supporte l\'arabe.'),
+  "q": zod.coerce.string().optional().describe('Recherche texte dans les conventions, responsables, porteurs de projet, maîtrises d\'ouvrage, partenaires et territoires. Supporte l\'arabe.'),
+  "partenaire": zod.coerce.string().optional().describe('Filtre les conventions associées à un partenaire précis.'),
   "alerte": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).optional().describe('Filtre sur le niveau d\'alerte recalculé'),
   "statutConvention": zod.coerce.string().optional(),
   "rattachement": zod.coerce.string().optional(),
@@ -982,7 +983,8 @@ export const GetOptionsFiltresResponse = zod.object({
   "responsables": zod.array(zod.string()),
   "statuts": zod.array(zod.string()),
   "naturesFonds": zod.array(zod.string()),
-  "decisions": zod.array(zod.string())
+  "decisions": zod.array(zod.string()),
+  "partenaires": zod.array(zod.string())
 })
 
 

@@ -392,7 +392,11 @@ paths:
       parameters:
         - name: q
           in: query
-          description: Recherche texte (nom de convention, responsable, porteur de projet, maîtrise d'ouvrage). Supporte l'arabe.
+          description: Recherche texte dans les conventions, responsables, porteurs de projet, maîtrises d'ouvrage, partenaires et territoires. Supporte l'arabe.
+          schema: { type: string }
+        - name: partenaire
+          in: query
+          description: Filtre les conventions associées à un partenaire précis.
           schema: { type: string }
         - name: alerte
           in: query
@@ -1110,6 +1114,7 @@ components:
         - statuts
         - naturesFonds
         - decisions
+        - partenaires
       properties:
         rattachements:
           type: array
@@ -1124,6 +1129,9 @@ components:
           type: array
           items: { type: string }
         decisions:
+          type: array
+          items: { type: string }
+        partenaires:
           type: array
           items: { type: string }
 

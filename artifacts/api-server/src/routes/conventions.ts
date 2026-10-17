@@ -175,6 +175,7 @@ interface FiltresListe {
   alerte?: string;
   statutConvention?: string;
   rattachement?: string;
+  partenaire?: string;
   responsableProjet?: string;
   natureFonds?: string;
   decision?: string;
@@ -217,6 +218,9 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
   }
   if (filtres.rattachement) {
     conditions.push(eq(conventionsTable.rattachement, filtres.rattachement));
+  }
+  if (filtres.partenaire) {
+    conditions.push(sql`${conventionsTable.partenaires} @> ARRAY[${filtres.partenaire}]::text[]`);
   }
   if (filtres.responsableProjet) {
     conditions.push(eq(conventionsTable.responsableProjet, filtres.responsableProjet));
@@ -585,13 +589,19 @@ router.get("/conventions/options-filtres", async (req, res): Promise<void> => {
       .filter((valeur): valeur is string => valeur !== null);
   }
 
-  const [rattachements, responsables, statuts, naturesFonds, decisions] = await Promise.all([
+  const [rattachements, responsables, statuts, naturesFonds, decisions, lignesPartenaires] = await Promise.all([
     valeursDistinctes(conventionsTable.rattachement),
     valeursDistinctes(conventionsTable.responsableProjet),
     valeursDistinctes(conventionsTable.statutConvention),
     valeursDistinctes(conventionsTable.natureFonds),
     valeursDistinctes(conventionsTable.decision),
+    db
+      .select({ valeurs: conventionsTable.partenaires })
+      .from(conventionsTable)
+      .where(conditionsVisibles(req.user!, reference)),
   ]);
+  const partenaires = [...new Set(lignesPartenaires.flatMap((ligne) => ligne.valeurs ?? []).filter((nom) => nom.trim() !== ""))]
+    .sort((a, b) => a.localeCompare(b, "fr"));
 
   res.json(
     valide(GetOptionsFiltresResponse, {
@@ -600,6 +610,7 @@ router.get("/conventions/options-filtres", async (req, res): Promise<void> => {
       statuts,
       naturesFonds,
       decisions,
+      partenaires,
     }),
   );
 });

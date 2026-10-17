@@ -12,4 +12,5 @@ export interface OptionsFiltres {
   statuts: string[];
   naturesFonds: string[];
   decisions: string[];
+  partenaires: string[];
 }
