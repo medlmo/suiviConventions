@@ -78,6 +78,8 @@ overrides:
   proxy-addr: 2.0.8
   "gaxios>uuid": 11.1.1
   "exceljs>uuid": 11.1.1
+  "ajv>fast-uri": 3.1.8
+  "@tailwindcss/typography>postcss-selector-parser": 7.1.6
   "minimatch@10.2.6>brace-expansion": 5.0.12
   source-map-js: 1.2.2
   # replit uses linux-x64 only, we can exclude all other platforms
