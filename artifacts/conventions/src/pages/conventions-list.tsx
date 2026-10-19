@@ -26,12 +26,17 @@ export default function ConventionsList() {
   const [q, setQ] = useState("");
   const [alerte, setAlerte] = useState<NiveauAlerte | undefined>();
   const [rattachement, setRattachement] = useState<string | undefined>();
+  const [service, setService] = useState<string | undefined>();
   const [partenaires, setPartenaires] = useState<string[]>([]);
   const [statutConvention, setStatutConvention] = useState<string | undefined>();
   const [tri, setTri] = useState<ListConventionsTri>("urgence");
   // Urgence ascendante = les retards en tête (rang 0), « À qualifier » en fin.
   const [ordre, setOrdre] = useState<ListConventionsOrdre>("asc");
-  const rattachementFiltre = user?.role === "chef_service" ? undefined : rattachement;
+  const rattachementFiltre =
+    user?.role === "chef_service" || user?.role === "chef_division"
+      ? undefined
+      : rattachement;
+  const serviceFiltre = user?.role === "chef_division" ? service : undefined;
 
   const { data, isLoading, isError, error, refetch } = useListConventions({
     page,
@@ -39,6 +44,7 @@ export default function ConventionsList() {
     q: q || undefined,
     alerte,
     rattachement: rattachementFiltre === "all" ? undefined : rattachementFiltre,
+    responsableProjet: serviceFiltre === "all" ? undefined : serviceFiltre,
     partenaires: partenaires.length ? partenaires : undefined,
     statutConvention: statutConvention === "all" ? undefined : statutConvention,
     tri,
@@ -61,6 +67,7 @@ export default function ConventionsList() {
     if (q) params.append("q", q);
     if (alerte) params.append("alerte", alerte);
     if (rattachementFiltre && rattachementFiltre !== "all") params.append("rattachement", rattachementFiltre);
+    if (serviceFiltre && serviceFiltre !== "all") params.append("responsableProjet", serviceFiltre);
     partenaires.forEach((partenaire) => params.append("partenaires", partenaire));
     if (statutConvention && statutConvention !== "all") params.append("statutConvention", statutConvention);
     if (tri) params.append("tri", tri);
@@ -142,7 +149,21 @@ export default function ConventionsList() {
               </Select>
               )}
 
-              {user?.role !== "chef_service" && (options?.rattachements.length ?? 0) > 0 && (
+              {user?.role === "chef_division" && (options?.responsables.length ?? 0) > 0 && (
+                <Select value={service || "all"} onValueChange={(v) => { setService(v === "all" ? undefined : v); setPage(1); }}>
+                  <SelectTrigger className="w-[200px] h-10 [&>span]:truncate" data-testid="select-filter-service">
+                    <SelectValue placeholder="Service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les services</SelectItem>
+                    {options?.responsables.map((responsable) => (
+                      <SelectItem key={responsable} value={responsable}>{responsable}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {user?.role !== "chef_service" && user?.role !== "chef_division" && (options?.rattachements.length ?? 0) > 0 && (
               <Select value={rattachement || "all"} onValueChange={(v) => { setRattachement(v); setPage(1); }}>
                 <SelectTrigger className="w-[200px] h-10 [&>span]:truncate">
                   <SelectValue placeholder="Rattachement" />
@@ -164,11 +185,11 @@ export default function ConventionsList() {
                 />
               )}
 
-              {(q || alerte || rattachementFiltre || partenaires.length > 0 || statutConvention) && (
+              {(q || alerte || rattachementFiltre || serviceFiltre || partenaires.length > 0 || statutConvention) && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setPartenaires([]); setStatutConvention(undefined); setPage(1); }}
+                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setService(undefined); setPartenaires([]); setStatutConvention(undefined); setPage(1); }}
                   className="h-10 w-10 text-muted-foreground hover:text-destructive"
                   title="Effacer les filtres"
                 >
