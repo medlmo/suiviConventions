@@ -31,13 +31,14 @@ export default function ConventionsList() {
   const [tri, setTri] = useState<ListConventionsTri>("urgence");
   // Urgence ascendante = les retards en tête (rang 0), « À qualifier » en fin.
   const [ordre, setOrdre] = useState<ListConventionsOrdre>("asc");
+  const rattachementFiltre = user?.role === "chef_service" ? undefined : rattachement;
 
   const { data, isLoading, isError, error, refetch } = useListConventions({
     page,
     pageSize: 25,
     q: q || undefined,
     alerte,
-    rattachement: rattachement === "all" ? undefined : rattachement,
+    rattachement: rattachementFiltre === "all" ? undefined : rattachementFiltre,
     partenaires: partenaires.length ? partenaires : undefined,
     statutConvention: statutConvention === "all" ? undefined : statutConvention,
     tri,
@@ -59,7 +60,7 @@ export default function ConventionsList() {
     const params = new URLSearchParams();
     if (q) params.append("q", q);
     if (alerte) params.append("alerte", alerte);
-    if (rattachement && rattachement !== "all") params.append("rattachement", rattachement);
+    if (rattachementFiltre && rattachementFiltre !== "all") params.append("rattachement", rattachementFiltre);
     partenaires.forEach((partenaire) => params.append("partenaires", partenaire));
     if (statutConvention && statutConvention !== "all") params.append("statutConvention", statutConvention);
     if (tri) params.append("tri", tri);
@@ -141,7 +142,7 @@ export default function ConventionsList() {
               </Select>
               )}
 
-              {(options?.rattachements.length ?? 0) > 0 && (
+              {user?.role !== "chef_service" && (options?.rattachements.length ?? 0) > 0 && (
               <Select value={rattachement || "all"} onValueChange={(v) => { setRattachement(v); setPage(1); }}>
                 <SelectTrigger className="w-[200px] h-10 [&>span]:truncate">
                   <SelectValue placeholder="Rattachement" />
@@ -163,7 +164,7 @@ export default function ConventionsList() {
                 />
               )}
 
-              {(q || alerte || rattachement || partenaires.length > 0 || statutConvention) && (
+              {(q || alerte || rattachementFiltre || partenaires.length > 0 || statutConvention) && (
                 <Button 
                   variant="ghost" 
                   size="icon" 

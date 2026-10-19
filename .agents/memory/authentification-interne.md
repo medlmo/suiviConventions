@@ -5,6 +5,12 @@ description: Choix métier derrière la connexion et les périmètres d'accès d
 
 Les utilisateurs se connectent avec un identifiant **sans adresse e-mail** et un mot de passe. La création des comptes relève exclusivement de l'administration, sans inscription publique. Les directeurs voient toutes les conventions mais ne les modifient pas ; le Directeur Général des Services dispose du même accès global en lecture seule, sans rattachement à une direction. Les chefs de division et de service peuvent créer, modifier et supprimer seulement celles de leur périmètre.
 
+Les chefs de service n'ont pas besoin d'un filtre par rattachement dans la liste : ils ne voient déjà que les conventions liées à leur service.
+
+**Why:** L'utilisateur a précisé que le périmètre de service suffit pour les chefs de service.
+
+**How to apply:** Masquer le filtre de rattachement à ces utilisateurs et ne pas transmettre ce critère dans leurs requêtes de liste ou d'export ; conserver la restriction de périmètre côté serveur.
+
 **Why:** L'utilisateur a explicitement choisi ces règles et demandé le rôle global en lecture seule du Directeur Général des Services. La configuration gérée d'authentification disponible par défaut était orientée e-mail/mot de passe et inscription publique ; l'imposer aurait modifié le parcours demandé. Les anciennes conventions sans rattachement ne peuvent pas être attribuées de façon sûre à un chef.
 
 **How to apply:** Garder la règle d'autorisation côté serveur sur toutes les lectures, écritures et exports ; ne pas élargir silencieusement l'accès aux enregistrements historiques non affectés. Préserver la visibilité globale en lecture pour le Directeur et le Directeur Général des Services, sans leur accorder de droits d'écriture.
