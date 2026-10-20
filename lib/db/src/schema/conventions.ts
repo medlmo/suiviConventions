@@ -73,6 +73,7 @@ export const conventionsTable = pgTable(
     membresComite: text("membres_comite"),
     frequenceReunions: text("frequence_reunions"),
     dernierComite: date("dernier_comite", { mode: "string" }),
+    datePvComite: date("date_pv_comite", { mode: "string" }),
     dernierComiteNote: text("dernier_comite_note"),
     prochainComite: date("prochain_comite", { mode: "string" }),
     prochaineEcheance: date("prochaine_echeance", { mode: "string" }),

@@ -680,6 +680,7 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
     { titre: "Membres du comité", extraire: (c) => c.membresComite, largeurMin: 24, largeurMax: 52 },
     { titre: "Fréquence des réunions", extraire: (c) => c.frequenceReunions, largeurMin: 20, largeurMax: 36 },
     { titre: "Dernier comité", extraire: (c) => c.dernierComite, largeurMin: 14, largeurMax: 16, date: true, format: "dd/mm/yyyy" },
+    { titre: "Date du PV du comité", extraire: (c) => c.datePvComite, largeurMin: 18, largeurMax: 20, date: true, format: "dd/mm/yyyy" },
     { titre: "Dernier comité — mention", extraire: (c) => c.dernierComiteNote, largeurMin: 24, largeurMax: 44 },
     { titre: "Prochain comité", extraire: (c) => c.prochainComite, largeurMin: 14, largeurMax: 16, date: true, format: "dd/mm/yyyy" },
     { titre: "Prochaine échéance", extraire: (c) => c.prochaineEcheance, largeurMin: 16, largeurMax: 18, date: true, format: "dd/mm/yyyy" },

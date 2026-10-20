@@ -891,6 +891,9 @@ components:
         dernierComite:
           type: ["string", "null"]
           format: date
+        datePvComite:
+          type: ["string", "null"]
+          format: date
         dernierComiteNote:
           type: ["string", "null"]
           description: Mention non convertible en date reprise du fichier source
@@ -959,6 +962,7 @@ components:
           items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }
         dernierComite: { type: ["string", "null"], format: date }
+        datePvComite: { type: ["string", "null"], format: date }
         dernierComiteNote: { type: ["string", "null"] }
         pv: { type: ["string", "null"] }
         documentConvention: { type: ["string", "null"] }
@@ -1028,6 +1032,7 @@ components:
           items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }
         dernierComite: { type: ["string", "null"], format: date }
+        datePvComite: { type: ["string", "null"], format: date }
         dernierComiteNote: { type: ["string", "null"] }
         pv: { type: ["string", "null"] }
         decision: { type: ["string", "null"] }

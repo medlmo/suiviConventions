@@ -69,6 +69,7 @@ export function versApi(ligne: LigneConvention) {
     communes: ligne.communes ?? [],
     prochainComite: ligne.prochainComite,
     dernierComite: ligne.dernierComite,
+    datePvComite: ligne.datePvComite,
     dernierComiteNote: ligne.dernierComiteNote,
     pv: ligne.pv,
     decision: ligne.decision,
@@ -134,6 +135,7 @@ const CHAMPS_DATE = [
   "dateVisa",
   "prochainComite",
   "dernierComite",
+  "datePvComite",
   "prochaineEcheance",
 ] as const;
 

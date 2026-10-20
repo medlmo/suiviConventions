@@ -81,6 +81,7 @@ const conventionSchema = z.object({
   membresComite: z.string().nullable().optional(),
   frequenceReunions: z.string().nullable().optional(),
   dernierComite: z.string().nullable().optional(),
+  datePvComite: z.string().nullable().optional(),
   dernierComiteNote: z.string().nullable().optional(),
   prochaineEcheance: z.string().nullable().optional(),
   prochaineEcheanceNote: z.string().nullable().optional(),
@@ -250,6 +251,7 @@ export default function ConventionDetail() {
         membresComite: convention.membresComite,
         frequenceReunions: convention.frequenceReunions,
         dernierComite: convention.dernierComite?.split('T')[0] || null,
+        datePvComite: convention.datePvComite?.split('T')[0] || null,
         dernierComiteNote: convention.dernierComiteNote,
         prochaineEcheance: convention.prochaineEcheance?.split('T')[0] || null,
         prochaineEcheanceNote: convention.prochaineEcheanceNote,
@@ -874,10 +876,16 @@ export default function ConventionDetail() {
                     )} />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="dernierComite" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Date Dernier Comité</FormLabel>
+                        <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="datePvComite" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date du PV de la réunion</FormLabel>
                         <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
                       </FormItem>
                     )} />
