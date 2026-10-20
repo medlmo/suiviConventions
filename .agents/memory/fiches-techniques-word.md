@@ -20,3 +20,9 @@ Pour embarquer une image dans le serveur compilé, privilégier le chargement ba
 **Why:** Le chargement binaire a produit un appel à Uint8Array.fromBase64, absent du runtime Node de ce projet, et a empêché la génération du document malgré un contrôle TypeScript réussi.
 
 **How to apply:** Vérifier une génération réelle après tout changement du chargement des images ; ne pas se fier uniquement à la compilation ou aux types.
+
+Chaque fiche technique générée doit afficher sa date réelle de génération, distincte des dates portées par la convention.
+
+**Why:** L'utilisateur a demandé que la fiche indique la date à laquelle elle a été générée.
+
+**How to apply:** Utiliser la date de génération de la fiche, et non la date de visa ou une autre date métier de la convention.

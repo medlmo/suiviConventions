@@ -21,6 +21,15 @@ function dateFr(value?: string | null): string {
   return `${day}/${month}/${year}`;
 }
 
+function dateGenerationFr(value: Date): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Africa/Casablanca",
+  }).format(value);
+}
+
 function montant(value?: number | null): string {
   return value == null ? EMPTY : new Intl.NumberFormat("fr-MA", {
     minimumFractionDigits: 2, maximumFractionDigits: 2,
@@ -220,6 +229,7 @@ function rubrique(label: string): TableRow {
 
 /** Génération à la demande : ni données inventées, ni fichier sauvegardé dans la fiche. */
 export async function genererFicheTechnique(convention: ConventionApi): Promise<Buffer> {
+  const dateGeneration = new Date();
   const header = new Header({
     children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new ImageRun({
       type: "png", data: Buffer.from(logo, "base64"), transformation: { width: 60, height: 81 },
@@ -273,6 +283,15 @@ export async function genererFicheTechnique(convention: ConventionApi): Promise<
         new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [new TextRun({
           text: "FICHE TECHNIQUE", bold: true, size: 36, color: NAVY,
         })] }),
+        new Paragraph({
+          alignment: AlignmentType.RIGHT,
+          spacing: { before: 0, after: 160 },
+          children: [new TextRun({
+            text: `Fiche générée le ${dateGenerationFr(dateGeneration)}`,
+            size: 17,
+            color: MUTED,
+          })],
+        }),
         new Table({
           width: { size: WIDTH, type: WidthType.DXA },
           layout: TableLayoutType.FIXED, columnWidths: [2900, WIDTH - 2900],
