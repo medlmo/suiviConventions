@@ -1,5 +1,5 @@
 import type { conventionsTable, HistoriqueDocument } from "@workspace/db";
-import { documentsConvention } from "./conventions-mapper";
+import { documentsConvention } from "./document-history-mapper";
 import type { VerifiedDocument } from "./objectStorage";
 import { normaliserDatePv } from "./pv-date";
 

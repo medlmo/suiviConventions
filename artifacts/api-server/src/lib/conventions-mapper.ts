@@ -1,5 +1,7 @@
 import { getTableColumns, sql, type SQL } from "drizzle-orm";
-import { conventionsTable, type HistoriqueDocument, type SuiviFinancier } from "@workspace/db";
+import { conventionsTable, type SuiviFinancier } from "@workspace/db";
+import { documentsConvention } from "./document-history-mapper";
+export { documentsConvention } from "./document-history-mapper";
 import {
   construireAlerte,
   joursRestantsSql,
@@ -23,35 +25,6 @@ function nombreOuNull(valeur: string | null): number | null {
   if (valeur === null) return null;
   const nombre = Number(valeur);
   return Number.isFinite(nombre) ? nombre : null;
-}
-
-/** Les références anciennes restent consultables sans inventer une date d'ajout. */
-export function documentsConvention(ligne: Pick<LigneConvention, "documents" | "pv" | "documentConvention" | "datePvComite">): HistoriqueDocument[] {
-  const documents = [...(ligne.documents ?? [])];
-  for (const [champ, type, name] of [
-    ["documentConvention", "convention", "Convention enregistrée précédemment"],
-    ["pv", "pv", "PV enregistré précédemment"],
-  ] as const) {
-    const objectPath = ligne[champ];
-    if (objectPath) {
-      const existing = documents.find(document => document.objectPath === objectPath);
-      const datePvComite = champ === "pv" ? ligne.datePvComite : null;
-      if (existing) {
-        if (type === "pv" && !existing.datePvComite && datePvComite) {
-          existing.datePvComite = datePvComite;
-        }
-      } else {
-        documents.push({
-          objectPath,
-          type,
-          name,
-          addedAt: null,
-          ...(datePvComite ? { datePvComite } : {}),
-        });
-      }
-    }
-  }
-  return documents;
 }
 
 /** Ligne de base -> objet Convention du contrat OpenAPI. */
