@@ -52,6 +52,8 @@ export interface ConventionInput {
   /** @nullable */
   dernierComite?: Date | null;
   /** @nullable */
+  datePvComite?: Date | null;
+  /** @nullable */
   dernierComiteNote?: string | null;
   /** @nullable */
   pv?: string | null;

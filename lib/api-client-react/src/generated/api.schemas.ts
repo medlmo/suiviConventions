@@ -329,6 +329,8 @@ export interface Convention {
   prochainComite?: string | null;
   /** @nullable */
   dernierComite?: string | null;
+  /** @nullable */
+  datePvComite?: string | null;
   /**
      * Mention non convertible en date reprise du fichier source
      * @nullable
@@ -424,6 +426,8 @@ export interface ConventionInput {
   /** @nullable */
   dernierComite?: string | null;
   /** @nullable */
+  datePvComite?: string | null;
+  /** @nullable */
   dernierComiteNote?: string | null;
   /** @nullable */
   pv?: string | null;
@@ -517,6 +521,8 @@ export interface ConventionUpdate {
   prochainComite?: string | null;
   /** @nullable */
   dernierComite?: string | null;
+  /** @nullable */
+  datePvComite?: string | null;
   /** @nullable */
   dernierComiteNote?: string | null;
   /** @nullable */
