@@ -47,6 +47,7 @@ import { genererFicheTechnique } from "../lib/fiche-technique";
 import { erreurSuiviFinancier, erreurPartenairesFinanciers } from "../lib/suivi-financier";
 import { creerConstatAvancement, erreurAvancementPhysique, natureAvecAvancement } from "../lib/avancement-physique";
 import { erreurSituationVersements } from "../lib/situation-versements";
+import { normaliserDatePv } from "../lib/pv-date";
 import {
   chargerReferentiel,
   chargerReferentielDepuis,
@@ -144,27 +145,17 @@ function normaliserCorps(corps: unknown): { ok: true; valeur: Record<string, unk
     for (const document of valeur.documentsAjoutes) {
       if (typeof document !== "object" || document === null || Array.isArray(document)) continue;
       const ajout = document as Record<string, unknown>;
-      const datePv = ajout.datePvComite;
-      if (datePv === "") {
-        ajout.datePvComite = null;
-        continue;
+      const resultatDatePv = normaliserDatePv(ajout.datePvComite);
+      if (!resultatDatePv.ok) {
+        const erreur = typeof ajout.datePvComite === "string" &&
+          /^\d{4}-\d{2}-\d{2}$/.test(ajout.datePvComite)
+          ? "La date d’un PV doit correspondre à un jour réel du calendrier."
+          : "La date du PV doit être au format AAAA-MM-JJ.";
+        return { ok: false, erreur };
       }
-      if (datePv !== null && datePv !== undefined && datePv !== "") {
-        if (typeof datePv !== "string" || !JOUR_ISO.test(datePv)) {
-          return { ok: false, erreur: "La date du PV doit être au format AAAA-MM-JJ." };
-        }
-        const [annee, mois, jour] = datePv.split("-").map(Number);
-        const controle = new Date(Date.UTC(annee!, mois! - 1, jour!));
-        if (
-          controle.getUTCFullYear() !== annee ||
-          controle.getUTCMonth() !== mois! - 1 ||
-          controle.getUTCDate() !== jour
-        ) {
-          return { ok: false, erreur: "La date d’un PV doit correspondre à un jour réel du calendrier." };
-        }
-        if (ajout.type !== "pv") {
-          return { ok: false, erreur: "La date du PV ne peut être définie que pour un document de type PV." };
-        }
+      ajout.datePvComite = resultatDatePv.date;
+      if (resultatDatePv.date && ajout.type !== "pv") {
+        return { ok: false, erreur: "La date du PV ne peut être définie que pour un document de type PV." };
       }
     }
   }
