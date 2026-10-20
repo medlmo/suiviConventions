@@ -428,6 +428,7 @@ export default function ConventionCreate() {
                       <SelectItem value="Propres">Propres</SelectItem>
                       <SelectItem value="FEC">FEC</SelectItem>
                       <SelectItem value="Contribution des partenaires">Contribution des partenaires</SelectItem>
+                      <SelectItem value="Fonds internationaux">Fonds internationaux</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
