@@ -222,28 +222,33 @@ export default function ConventionsList() {
             </div>
           ) : (
             data?.items.map((conv) => (
-              <Link key={conv.id} href={`/conventions/${conv.id}`}>
-                <div className="p-4 active:bg-accent/40 transition-colors">
-                  <AlerteBadge alerte={conv.alerte} />
-                  <div dir="auto" className="mt-2 font-semibold leading-relaxed line-clamp-3">
-                    {conv.nomConvention}
+              <div key={conv.id} className="p-4">
+                <Link href={`/conventions/${conv.id}`}>
+                  <div className="active:bg-accent/40 transition-colors">
+                    <AlerteBadge alerte={conv.alerte} />
+                    <div dir="auto" className="mt-2 font-semibold leading-relaxed line-clamp-3">
+                      {conv.nomConvention}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span>
+                        Dernier comité :{" "}
+                        {conv.dernierComite
+                          ? format(new Date(conv.dernierComite), "dd/MM/yyyy")
+                          : "—"}
+                      </span>
+                      <span className="font-medium text-foreground">
+                        Échéance :{" "}
+                        {conv.prochaineEcheance
+                          ? format(new Date(conv.prochaineEcheance), "dd/MM/yyyy")
+                          : "—"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <span>
-                      Dernier comité :{" "}
-                      {conv.dernierComite
-                        ? format(new Date(conv.dernierComite), "dd/MM/yyyy")
-                        : "—"}
-                    </span>
-                    <span className="font-medium text-foreground">
-                      Échéance :{" "}
-                      {conv.prochaineEcheance
-                        ? format(new Date(conv.prochaineEcheance), "dd/MM/yyyy")
-                        : "—"}
-                    </span>
-                  </div>
+                </Link>
+                <div className="mt-3 flex justify-end">
+                  <FicheTechniqueButton conventionId={conv.id} />
                 </div>
-              </Link>
+              </div>
             ))
           )}
         </div>
