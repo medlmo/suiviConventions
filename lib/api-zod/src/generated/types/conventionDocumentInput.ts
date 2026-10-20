@@ -14,4 +14,9 @@ export interface ConventionDocumentInput {
      */
   objectPath: string;
   type: ConventionDocumentInputType;
+  /**
+     * Date facultative associée au PV
+     * @nullable
+     */
+  datePvComite?: Date | null;
 }

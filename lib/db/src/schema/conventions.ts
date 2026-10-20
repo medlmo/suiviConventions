@@ -22,6 +22,7 @@ export type HistoriqueDocument = {
   type: "convention" | "avenant" | "pv";
   name: string;
   addedAt: string | null;
+  datePvComite?: string | null;
 };
 
 export type SuiviFinancier = {

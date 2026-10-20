@@ -507,7 +507,6 @@ export const ListConventionsResponse = zod.object({
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
-  "datePvComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
   "pv": zod.string().nullish(),
   "decision": zod.string().nullish(),
@@ -518,7 +517,8 @@ export const ListConventionsResponse = zod.object({
   "objectPath": zod.string(),
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
-  "addedAt": zod.coerce.date().nullable()
+  "addedAt": zod.coerce.date().nullable(),
+  "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
@@ -558,7 +558,8 @@ export const CreateConventionBody = zod.object({
   "nomConvention": zod.string().min(1),
   "documentsAjoutes": zod.array(zod.object({
   "objectPath": zod.string().min(1).max(createConventionBodyDocumentsAjoutesItemObjectPathMax),
-  "type": zod.enum(['convention', 'avenant', 'pv'])
+  "type": zod.enum(['convention', 'avenant', 'pv']),
+  "datePvComite": zod.coerce.date().nullish().describe('Date facultative associée au PV')
 })).max(createConventionBodyDocumentsAjoutesMax).optional(),
   "objetConventionFr": zod.string().nullish(),
   "rattachement": zod.string().nullish(),
@@ -579,7 +580,6 @@ export const CreateConventionBody = zod.object({
   "communes": zod.array(zod.string()).nullish(),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
-  "datePvComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish(),
   "pv": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
@@ -672,7 +672,6 @@ export const CreateConventionResponse = zod.object({
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
-  "datePvComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
   "pv": zod.string().nullish(),
   "decision": zod.string().nullish(),
@@ -683,7 +682,8 @@ export const CreateConventionResponse = zod.object({
   "objectPath": zod.string(),
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
-  "addedAt": zod.coerce.date().nullable()
+  "addedAt": zod.coerce.date().nullable(),
+  "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
@@ -818,7 +818,6 @@ export const ListAlertesResponseItem = zod.object({
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
-  "datePvComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
   "pv": zod.string().nullish(),
   "decision": zod.string().nullish(),
@@ -829,7 +828,8 @@ export const ListAlertesResponseItem = zod.object({
   "objectPath": zod.string(),
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
-  "addedAt": zod.coerce.date().nullable()
+  "addedAt": zod.coerce.date().nullable(),
+  "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
@@ -946,7 +946,6 @@ export const GetAgendaResponseItem = zod.object({
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
-  "datePvComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
   "pv": zod.string().nullish(),
   "decision": zod.string().nullish(),
@@ -957,7 +956,8 @@ export const GetAgendaResponseItem = zod.object({
   "objectPath": zod.string(),
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
-  "addedAt": zod.coerce.date().nullable()
+  "addedAt": zod.coerce.date().nullable(),
+  "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
@@ -1092,7 +1092,6 @@ export const GetConventionResponse = zod.object({
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
-  "datePvComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
   "pv": zod.string().nullish(),
   "decision": zod.string().nullish(),
@@ -1103,7 +1102,8 @@ export const GetConventionResponse = zod.object({
   "objectPath": zod.string(),
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
-  "addedAt": zod.coerce.date().nullable()
+  "addedAt": zod.coerce.date().nullable(),
+  "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
@@ -1199,7 +1199,8 @@ export const UpdateConventionBody = zod.object({
   "version": zod.number().int().min(1),
   "documentsAjoutes": zod.array(zod.object({
   "objectPath": zod.string().min(1).max(updateConventionBodyDocumentsAjoutesItemObjectPathMax),
-  "type": zod.enum(['convention', 'avenant', 'pv'])
+  "type": zod.enum(['convention', 'avenant', 'pv']),
+  "datePvComite": zod.coerce.date().nullish().describe('Date facultative associée au PV')
 })).max(updateConventionBodyDocumentsAjoutesMax).optional(),
   "documentsRetires": zod.array(zod.string().min(1)).max(updateConventionBodyDocumentsRetiresMax).optional().describe('Chemins des documents à détacher de la fiche, sans suppression physique des fichiers'),
   "nomConvention": zod.string().min(1).optional(),
@@ -1222,7 +1223,6 @@ export const UpdateConventionBody = zod.object({
   "communes": zod.array(zod.string()).nullish(),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
-  "datePvComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish(),
   "pv": zod.string().nullish(),
   "decision": zod.string().nullish(),
@@ -1316,7 +1316,6 @@ export const UpdateConventionResponse = zod.object({
   "communes": zod.array(zod.string()).describe('Communes du projet, sélectionnées dans le référentiel des maîtrises d\'ouvrage'),
   "prochainComite": zod.coerce.date().nullish(),
   "dernierComite": zod.coerce.date().nullish(),
-  "datePvComite": zod.coerce.date().nullish(),
   "dernierComiteNote": zod.string().nullish().describe('Mention non convertible en date reprise du fichier source'),
   "pv": zod.string().nullish(),
   "decision": zod.string().nullish(),
@@ -1327,7 +1326,8 @@ export const UpdateConventionResponse = zod.object({
   "objectPath": zod.string(),
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
-  "addedAt": zod.coerce.date().nullable()
+  "addedAt": zod.coerce.date().nullable(),
+  "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),

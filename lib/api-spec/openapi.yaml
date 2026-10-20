@@ -768,6 +768,7 @@ components:
       properties:
         objectPath: { type: string, minLength: 1, maxLength: 512 }
         type: { type: string, enum: [convention, avenant, pv] }
+        datePvComite: { type: ["string", "null"], format: date, description: Date facultative associée au PV }
     ConventionDocument:
       type: object
       required: [objectPath, type, name, addedAt]
@@ -776,6 +777,7 @@ components:
         type: { type: string, enum: [convention, avenant, pv] }
         name: { type: string }
         addedAt: { type: ["string", "null"], format: date-time }
+        datePvComite: { type: ["string", "null"], format: date }
 
     ContributionAnnuelle:
       type: object
@@ -891,9 +893,6 @@ components:
         dernierComite:
           type: ["string", "null"]
           format: date
-        datePvComite:
-          type: ["string", "null"]
-          format: date
         dernierComiteNote:
           type: ["string", "null"]
           description: Mention non convertible en date reprise du fichier source
@@ -962,7 +961,6 @@ components:
           items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }
         dernierComite: { type: ["string", "null"], format: date }
-        datePvComite: { type: ["string", "null"], format: date }
         dernierComiteNote: { type: ["string", "null"] }
         pv: { type: ["string", "null"] }
         documentConvention: { type: ["string", "null"] }
@@ -1032,7 +1030,6 @@ components:
           items: { type: string }
         prochainComite: { type: ["string", "null"], format: date }
         dernierComite: { type: ["string", "null"], format: date }
-        datePvComite: { type: ["string", "null"], format: date }
         dernierComiteNote: { type: ["string", "null"] }
         pv: { type: ["string", "null"] }
         decision: { type: ["string", "null"] }

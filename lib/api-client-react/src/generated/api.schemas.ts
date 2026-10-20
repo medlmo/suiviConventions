@@ -159,6 +159,11 @@ export interface ConventionDocumentInput {
      */
   objectPath: string;
   type: ConventionDocumentInputType;
+  /**
+     * Date facultative associée au PV
+     * @nullable
+     */
+  datePvComite?: string | null;
 }
 
 export type ConventionDocumentType = typeof ConventionDocumentType[keyof typeof ConventionDocumentType];
@@ -176,6 +181,8 @@ export interface ConventionDocument {
   name: string;
   /** @nullable */
   addedAt: string | null;
+  /** @nullable */
+  datePvComite?: string | null;
 }
 
 export interface ContributionAnnuelle {
@@ -329,8 +336,6 @@ export interface Convention {
   prochainComite?: string | null;
   /** @nullable */
   dernierComite?: string | null;
-  /** @nullable */
-  datePvComite?: string | null;
   /**
      * Mention non convertible en date reprise du fichier source
      * @nullable
@@ -426,8 +431,6 @@ export interface ConventionInput {
   /** @nullable */
   dernierComite?: string | null;
   /** @nullable */
-  datePvComite?: string | null;
-  /** @nullable */
   dernierComiteNote?: string | null;
   /** @nullable */
   pv?: string | null;
@@ -521,8 +524,6 @@ export interface ConventionUpdate {
   prochainComite?: string | null;
   /** @nullable */
   dernierComite?: string | null;
-  /** @nullable */
-  datePvComite?: string | null;
   /** @nullable */
   dernierComiteNote?: string | null;
   /** @nullable */

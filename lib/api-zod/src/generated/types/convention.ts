@@ -65,8 +65,6 @@ export interface Convention {
   prochainComite?: Date | null;
   /** @nullable */
   dernierComite?: Date | null;
-  /** @nullable */
-  datePvComite?: Date | null;
   /**
      * Mention non convertible en date reprise du fichier source
      * @nullable

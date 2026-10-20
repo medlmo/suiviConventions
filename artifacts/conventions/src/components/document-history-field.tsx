@@ -3,6 +3,7 @@ import type { ConventionDocument, ConventionDocumentInput } from "@workspace/api
 import { DocumentUploadField } from "./document-upload-field";
 import { DocumentDownloadLink } from "./document-download-link";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -35,6 +36,10 @@ export function DocumentHistoryField({
   );
   const [uploading, setUploading] = useState(false);
   const [documentARetirer, setDocumentARetirer] = useState<ConventionDocument | null>(null);
+  const [datePvComite, setDatePvComite] = useState("");
+
+  const datePvAffichee = (date?: string | null) =>
+    date ? date.slice(0, 10).split("-").reverse().join("/") : null;
 
   return <section className="space-y-3" aria-label={category === "pv" ? "Historique des PV des comités" : "Convention et avenants"}>
     <h3 className="text-sm font-medium">{category === "pv" ? "PV des comités — historique" : "Convention et avenants"}</h3>
@@ -51,6 +56,13 @@ export function DocumentHistoryField({
         <p className="text-xs text-muted-foreground">{document.addedAt
           ? `Ajouté le ${new Date(document.addedAt).toLocaleString("fr-FR")}`
           : "Document antérieur — date d’ajout non renseignée"}</p>
+        {category === "pv" && document.type === "pv" && (
+          <p className="text-xs text-muted-foreground">
+            {datePvAffichee(document.datePvComite)
+              ? `Date du PV : ${datePvAffichee(document.datePvComite)}`
+              : "Date du PV non renseignée"}
+          </p>
+        )}
         {editable && onRemoveSaved && (
           removedPaths.includes(document.objectPath) ? <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-destructive">Sera retiré à l’enregistrement</span>
@@ -61,6 +73,11 @@ export function DocumentHistoryField({
       </li>)}
       {brouillons.map(document => <li key={document.objectPath} className="rounded-md border border-dashed p-3 text-sm">
         <p className="font-medium">{libelles[document.type]} : {document.name}</p>
+        {document.type === "pv" && (
+          <p className="text-xs text-muted-foreground">
+            Date du PV : {datePvAffichee(document.datePvComite) ?? "non renseignée"}
+          </p>
+        )}
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">À enregistrer avec la fiche</span>
           {editable && <button type="button" className="text-xs underline" onClick={() => onRemove(document.objectPath)}>Retirer cet ajout</button>}
@@ -75,9 +92,32 @@ export function DocumentHistoryField({
           <option value="convention">Convention</option><option value="avenant">Avenant</option>
         </select>
       </label>}
+      {category === "pv" && <div className="space-y-1">
+        <label htmlFor={`date-pv-comite-${conventionId ?? "nouvelle"}`} className="text-sm font-medium">Date du PV</label>
+        <Input
+          id={`date-pv-comite-${conventionId ?? "nouvelle"}`}
+          type="date"
+          value={datePvComite}
+          disabled={uploading}
+          onChange={event => setDatePvComite(event.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">Facultative; si elle est saisie, elle sera conservée avec ce document.</p>
+      </div>}
       <DocumentUploadField id={`ajout-document-${category}`} field={category === "pv" ? "pv" : "documentConvention"}
+        datePvComite={category === "pv" ? datePvComite : undefined}
         value={null} onChange={() => {}}
-        onUploaded={document => onAdd({ objectPath: document.objectPath, name: document.name, type: category === "pv" ? "pv" : type })}
+        onUploaded={document => {
+          const typeDocument = category === "pv" ? "pv" : type;
+          onAdd({
+            objectPath: document.objectPath,
+            name: document.name,
+            type: typeDocument,
+            ...(typeDocument === "pv" ? { datePvComite: document.datePvComite || null } : {}),
+          });
+          if (document.datePvComite) {
+            setDatePvComite(current => current === document.datePvComite ? "" : current);
+          }
+        }}
         onUploadingChange={active => { setUploading(active); onUploadingChange(active); }} />
       <p className="text-xs text-muted-foreground">Chaque ajout conserve tous les documents précédents. {conventionId != null
         ? "Cliquez sur « Enregistrer » pour le conserver dans la fiche."

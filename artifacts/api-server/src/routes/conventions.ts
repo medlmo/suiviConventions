@@ -140,6 +140,35 @@ function normaliserCorps(corps: unknown): { ok: true; valeur: Record<string, unk
     }
   }
 
+  if (Array.isArray(valeur.documentsAjoutes)) {
+    for (const document of valeur.documentsAjoutes) {
+      if (typeof document !== "object" || document === null || Array.isArray(document)) continue;
+      const ajout = document as Record<string, unknown>;
+      const datePv = ajout.datePvComite;
+      if (datePv === "") {
+        ajout.datePvComite = null;
+        continue;
+      }
+      if (datePv !== null && datePv !== undefined && datePv !== "") {
+        if (typeof datePv !== "string" || !JOUR_ISO.test(datePv)) {
+          return { ok: false, erreur: "La date du PV doit être au format AAAA-MM-JJ." };
+        }
+        const [annee, mois, jour] = datePv.split("-").map(Number);
+        const controle = new Date(Date.UTC(annee!, mois! - 1, jour!));
+        if (
+          controle.getUTCFullYear() !== annee ||
+          controle.getUTCMonth() !== mois! - 1 ||
+          controle.getUTCDate() !== jour
+        ) {
+          return { ok: false, erreur: "La date d’un PV doit correspondre à un jour réel du calendrier." };
+        }
+        if (ajout.type !== "pv") {
+          return { ok: false, erreur: "La date du PV ne peut être définie que pour un document de type PV." };
+        }
+      }
+    }
+  }
+
   for (const champ of CHAMPS_MONTANT_CORPS) {
     if (!(champ in valeur)) continue;
     const brut = valeur[champ];
@@ -680,7 +709,6 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
     { titre: "Membres du comité", extraire: (c) => c.membresComite, largeurMin: 24, largeurMax: 52 },
     { titre: "Fréquence des réunions", extraire: (c) => c.frequenceReunions, largeurMin: 20, largeurMax: 36 },
     { titre: "Dernier comité", extraire: (c) => c.dernierComite, largeurMin: 14, largeurMax: 16, date: true, format: "dd/mm/yyyy" },
-    { titre: "Date du PV du comité", extraire: (c) => c.datePvComite, largeurMin: 18, largeurMax: 20, date: true, format: "dd/mm/yyyy" },
     { titre: "Dernier comité — mention", extraire: (c) => c.dernierComiteNote, largeurMin: 24, largeurMax: 44 },
     { titre: "Prochain comité", extraire: (c) => c.prochainComite, largeurMin: 14, largeurMax: 16, date: true, format: "dd/mm/yyyy" },
     { titre: "Prochaine échéance", extraire: (c) => c.prochaineEcheance, largeurMin: 16, largeurMax: 18, date: true, format: "dd/mm/yyyy" },

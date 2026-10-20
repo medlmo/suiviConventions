@@ -16,13 +16,15 @@ type StoredDocument = {
   name: string;
   contentType: string;
   size: number;
+  datePvComite?: string;
 };
 
-type PendingCompletion = { objectPath: string; name: string };
+type PendingCompletion = { objectPath: string; name: string; datePvComite?: string };
 
 type Props = {
   id: string;
   field: DocumentField;
+  datePvComite?: string;
   value?: string | null;
   persistedValue?: string | null;
   conventionId?: number;
@@ -45,6 +47,7 @@ function mimePourNom(nom: string): string | null {
 export function DocumentUploadField({
   id,
   field,
+  datePvComite,
   value,
   persistedValue,
   conventionId,
@@ -100,7 +103,11 @@ export function DocumentUploadField({
         throw new Error("Le téléversement du fichier a échoué.");
       }
 
-      const completion = { objectPath: upload.objectPath, name: file.name };
+      const completion = {
+        objectPath: upload.objectPath,
+        name: file.name,
+        ...(field === "pv" ? { datePvComite } : {}),
+      };
       if (mounted.current) setPendingCompletion(completion);
       await finaliserTeleversement(completion);
     } catch (uploadError) {
@@ -120,13 +127,13 @@ export function DocumentUploadField({
     try {
       const stored = await api<StoredDocument>("/storage/uploads/complete", {
         method: "POST",
-        body: JSON.stringify(completion),
+        body: JSON.stringify({ objectPath: completion.objectPath, name: completion.name }),
       });
       if (mounted.current) {
         setPendingCompletion(null);
         setError("");
         onChange(stored.objectPath);
-        onUploaded?.(stored);
+        onUploaded?.({ ...stored, datePvComite: completion.datePvComite });
         setUploadedName(stored.name);
       }
     } catch (cause) {

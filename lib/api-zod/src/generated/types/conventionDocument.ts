@@ -13,4 +13,6 @@ export interface ConventionDocument {
   name: string;
   /** @nullable */
   addedAt: Date | null;
+  /** @nullable */
+  datePvComite?: Date | null;
 }
