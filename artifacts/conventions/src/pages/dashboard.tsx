@@ -11,6 +11,7 @@ import { AlertCircle, Calendar, ArrowRight, Activity, Clock, FileWarning, CheckC
 import { AlerteBadge } from "@/components/alerte-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -141,7 +142,9 @@ export default function Dashboard() {
   } = useGetAgenda({ mois: 3 });
 
   return (
+    <Dialog>
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Pilotage des Conventions</h1>
         <div className="text-muted-foreground text-lg">
@@ -153,6 +156,13 @@ export default function Dashboard() {
             <>Vue d'ensemble momentanément indisponible</>
           )}
         </div>
+      </div>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="shrink-0 gap-2 whitespace-normal h-auto min-h-10 py-2 text-left">
+            <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Comprendre les niveaux d’alerte
+          </Button>
+        </DialogTrigger>
       </div>
 
       {/* Compteurs */}
@@ -197,24 +207,14 @@ export default function Dashboard() {
       </div>
       )}
 
-      {/* Légende métier : rendre les compteurs compréhensibles sans devoir
-          connaître le référentiel Excel d'origine. */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-              <Info className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">Comprendre les niveaux d’alerte</CardTitle>
-              <CardDescription>
-                Le niveau est recalculé chaque jour à partir de la prochaine échéance ou de la fréquence de la convention.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-4xl max-h-[85dvh] rounded-lg">
+        <DialogHeader className="pr-6 text-left">
+          <DialogTitle className="text-xl">Comprendre les niveaux d’alerte</DialogTitle>
+          <DialogDescription>
+            Le niveau est recalculé chaque jour à partir de la prochaine échéance ou de la fréquence de la convention.
+          </DialogDescription>
+        </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {EXPLICATIONS_ALERTES.map((explication) => {
               const Icon = ICONS[explication.couleur];
               const bgClass = BG_COLORS[explication.couleur];
@@ -243,8 +243,12 @@ export default function Dashboard() {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">Fermer</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Actions urgentes */}
@@ -402,5 +406,6 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
+    </Dialog>
   );
 }
