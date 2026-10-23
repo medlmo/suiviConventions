@@ -47,6 +47,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+/.agents/skills/security-audit/
 
 # Données métier réelles, sources privées et captures : ne jamais publier.
 /data/conventions_seed.json
