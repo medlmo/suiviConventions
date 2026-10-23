@@ -5,9 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const montant = new Intl.NumberFormat("fr-FR", {
+  useGrouping: true,
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+const formaterMontant = (value: number) =>
+  montant.format(value).replace(/[\u00a0\u202f]/g, " ");
 
 export function DashboardTotals({
   resume,
@@ -37,21 +41,19 @@ export function DashboardTotals({
     },
     {
       titre: "Montant global des conventions",
-      valeur: `${montant.format(resume.montantGlobal)} MAD`,
-      precision: "Somme des enveloppes budgétaires renseignées",
+      valeur: `${formaterMontant(resume.montantGlobal)} MAD`,
       Icon: Wallet,
     },
     {
-      titre: "Contributions de la Région",
-      valeur: `${montant.format(resume.contributionRegionTotale)} MAD`,
-      precision: "Somme des contributions de la Région renseignées",
+      titre: "Total des contributions de la Région",
+      valeur: `${formaterMontant(resume.contributionRegionTotale)} MAD`,
       Icon: Landmark,
     },
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {indicateurs.map(({ titre, valeur, precision, Icon, lien }) => (
+      {indicateurs.map(({ titre, valeur, Icon, lien }) => (
         <Card key={titre} className="shadow-sm min-w-0">
           <CardContent className="p-5">
             <div className="flex items-start justify-between gap-3">
@@ -61,7 +63,6 @@ export function DashboardTotals({
             <p className="mt-3 text-2xl font-bold tracking-tight text-foreground break-words tabular-nums">
               {valeur}
             </p>
-            <p className="mt-2 text-xs text-muted-foreground">{precision}</p>
             {lien && (
               <Link
                 href="/conventions"
