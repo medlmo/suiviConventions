@@ -22,3 +22,4 @@
 - [Avancement physique](avancement-physique-metier.md) — volet pour infrastructures et prestations ; constats datés, taux estimé et historique conservé.
 - [Situation des versements](situation-versements-metier.md) — Région Souss-Massa uniquement, sans partenaires ; programmé annuel indépendant du Montage financier.
 - [Dates des PV de comité](dates-pv-comite.md) — date facultative liée au fichier PV individuel, pas aux champs généraux du comité.
+- [Réécriture d’une fonctionnalité retirée](reecriture-fonctionnalite-retiree.md) — repérer l’implémentation initiale intégrée à un commit plus large pour éviter de la ressusciter en supprimant seulement son ajout et son retrait.
