@@ -9,6 +9,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertCircle, Calendar, ArrowRight, Activity, Clock, FileWarning, CheckCircle2, Info, RefreshCw, WifiOff } from "lucide-react";
 import { AlerteBadge } from "@/components/alerte-badge";
+import { DashboardTotals } from "@/components/dashboard-totals";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -168,11 +169,13 @@ export default function Dashboard() {
       {/* Compteurs */}
       {resumeErreur ? (
         <ErreurChargement
-          titre="Les compteurs d’alerte n’ont pas pu être chargés."
+          titre="Les indicateurs de synthèse et d’alerte n’ont pas pu être chargés."
           erreur={resumeErreurDetail}
           onReessayer={() => void rechargerResume()}
         />
       ) : (
+      <div className="space-y-4">
+      <DashboardTotals resume={resume} isLoading={resumeLoading} />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {resumeLoading ? (
           Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
@@ -204,6 +207,7 @@ export default function Dashboard() {
             );
           })
         )}
+      </div>
       </div>
       )}
 

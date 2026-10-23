@@ -1070,6 +1070,8 @@ components:
       type: object
       required:
         - total
+        - montantGlobal
+        - contributionRegionTotale
         - compteurs
         - aTraiter
         - dateCalcul
@@ -1077,7 +1079,13 @@ components:
       properties:
         total:
           type: integer
-          description: Nombre total de conventions
+          description: Nombre total de conventions visibles par l'utilisateur connecté
+        montantGlobal:
+          type: number
+          description: Somme des enveloppes budgétaires renseignées des conventions visibles par l'utilisateur, en MAD (0 si aucune)
+        contributionRegionTotale:
+          type: number
+          description: Somme des contributions de la Région renseignées des conventions visibles par l'utilisateur, en MAD (0 si aucune)
         compteurs:
           type: array
           description: Un compteur par niveau d'alerte, dans l'ordre d'urgence

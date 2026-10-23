@@ -708,7 +708,9 @@ export const CreateConventionResponse = zod.object({
  * @summary Compteurs par niveau d'alerte et indicateurs de pilotage
  */
 export const GetResumeAlertesResponse = zod.object({
-  "total": zod.number().int().describe('Nombre total de conventions'),
+  "total": zod.number().int().describe('Nombre total de conventions visibles par l\'utilisateur connecté'),
+  "montantGlobal": zod.number().describe('Somme des enveloppes budgétaires renseignées des conventions visibles par l\'utilisateur, en MAD (0 si aucune)'),
+  "contributionRegionTotale": zod.number().describe('Somme des contributions de la Région renseignées des conventions visibles par l\'utilisateur, en MAD (0 si aucune)'),
   "compteurs": zod.array(zod.object({
   "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée.\nA_DECLENCHER : échéance dans 0 à 30 jours.\nA_PREPARER : échéance dans 31 à 60 jours.\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
   "libelle": zod.string(),

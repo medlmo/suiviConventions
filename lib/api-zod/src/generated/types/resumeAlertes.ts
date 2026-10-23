@@ -8,8 +8,12 @@
 import type { CompteurAlerte } from './compteurAlerte';
 
 export interface ResumeAlertes {
-  /** Nombre total de conventions */
+  /** Nombre total de conventions visibles par l'utilisateur connecté */
   total: number;
+  /** Somme des enveloppes budgétaires renseignées des conventions visibles par l'utilisateur, en MAD (0 si aucune) */
+  montantGlobal: number;
+  /** Somme des contributions de la Région renseignées des conventions visibles par l'utilisateur, en MAD (0 si aucune) */
+  contributionRegionTotale: number;
   /** Un compteur par niveau d'alerte, dans l'ordre d'urgence */
   compteurs: CompteurAlerte[];
   /** Conventions en retard ou à échéance dans 60 jours */

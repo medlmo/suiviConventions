@@ -469,7 +469,7 @@ router.get("/conventions", async (req, res): Promise<void> => {
 router.get("/conventions/resume", async (req, res): Promise<void> => {
   const reference = await chargerReferentiel();
   const visible = conditionsVisibles(req.user!, reference);
-  const [repartition, [prochaine], jourCourant] = await Promise.all([
+  const [repartition, [prochaine], jourCourant, [montants]] = await Promise.all([
     db
       .select({ niveau: niveauAlerteSql, nombre: count() })
       .from(conventionsTable)
@@ -482,6 +482,13 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
       .orderBy(asc(conventionsTable.prochaineEcheance))
       .limit(1),
     db.execute<{ valeur: string }>(sql`SELECT CURRENT_DATE::text AS valeur`),
+    db
+      .select({
+        montantGlobal: sql<string>`coalesce(sum(${conventionsTable.enveloppeBudgetaire}), 0)`,
+        contributionRegionTotale: sql<string>`coalesce(sum(${conventionsTable.contributionRegion}), 0)`,
+      })
+      .from(conventionsTable)
+      .where(visible),
   ]);
 
   const parNiveau = new Map<NiveauAlerte, number>(
@@ -506,6 +513,8 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
   res.json(
     valide(GetResumeAlertesResponse, {
       total,
+      montantGlobal: Number(montants.montantGlobal),
+      contributionRegionTotale: Number(montants.contributionRegionTotale),
       compteurs,
       aTraiter,
       sansEcheance,
