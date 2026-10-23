@@ -172,15 +172,25 @@ export default function Dashboard() {
             const bgClass = BG_COLORS[compteur.couleur];
             
             return (
-              <Card key={compteur.niveau} className={cn("border shadow-sm overflow-hidden", bgClass)}>
+              <Link
+                key={compteur.niveau}
+                href={`/conventions?alerte=${encodeURIComponent(compteur.niveau)}`}
+                aria-label={`Voir les conventions : ${compteur.libelle} (${compteur.nombre})`}
+                className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+              <Card className={cn("h-full border shadow-sm overflow-hidden transition-shadow group-hover:shadow-md", bgClass)}>
                 <CardContent className="p-5 flex flex-col items-center justify-center text-center h-full">
                   <Icon className="w-6 h-6 mb-2 opacity-80" />
                   <div className="text-3xl font-black mb-1">{compteur.nombre}</div>
                   <div className="text-xs font-semibold uppercase tracking-wider opacity-90">
                     {compteur.libelle}
                   </div>
+                  <span className="mt-3 flex items-center gap-1 text-xs font-medium group-hover:underline">
+                    Voir les conventions <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                  </span>
                 </CardContent>
               </Card>
+              </Link>
             );
           })
         )}

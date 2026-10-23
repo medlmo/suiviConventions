@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "wouter";
 import { 
   useListConventions,
   useGetOptionsFiltres,
@@ -22,9 +22,21 @@ import { PartenaireMultiSelect } from "@/components/partenaire-multi-select";
 
 export default function ConventionsList() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const alerteParam = searchParams.get("alerte");
+  const alerte = Object.values(NiveauAlerte).find((niveau) => niveau === alerteParam);
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
-  const [alerte, setAlerte] = useState<NiveauAlerte | undefined>();
+  const setAlerte = (niveau: NiveauAlerte | undefined) => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (niveau) next.set("alerte", niveau);
+      else next.delete("alerte");
+      return next;
+    });
+    setPage(1);
+  };
+  useEffect(() => { setPage(1); }, [alerte]);
   const [rattachement, setRattachement] = useState<string | undefined>();
   const [service, setService] = useState<string | undefined>();
   const [partenaires, setPartenaires] = useState<string[]>([]);
