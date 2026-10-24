@@ -4,6 +4,7 @@ import { tmpdir, userInfo } from "node:os";
 import { DocumentSecurityError, documentRejected } from "./document-security-errors";
 import { runDocumentTool } from "./document-tools";
 import { logger } from "./logger";
+import { safeErrorFields } from "./error-logging";
 
 const DATABASE_DIR = join(tmpdir(), "conventions-antivirus");
 const MAX_DB_AGE = 24 * 60 * 60 * 1000;
@@ -79,11 +80,14 @@ export function prepareDocumentAntivirus(): Promise<void> {
     readyAt = Date.now();
     await writeFile(join(DATABASE_DIR, "last-success"), String(readyAt), { mode: 0o600 });
     lastUpdateFailed = false;
-    logger.info("Base antimalware locale disponible");
+    logger.info({ event: "antivirus.ready", operation: "antivirus.update" }, "Base antimalware locale disponible");
   })().catch(error => {
     lastUpdateFailed = true;
     // Ne pas exposer la sortie des outils, les noms ou le contenu des documents.
-    logger.warn({ errorType: error instanceof Error ? error.name : "unknown" }, "Mise à jour antimalware impossible ; les fichiers non contrôlés restent bloqués");
+    logger.warn({
+      event: "antivirus.update.failed", operation: "antivirus.update",
+      errorCode: "ANTIVIRUS_UPDATE_FAILED", ...safeErrorFields(error),
+    }, "Mise à jour antimalware impossible ; les fichiers non contrôlés restent bloqués");
     retryTimer = setTimeout(() => {
       retryTimer = undefined;
       void prepareDocumentAntivirus();

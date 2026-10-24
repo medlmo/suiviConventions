@@ -1,10 +1,8 @@
 import express, { type ErrorRequestHandler, type Express } from "express";
-import pinoHttp from "pino-http";
 import router from "./routes";
-import { logger } from "./lib/logger";
 import { csrfOriginGuard } from "./lib/auth";
-import { postgresErrorCode } from "./lib/database-errors";
 import { DocumentSecurityError } from "./lib/document-security-errors";
+import { httpLogging, recordRequestFailure } from "./lib/http-logging";
 
 const app: Express = express();
 app.set("trust proxy", 1);
@@ -19,25 +17,7 @@ app.use("/api", (_req, res, next) => {
   next();
 });
 
-app.use(
-  pinoHttp({
-    logger,
-    serializers: {
-      req(req) {
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
-      },
-      res(res) {
-        return {
-          statusCode: res.statusCode,
-        };
-      },
-    },
-  }),
-);
+app.use(httpLogging);
 app.use("/api", csrfOriginGuard);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -46,9 +26,12 @@ app.use("/api", router);
 
 // The default Express error handler prints Drizzle's query parameters, which
 // can include password hashes. Log only safe metadata and send a generic reply.
-const handleApiError: ErrorRequestHandler = (error: unknown, req, res, next) => {
+const handleApiError: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
   if (error instanceof DocumentSecurityError && !res.headersSent) {
-    req.log.warn({ code: error.code, securityStatus: error.securityStatus }, "Document non disponible après contrôle de sécurité");
+    recordRequestFailure(res, error, {
+      event: "document.security.blocked", operation: "document.security",
+      status: error.status, errorCode: error.code,
+    });
     res.status(error.status).json({ error: error.message, code: error.code, securityStatus: error.securityStatus });
     return;
   }
@@ -60,13 +43,14 @@ const handleApiError: ErrorRequestHandler = (error: unknown, req, res, next) => 
       typeof value === "number" && Number.isInteger(value) && value >= 400 && value <= 599,
   ) ?? 500;
 
-  req.log.error(
-    { status, errorType: error instanceof Error ? error.name : typeof error, databaseCode: postgresErrorCode(error) },
-    "API request failed",
-  );
+  recordRequestFailure(res, error, {
+    event: status >= 500 ? "api.request.failed" : "api.request.rejected",
+    operation: "http.request", status,
+    errorCode: status >= 500 ? "INTERNAL_ERROR" : "REQUEST_REJECTED",
+  });
   if (res.headersSent) {
-    // Let Express close the response, without logging raw SQL parameters.
-    next(Object.assign(new Error("Erreur lors du traitement de la réponse."), { status }));
+    // Close without Express logging a second stack or raw SQL parameters.
+    res.destroy();
     return;
   }
   res.status(status).json({

@@ -48,6 +48,7 @@ import { erreurSuiviFinancier, erreurPartenairesFinanciers } from "../lib/suivi-
 import { creerConstatAvancement, erreurAvancementPhysique, natureAvecAvancement } from "../lib/avancement-physique";
 import { erreurSituationVersements } from "../lib/situation-versements";
 import { normaliserDatePv } from "../lib/pv-date";
+import { recordRequestFailure } from "../lib/http-logging";
 import {
   chargerReferentiel,
   chargerReferentielDepuis,
@@ -830,7 +831,10 @@ router.post("/conventions", async (req, res): Promise<void> => {
 
   const parsed = CreateConventionBody.safeParse(nettoye.valeur);
   if (!parsed.success) {
-    req.log.warn({ errors: parsed.error.message }, "Création refusée");
+    recordRequestFailure(res, undefined, {
+      event: "convention.create.rejected", operation: "convention.create",
+      status: 400, errorCode: "SCHEMA_VALIDATION_FAILED",
+    });
     res.status(400).json({ error: parsed.error.message });
     return;
   }
@@ -947,7 +951,10 @@ router.get("/conventions/:id/fiche-technique", async (req, res): Promise<void> =
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.send(fichier);
   } catch (error) {
-    req.log.error({ err: error, conventionId: ligne.id }, "Génération de la fiche technique impossible");
+    recordRequestFailure(res, error, {
+      event: "document.generate.failed", operation: "document.generate",
+      status: 500, errorCode: "INTERNAL_ERROR",
+    });
     res.status(500).json({ error: "La fiche technique n'a pas pu être générée. Réessayez." });
   }
 });
@@ -1033,9 +1040,12 @@ router.get("/conventions/:id/documents/:field", async (req, res): Promise<void> 
   res.setHeader("Cache-Control", "private, no-store");
   fichier.createReadStream()
     .on("error", (error) => {
-      req.log.error({ err: error }, "Téléchargement du document impossible");
+      recordRequestFailure(res, error, {
+        event: "document.download.failed", operation: "document.download",
+        status: 500, errorCode: "INTERNAL_ERROR",
+      });
       if (!res.headersSent) res.status(500).end();
-      else res.destroy(error);
+      else res.destroy();
     })
     .pipe(res);
 });
@@ -1059,7 +1069,10 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
 
   const parsed = UpdateConventionBody.safeParse(nettoye.valeur);
   if (!parsed.success) {
-    req.log.warn({ errors: parsed.error.message }, "Mise à jour refusée");
+    recordRequestFailure(res, undefined, {
+      event: "convention.update.rejected", operation: "convention.update",
+      status: 400, errorCode: "SCHEMA_VALIDATION_FAILED",
+    });
     res.status(400).json({ error: parsed.error.message });
     return;
   }

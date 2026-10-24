@@ -14,6 +14,7 @@ import {
   typeDocumentPourNom,
 } from "../lib/objectStorage";
 import { DocumentSecurityError } from "../lib/document-security-errors";
+import { recordRequestFailure } from "../lib/http-logging";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -57,7 +58,10 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
     const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
     res.json(RequestUploadUrlResponse.parse({ uploadURL, objectPath }));
   } catch (error) {
-    req.log.error({ err: error }, "Préparation du téléversement impossible");
+    recordRequestFailure(res, error, {
+      event: "document.upload.prepare.failed", operation: "document.upload.prepare",
+      status: 500, errorCode: "INTERNAL_ERROR",
+    });
     res.status(500).json({ error: "Impossible de préparer le téléversement du document." });
   }
 });
@@ -86,6 +90,10 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     res.json(CompleteUploadResponse.parse(document));
   } catch (error) {
     if (error instanceof DocumentSecurityError) {
+      recordRequestFailure(res, error, {
+        event: "document.security.blocked", operation: "document.upload.complete",
+        status: error.status, errorCode: error.code,
+      });
       res.setHeader("Retry-After", error.code === "ANALYSIS_UNAVAILABLE" ? "60" : "5");
       res.status(error.status).json({ error: error.message, code: error.code, securityStatus: error.securityStatus });
       return;
@@ -98,7 +106,10 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
       res.status(404).json({ error: "Fichier téléversé introuvable." });
       return;
     }
-    req.log.error({ err: error }, "Validation du document téléversé impossible");
+    recordRequestFailure(res, error, {
+      event: "document.upload.complete.failed", operation: "document.upload.complete",
+      status: 500, errorCode: "INTERNAL_ERROR",
+    });
     res.status(500).json({ error: "Impossible de valider le document téléversé." });
   }
 });
