@@ -4,21 +4,18 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { validateDocumentStructure } from "./document-structure";
 import { requireDocumentAntivirus, scanDocumentAntivirus } from "./document-antivirus";
-import { DocumentSecurityError } from "./document-security-errors";
+import { documentAnalysisBusy } from "./document-security-errors";
 
 export const DOCUMENT_SECURITY_POLICY = "structure-antimalware-v1";
 let busy = false;
 
 /** Une seule analyse simultanée pour borner mémoire, CPU et nombre de processus. */
 export async function inspectDocument(name: string, read: () => Promise<Buffer>) {
-  await requireDocumentAntivirus();
-  if (busy) throw new DocumentSecurityError(
-    "Document en quarantaine : une autre analyse est en cours. Réessayez dans quelques instants.",
-    "ANALYSIS_BUSY",
-  );
+  if (busy) throw documentAnalysisBusy();
   busy = true;
   let dir: string | undefined;
   try {
+    await requireDocumentAntivirus();
     const bytes = await read();
     dir = await mkdtemp(join(tmpdir(), "convention-document-"));
     const extension = name.slice(name.lastIndexOf(".")).toLowerCase();

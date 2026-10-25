@@ -12,6 +12,13 @@ export class DocumentSecurityError extends Error {
   }
 }
 
+export function documentAnalysisBusy(): DocumentSecurityError {
+  return new DocumentSecurityError(
+    "Document en quarantaine : une autre analyse est en cours. Réessayez dans quelques instants.",
+    "ANALYSIS_BUSY",
+  );
+}
+
 export function documentRejected(): DocumentSecurityError {
   return new DocumentSecurityError(
     "Document refusé : structure invalide, contenu dangereux, macros ou protection empêchant son analyse. Le fichier n'est pas disponible.",

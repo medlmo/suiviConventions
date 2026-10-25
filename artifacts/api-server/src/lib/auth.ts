@@ -7,12 +7,10 @@ import { db, sessionsTable, usersTable, type AppUser } from "@workspace/db";
 const scrypt = promisify(scryptCallback);
 export const COOKIE_NAME = "region_session";
 const SESSION_HOURS = 24;
-const LOGIN_LIMITS = {
-  account: { windowMs: 30 * 60 * 1000, maxAttempts: 12 },
-  ip: { windowMs: 15 * 60 * 1000, maxAttempts: 120 },
-} as const;
-const MAX_TRACKED_KEYS_PER_LIMIT = 20_000;
-const ATTEMPT_CLEANUP_INTERVAL_MS = 60 * 1000;
+// These are not credentials: a missing/malformed verifier must always fail,
+// but still do the same fixed-size scrypt work as an existing account.
+const DUMMY_PASSWORD_SALT = Buffer.alloc(16);
+const DUMMY_PASSWORD_KEY = Buffer.alloc(64);
 
 export type Role = "admin" | "directeur" | "directeur_general_services" | "chef_division" | "chef_service";
 export type SessionUser = Pick<AppUser, "id" | "username" | "role" | "direction" | "division" | "service" | "active">;
@@ -24,61 +22,6 @@ declare global {
       sessionId?: number;
     }
   }
-}
-
-type LoginAttemptWindow = { count: number; expiresAt: number };
-
-const loginAttemptsByAccount = new Map<string, LoginAttemptWindow>();
-const loginAttemptsByIp = new Map<string, LoginAttemptWindow>();
-
-function supprimerFenêtresExpirées(
-  fenêtres: Map<string, LoginAttemptWindow>,
-  maintenant: number,
-): void {
-  for (const [clé, fenêtre] of fenêtres) {
-    if (fenêtre.expiresAt <= maintenant) fenêtres.delete(clé);
-  }
-}
-
-const nettoyageTentatives = setInterval(() => {
-  const maintenant = Date.now();
-  supprimerFenêtresExpirées(loginAttemptsByAccount, maintenant);
-  supprimerFenêtresExpirées(loginAttemptsByIp, maintenant);
-}, ATTEMPT_CLEANUP_INTERVAL_MS);
-nettoyageTentatives.unref();
-
-function cleCompte(username: string): string {
-  return username.trim().toLocaleLowerCase("fr-FR");
-}
-
-function enregistrerTentative(
-  fenêtres: Map<string, LoginAttemptWindow>,
-  clé: string,
-  durée: number,
-  maintenant: number,
-): void {
-  const actuelle = fenêtres.get(clé);
-  if (actuelle && actuelle.expiresAt > maintenant) {
-    actuelle.count += 1;
-    return;
-  }
-  if (actuelle) fenêtres.delete(clé);
-  fenêtres.set(clé, { count: 1, expiresAt: maintenant + durée });
-}
-
-function fenêtreBloquée(
-  fenêtres: Map<string, LoginAttemptWindow>,
-  clé: string,
-  seuil: number,
-  maintenant: number,
-): boolean {
-  const fenêtre = fenêtres.get(clé);
-  if (!fenêtre) return false;
-  if (fenêtre.expiresAt <= maintenant) {
-    fenêtres.delete(clé);
-    return false;
-  }
-  return fenêtre.count >= seuil;
 }
 
 export function estRole(role: string): role is Role {
@@ -106,12 +49,13 @@ export async function hashPassword(password: string): Promise<string> {
   return derivePassword(password);
 }
 
-export async function verifyPassword(password: string, encoded: string): Promise<boolean> {
-  const [algorithm, saltHex, expectedHex] = encoded.split("$");
-  if (algorithm !== "scrypt" || !saltHex || !expectedHex) return false;
-  const expected = Buffer.from(expectedHex, "hex");
-  const actual = (await scrypt(password, Buffer.from(saltHex, "hex"), expected.length)) as Buffer;
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
+export async function verifyPassword(password: string, encoded?: string): Promise<boolean> {
+  const verifier = /^scrypt\$([0-9a-fA-F]{32})\$([0-9a-fA-F]{128})$/.exec(encoded ?? "");
+  const salt = verifier ? Buffer.from(verifier[1]!, "hex") : DUMMY_PASSWORD_SALT;
+  const expected = verifier ? Buffer.from(verifier[2]!, "hex") : DUMMY_PASSWORD_KEY;
+  const actual = (await scrypt(password, salt, 64)) as Buffer;
+  const matches = timingSafeEqual(actual, expected);
+  return verifier !== null && matches;
 }
 
 function hashToken(token: string): string {
@@ -223,47 +167,6 @@ export function adminRequired(req: Request, res: Response, next: NextFunction): 
     return;
   }
   next();
-}
-
-export function estRateLimited(username: string, ip: string): boolean {
-  const maintenant = Date.now();
-  const compte = cleCompte(username);
-  const adresse = ip.trim().toLowerCase() || "unknown";
-  if (fenêtreBloquée(
-    loginAttemptsByAccount,
-    compte,
-    LOGIN_LIMITS.account.maxAttempts,
-    maintenant,
-  ) || fenêtreBloquée(
-    loginAttemptsByIp,
-    adresse,
-    LOGIN_LIMITS.ip.maxAttempts,
-    maintenant,
-  )) return true;
-  // Refuse new keys at capacity rather than evicting an active restriction.
-  if (
-    (!loginAttemptsByAccount.has(compte) && loginAttemptsByAccount.size >= MAX_TRACKED_KEYS_PER_LIMIT) ||
-    (!loginAttemptsByIp.has(adresse) && loginAttemptsByIp.size >= MAX_TRACKED_KEYS_PER_LIMIT)
-  ) return true;
-  // Reserve both counters synchronously, before the asynchronous password check.
-  enregistrerTentative(
-    loginAttemptsByAccount,
-    compte,
-    LOGIN_LIMITS.account.windowMs,
-    maintenant,
-  );
-  enregistrerTentative(
-    loginAttemptsByIp,
-    adresse,
-    LOGIN_LIMITS.ip.windowMs,
-    maintenant,
-  );
-  return false;
-}
-
-export function reinitialiserTentatives(username: string): void {
-  // A successful login must not erase activity by other accounts on this IP.
-  loginAttemptsByAccount.delete(cleCompte(username));
 }
 
 export function csrfOriginGuard(req: Request, res: Response, next: NextFunction): void {

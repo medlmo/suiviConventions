@@ -3,17 +3,16 @@ import { eq } from "drizzle-orm";
 import { db, sessionsTable, usersTable } from "@workspace/db";
 import { LoginBody } from "@workspace/api-zod";
 import {
-  authRequired,
   creerSession,
   estRole,
-  estRateLimited,
-  hashPassword,
-  reinitialiserTentatives,
   sessionMiddleware,
   supprimerCookie,
   verifyPassword,
   versUtilisateur,
 } from "../lib/auth";
+import {
+  reserveLoginAttempt, reserveLoginVerification, resetLoginAttempts,
+} from "../lib/login-rate-limit";
 
 const router: IRouter = Router();
 
@@ -25,19 +24,31 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
   const username = parsed.data.username.trim();
   const ip = req.ip || "unknown";
-  if (estRateLimited(username, ip)) {
-    res.status(429).json({ error: "Trop de tentatives. Réessayez dans quelques minutes." });
+  const retryAfter = reserveLoginAttempt(username, ip);
+  if (retryAfter > 0) {
+    res.setHeader("Retry-After", String(retryAfter));
+    res.status(429).json({ error: "Trop de tentatives depuis cette adresse. Réessayez ultérieurement." });
     return;
   }
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1);
-  const valide = user ? await verifyPassword(parsed.data.password, user.passwordHash) : false;
-  if (!user || !user.active || !valide || !estRole(user.role)) {
-    res.status(401).json({ error: "Identifiant ou mot de passe invalide." });
+  const releaseVerification = reserveLoginVerification();
+  if (!releaseVerification) {
+    res.setHeader("Retry-After", "1");
+    res.status(429).json({ error: "Le service de connexion est occupé. Réessayez dans quelques instants." });
     return;
   }
-  reinitialiserTentatives(username);
-  await creerSession(user.id, req, res);
-  res.json(versUtilisateur(user));
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1);
+    const valide = await verifyPassword(parsed.data.password, user?.passwordHash);
+    if (!user || !user.active || !valide || !estRole(user.role)) {
+      res.status(401).json({ error: "Identifiant ou mot de passe invalide." });
+      return;
+    }
+    await creerSession(user.id, req, res);
+    resetLoginAttempts(username, ip);
+    res.json(versUtilisateur(user));
+  } finally {
+    releaseVerification();
+  }
 });
 
 router.get("/auth/me", sessionMiddleware, (req, res): void => {

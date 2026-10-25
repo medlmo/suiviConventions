@@ -1,7 +1,7 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir, userInfo } from "node:os";
-import { DocumentSecurityError, documentRejected } from "./document-security-errors";
+import { DocumentSecurityError, documentAnalysisBusy, documentRejected } from "./document-security-errors";
 import { runDocumentTool } from "./document-tools";
 import { logger } from "./logger";
 import { safeErrorFields } from "./error-logging";
@@ -20,6 +20,7 @@ let engineAvailable: boolean | undefined;
 let engineCheckedAt = 0;
 let engineCheck: Promise<boolean> | undefined;
 let retryTimer: ReturnType<typeof setTimeout> | undefined;
+let scanning = false;
 
 async function databaseDate(): Promise<number> {
   const dates = await Promise.all(["main", "daily", "bytecode"].map(async name => {
@@ -156,19 +157,26 @@ export async function requireDocumentAntivirus(): Promise<void> {
 }
 
 export async function scanDocumentAntivirus(path: string): Promise<{ engine: string; signatureDate: string }> {
-  await requireDocumentAntivirus();
-  const result = await runDocumentTool("clamscan", [
-    "--database=" + DATABASE_DIR, "--no-summary", "--infected", "--fail-if-cvd-older-than=2",
-    "--scan-archive=yes", "--scan-pdf=yes", "--scan-ole2=yes", "--alert-encrypted=yes",
-    "--alert-macros=yes", "--alert-exceeds-max=yes", "--alert-broken=yes",
-    "--max-filesize=20M", "--max-scansize=80M", "--max-files=3000", "--max-recursion=12",
-    "--max-scantime=120000",
-    path,
-  ], 90_000);
-  if (result.code === 1) throw documentRejected();
-  if (result.code !== 0) throw new DocumentSecurityError(
-    "Document en quarantaine : l'analyse antimalware n'a pas abouti. L'accès est refusé.",
-    "ANALYSIS_UNAVAILABLE",
-  );
-  return { engine: "ClamAV", signatureDate: new Date(readyAt).toISOString() };
+  // Also protect direct scanner callers, independently of the full inspection guard.
+  if (scanning) throw documentAnalysisBusy();
+  scanning = true;
+  try {
+    await requireDocumentAntivirus();
+    const result = await runDocumentTool("clamscan", [
+      "--database=" + DATABASE_DIR, "--no-summary", "--infected", "--fail-if-cvd-older-than=2",
+      "--scan-archive=yes", "--scan-pdf=yes", "--scan-ole2=yes", "--alert-encrypted=yes",
+      "--alert-macros=yes", "--alert-exceeds-max=yes", "--alert-broken=yes",
+      "--max-filesize=20M", "--max-scansize=80M", "--max-files=3000", "--max-recursion=12",
+      "--max-scantime=120000",
+      path,
+    ], 90_000);
+    if (result.code === 1) throw documentRejected();
+    if (result.code !== 0) throw new DocumentSecurityError(
+      "Document en quarantaine : l'analyse antimalware n'a pas abouti. L'accès est refusé.",
+      "ANALYSIS_UNAVAILABLE",
+    );
+    return { engine: "ClamAV", signatureDate: new Date(readyAt).toISOString() };
+  } finally {
+    scanning = false;
+  }
 }

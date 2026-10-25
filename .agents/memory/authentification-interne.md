@@ -33,8 +33,14 @@ Les libellés de l'organigramme ne sont pas de simples étiquettes d'affichage :
 
 **How to apply:** Effectuer les renommages et la mise à jour des périmètres utilisateurs/conventions dans une même transaction, avec les changements de version nécessaires ; sérialiser cette opération avec les créations et modifications qui valident ces mêmes libellés. Ne jamais traiter un renommage comme une simple retouche visuelle.
 
-La limitation des connexions doit réserver une tentative avant toute vérification asynchrone du mot de passe. Un plafond de capacité ne doit pas effacer les restrictions encore actives : les nouvelles clés sont temporairement refusées jusqu'à l'expiration de places existantes.
+Les limites de connexion et d'analyse documentaire restent locales à chaque instance, conformément au choix explicite de l'utilisateur pour une mise en œuvre plus légère, sans coordination en base.
 
-**Why:** Enregistrer seulement les échecs après le contrôle laisserait passer une rafale simultanée. Évincer des clés actives pour borner la mémoire permettrait à une attaque de forte cardinalité d'effacer les blocages ; le refus temporaire privilégie ici la protection plutôt que la disponibilité des nouvelles clés.
+**Why:** L'utilisateur a choisi les limites par instance plutôt que des limites partagées entre serveurs.
 
-**How to apply:** Conserver une admission synchrone et bornée, des limites indépendantes par compte et par IP, et des expirations fixes. Une connexion réussie ne doit pas effacer le compteur collectif de l'IP.
+**How to apply:** Ne pas présenter ces limites comme persistantes après redémarrage ni comme une protection globale entre instances. Une coordination partagée nécessiterait une nouvelle décision de portée.
+
+La limitation des connexions réserve une tentative avant toute vérification asynchrone du mot de passe et contrôle l'IP ainsi que le couple identifiant/IP, sans verrouillage global du compte. Une connexion réussie ne remet à zéro que ce couple, jamais le budget collectif de l'IP. Un plafond de capacité ne doit pas effacer les restrictions encore actives.
+
+**Why:** Un verrouillage sur le seul identifiant permettait à un tiers de bloquer le compte depuis une autre adresse. Réserver après le contrôle laisserait passer une rafale simultanée, et évincer des clés actives permettrait d'effacer leurs restrictions.
+
+**How to apply:** Conserver une admission synchrone, bornée et à expirations fixes. Ne pas réintroduire un blocage global par identifiant sans protection supplémentaire. Ce compromis ne supprime ni les limites communes aux utilisateurs d'une même IP, ni le risque de tentatives réparties entre de nombreuses IP.
