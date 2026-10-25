@@ -46,7 +46,7 @@ paths:
       operationId: antivirusReadiness
       tags: [health]
       summary: Vérifier la disponibilité de l'antivirus documentaire
-      description: Indique si la base ClamAV est assez récente pour valider de nouveaux dépôts.
+      description: Indique si les nouveaux dépôts peuvent être analysés.
       security: []
       responses:
         "200":
@@ -672,13 +672,9 @@ components:
         - status
     AntivirusReadiness:
       type: object
-      required: [ready, updating, scannerAvailable, lastUpdateFailed, databaseAgeSeconds]
+      required: [ready]
       properties:
         ready: { type: boolean }
-        updating: { type: boolean }
-        scannerAvailable: { type: boolean }
-        lastUpdateFailed: { type: boolean }
-        databaseAgeSeconds: { type: ["integer", "null"], minimum: 0 }
 
     Erreur:
       type: object

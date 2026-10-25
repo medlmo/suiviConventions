@@ -311,7 +311,9 @@ router.post("/admin/reference-data/:kind", adminRequired, async (req, res): Prom
     typeof kind !== "string" ||
     !["directions", "divisions", "services", "services-dgs", "maitrises-ouvrage"].includes(kind)
   ) {
-    res.status(400).json({ error: params.success ? "Type de référentiel invalide." : params.error.message });
+    res.status(400).json({
+      error: params.success ? "Type de référentiel invalide." : "Données de référentiel invalides.",
+    });
     return;
   }
   const { nom: brut, parentId } = params.data;
@@ -373,7 +375,7 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
     typeof kind !== "string" ||
     !["directions", "divisions", "services", "services-dgs", "maitrises-ouvrage"].includes(kind)
   ) {
-    res.status(400).json({ error: !params.success ? params.error.message : "Paramètres de référentiel invalides." });
+    res.status(400).json({ error: "Paramètres de référentiel invalides." });
     return;
   }
   const nom = params.data.nom.trim();

@@ -10,7 +10,8 @@ router.get("/healthz", (_req, res) => {
 });
 
 router.get("/healthz/antivirus", async (_req, res): Promise<void> => {
-  const readiness = AntivirusReadinessResponse.parse(await getDocumentAntivirusReadiness());
+  const { ready } = await getDocumentAntivirusReadiness();
+  const readiness = AntivirusReadinessResponse.parse({ ready });
   res.setHeader("Cache-Control", "no-store");
   if (!readiness.ready) res.setHeader("Retry-After", "60");
   res.status(readiness.ready ? 200 : 503).json(readiness);

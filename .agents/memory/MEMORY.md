@@ -17,6 +17,7 @@
 - [Retrait de documents](retrait-documents.md) — retirer une pièce de la fiche la détache ; ne pas supprimer automatiquement le fichier physique.
 - [Fiches techniques Word](fiches-techniques-word.md) — export à la demande sans modifier la fiche ; précaution de compilation pour les images embarquées.
 - [Protection documentaire](protection-documents.md) — analyse au dépôt seulement ; aucun scan antivirus au téléchargement, les fichiers déjà rejetés restent bloqués.
+- [État antivirus public](etat-antivirus-public.md) — l’endpoint public expose seulement `ready` et le statut HTTP ; les détails internes restent privés.
 - [Limites d'audit App Storage](app-storage-audit-limitations.md) — la garantie générale de confidentialité ne révèle pas l'IAM/les ACL effectifs d'un bucket donné.
 - [Suivi financier](suivi-financier-metier.md) — tableau annuel dans chaque fiche ; partenaires propres à la convention et années variables.
 - [Avancement physique](avancement-physique-metier.md) — volet pour infrastructures et prestations ; constats datés, taux estimé et historique conservé.

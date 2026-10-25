@@ -167,7 +167,7 @@ export const getAntivirusReadinessUrl = () => {
 }
 
 /**
- * Indique si la base ClamAV est assez récente pour valider de nouveaux dépôts.
+ * Indique si les nouveaux dépôts peuvent être analysés.
  * @summary Vérifier la disponibilité de l'antivirus documentaire
  */
 export const antivirusReadiness = async ( options?: Parameters<typeof customFetch>[1]): Promise<AntivirusReadiness> => {

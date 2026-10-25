@@ -435,7 +435,7 @@ router.get("/conventions", async (req, res): Promise<void> => {
     partenaires: partenaires === undefined ? undefined : Array.isArray(partenaires) ? partenaires : [partenaires],
   });
   if (!query.success) {
-    res.status(400).json({ error: query.error.message });
+    res.status(400).json({ error: "Paramètres de recherche invalides." });
     return;
   }
 
@@ -529,7 +529,7 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
 router.get("/conventions/alertes", async (req, res): Promise<void> => {
   const query = ListAlertesQueryParams.safeParse(req.query);
   if (!query.success) {
-    res.status(400).json({ error: query.error.message });
+    res.status(400).json({ error: "Paramètres des alertes invalides." });
     return;
   }
 
@@ -560,7 +560,7 @@ router.get("/conventions/alertes", async (req, res): Promise<void> => {
 router.get("/conventions/agenda", async (req, res): Promise<void> => {
   const query = GetAgendaQueryParams.safeParse(req.query);
   if (!query.success) {
-    res.status(400).json({ error: query.error.message });
+    res.status(400).json({ error: "Paramètres de l’agenda invalides." });
     return;
   }
 
@@ -663,7 +663,7 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
     partenaires: partenaires === undefined ? undefined : Array.isArray(partenaires) ? partenaires : [partenaires],
   });
   if (!query.success) {
-    res.status(400).json({ error: query.error.message });
+    res.status(400).json({ error: "Paramètres de recherche invalides." });
     return;
   }
 
@@ -835,7 +835,7 @@ router.post("/conventions", async (req, res): Promise<void> => {
       event: "convention.create.rejected", operation: "convention.create",
       status: 400, errorCode: "SCHEMA_VALIDATION_FAILED",
     });
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: "Données de convention invalides." });
     return;
   }
   if (contributionDepasseEnveloppe(parsed.data.enveloppeBudgetaire, parsed.data.contributionRegion)) {
@@ -962,7 +962,7 @@ router.get("/conventions/:id/fiche-technique", async (req, res): Promise<void> =
 router.get("/conventions/:id", async (req, res): Promise<void> => {
   const params = GetConventionParams.safeParse(req.params);
   if (!params.success) {
-    res.status(400).json({ error: params.error.message });
+    res.status(400).json({ error: "Identifiant de convention invalide." });
     return;
   }
 
@@ -1057,7 +1057,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
   }
   const params = UpdateConventionParams.safeParse(req.params);
   if (!params.success) {
-    res.status(400).json({ error: params.error.message });
+    res.status(400).json({ error: "Identifiant de convention invalide." });
     return;
   }
 
@@ -1073,7 +1073,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       event: "convention.update.rejected", operation: "convention.update",
       status: 400, errorCode: "SCHEMA_VALIDATION_FAILED",
     });
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: "Données de convention invalides." });
     return;
   }
 
@@ -1245,7 +1245,7 @@ router.delete("/conventions/:id", async (req, res): Promise<void> => {
   }
   const params = DeleteConventionParams.safeParse(req.params);
   if (!params.success) {
-    res.status(400).json({ error: params.error.message });
+    res.status(400).json({ error: "Identifiant de convention invalide." });
     return;
   }
 

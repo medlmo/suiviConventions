@@ -11,14 +11,6 @@ export interface HealthStatus {
 
 export interface AntivirusReadiness {
   ready: boolean;
-  updating: boolean;
-  scannerAvailable: boolean;
-  lastUpdateFailed: boolean;
-  /**
-     * @minimum 0
-     * @nullable
-     */
-  databaseAgeSeconds: number | null;
 }
 
 export type ErreurCode = typeof ErreurCode[keyof typeof ErreurCode];

@@ -8,12 +8,4 @@
 
 export interface AntivirusReadiness {
   ready: boolean;
-  updating: boolean;
-  scannerAvailable: boolean;
-  lastUpdateFailed: boolean;
-  /**
-     * @minimum 0
-     * @nullable
-     */
-  databaseAgeSeconds: number | null;
 }

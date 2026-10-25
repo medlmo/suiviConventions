@@ -18,19 +18,11 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * Indique si la base ClamAV est assez récente pour valider de nouveaux dépôts.
+ * Indique si les nouveaux dépôts peuvent être analysés.
  * @summary Vérifier la disponibilité de l'antivirus documentaire
  */
-export const antivirusReadinessResponseDatabaseAgeSecondsMin = 0;
-
-
-
 export const AntivirusReadinessResponse = zod.object({
-  "ready": zod.boolean(),
-  "updating": zod.boolean(),
-  "scannerAvailable": zod.boolean(),
-  "lastUpdateFailed": zod.boolean(),
-  "databaseAgeSeconds": zod.number().int().min(antivirusReadinessResponseDatabaseAgeSecondsMin).nullable()
+  "ready": zod.boolean()
 })
 
 
