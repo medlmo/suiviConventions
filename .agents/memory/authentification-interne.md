@@ -39,6 +39,12 @@ Les limites de connexion et d'analyse documentaire restent locales à chaque ins
 
 **How to apply:** Ne pas présenter ces limites comme persistantes après redémarrage ni comme une protection globale entre instances. Une coordination partagée nécessiterait une nouvelle décision de portée.
 
+Plusieurs comptes utilisés dans une même administration peuvent partager la même adresse IP publique.
+
+**Why:** L'utilisateur a précisé que plusieurs comptes connectés à cette application dans une administration partagent la même IP publique.
+
+**How to apply:** Ne jamais traiter une limite par IP comme une limite par personne. Calibrer les budgets IP pour l'usage simultané de l'administration et éviter qu'une protection globale par IP pénalise les autres comptes.
+
 La limitation des connexions réserve une tentative avant toute vérification asynchrone du mot de passe et contrôle l'IP ainsi que le couple identifiant/IP, sans verrouillage global du compte. Une connexion réussie ne remet à zéro que ce couple, jamais le budget collectif de l'IP. Un plafond de capacité ne doit pas effacer les restrictions encore actives.
 
 **Why:** Un verrouillage sur le seul identifiant permettait à un tiers de bloquer le compte depuis une autre adresse. Réserver après le contrôle laisserait passer une rafale simultanée, et évincer des clés actives permettrait d'effacer leurs restrictions.
