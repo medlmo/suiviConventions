@@ -97,10 +97,11 @@ export function DocumentUploadField({
         method: "PUT",
         headers: { "Content-Type": contentType },
         body: file,
-        credentials: "omit",
+        credentials: "same-origin",
       });
       if (!response.ok) {
-        throw new Error("Le téléversement du fichier a échoué.");
+        const failure = await response.json().catch(() => null);
+        throw new Error(failure?.error ?? "Le téléversement du fichier a échoué.");
       }
 
       const completion = {
@@ -142,8 +143,8 @@ export function DocumentUploadField({
         (cause.code === "ANALYSIS_UNAVAILABLE" || cause.code === "ANALYSIS_BUSY")) {
         setPendingCompletion(completion);
         setError(cause.code === "ANALYSIS_UNAVAILABLE"
-          ? "L’antivirus est temporairement indisponible. Votre fichier est conservé ; réessayez l’analyse sans le téléverser à nouveau."
-          : "Une autre analyse est en cours. Votre fichier est conservé ; réessayez dans quelques instants.");
+          ? "L’antivirus est temporairement indisponible. Votre fichier reste en mémoire dix minutes au maximum ; réessayez l’analyse sans le téléverser à nouveau."
+          : "Une autre analyse est en cours. Votre fichier reste en mémoire dix minutes au maximum ; réessayez dans quelques instants.");
         return;
       }
       setPendingCompletion(null);

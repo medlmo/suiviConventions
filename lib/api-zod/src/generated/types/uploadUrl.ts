@@ -7,6 +7,7 @@
  */
 
 export interface UploadUrl {
+  /** Chemin relatif sur la même origine ; PUT avec cookie de session requis */
   uploadURL: string;
   objectPath: string;
 }

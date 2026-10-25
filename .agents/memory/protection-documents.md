@@ -20,3 +20,9 @@ Les métadonnées fournies lors d'un dépôt ne constituent jamais une preuve d'
 **Why:** Le téléversement direct permet de présenter des métadonnées prétendant que le fichier est déjà propre. Un nouveau dépôt doit toujours être effectivement analysé, puis lié à la version exacte de son contenu.
 
 **How to apply:** Ne pas utiliser une déclaration « propre » provenant du dépôt pour éviter les contrôles ; préserver le lien entre analyse et contenu immuable.
+
+Le stockage persistant d'un nouveau dépôt doit attendre les contrôles effectifs du contenu et l'antivirus ; une URL PUT directe non contrainte n'est pas une protection suffisante.
+
+**Why:** Un rejet à la finalisation est trop tardif si l'URL autorise déjà le client à remplir le bucket avec un contenu arbitraire. La conservation provisoire en mémoire a été choisie pour ne laisser aucun objet refusé dans App Storage.
+
+**How to apply:** Toute évolution vers une conservation provisoire durable ou plusieurs instances doit préserver cette garantie et borner les ressources. Ne pas présenter la conservation provisoire comme une sauvegarde : un redémarrage impose une nouvelle sélection du fichier.

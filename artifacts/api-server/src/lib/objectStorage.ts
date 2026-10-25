@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { File, Storage } from "@google-cloud/storage";
 import { inspectDocument, DOCUMENT_SECURITY_POLICY } from "./document-security";
-import { DocumentSecurityError, documentRejected } from "./document-security-errors";
+import { documentRejected } from "./document-security-errors";
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 
@@ -14,7 +14,6 @@ const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
 };
 
 const OBJECT_PATH_PATTERN = /^\/objects\/(?:uploads|documents)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const UPLOAD_PATH_PATTERN = /^\/objects\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DOCUMENT_PATH_PATTERN = /^\/objects\/documents\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const objectStorageClient = new Storage({
@@ -57,59 +56,6 @@ export interface VerifiedDocument {
   generation: string;
 }
 
-const activeInspections = new Map<string, Promise<void>>();
-
-async function inspectStoredFile(file: File, name: string, size: number, force = false): Promise<void> {
-  const [metadata] = await file.getMetadata();
-  const generation = String(metadata.generation);
-  const flags = metadata.metadata ?? {};
-  if (!force && flags.securityStatus === "clean" && flags.securityPolicy === DOCUMENT_SECURITY_POLICY &&
-    flags.securityGeneration === generation && typeof flags.securityHash === "string" &&
-    /^[0-9a-f]{64}$/u.test(flags.securityHash) &&
-    typeof flags.securityScannedAt === "string" &&
-    Date.parse(flags.securityScannedAt) > Date.now() - 24 * 60 * 60 * 1000) return;
-  if (!force && flags.securityStatus === "rejected" && flags.securityPolicy === DOCUMENT_SECURITY_POLICY) throw documentRejected();
-  const key = `${file.bucket.name}/${file.name}/${generation}`;
-  const existing = activeInspections.get(key);
-  if (existing) return existing;
-  const work = (async () => {
-    await file.setMetadata({ metadata: { ...flags, securityStatus: "quarantined", securityReason: "analysis_pending" } });
-    try {
-      const result = await inspectDocument(name, async () => {
-        const stream = file.createReadStream({ start: 0, end: DOCUMENT_MAX_SIZE_BYTES });
-        const chunks: Buffer[] = [];
-        let length = 0;
-        for await (const chunk of stream) {
-          const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-          length += bytes.length;
-          if (length > DOCUMENT_MAX_SIZE_BYTES) {
-            stream.destroy();
-            throw documentRejected();
-          }
-          chunks.push(bytes);
-        }
-        if (length !== size) throw documentRejected();
-        return Buffer.concat(chunks);
-      });
-      await file.setMetadata({ metadata: {
-        ...flags, ...result, securityStatus: "clean", securityGeneration: generation, securityReason: null,
-      } });
-    } catch (error) {
-      const securityError = error instanceof DocumentSecurityError ? error : new DocumentSecurityError(
-        "Document en quarantaine : le contrôle de sécurité n'a pas pu aboutir. L'accès est refusé.",
-        "ANALYSIS_UNAVAILABLE",
-      );
-      await file.setMetadata({ metadata: {
-        ...flags, securityStatus: securityError.securityStatus, securityPolicy: DOCUMENT_SECURITY_POLICY,
-        securityReason: securityError.code,
-      } }).catch(() => undefined);
-      throw securityError;
-    }
-  })().finally(() => { activeInspections.delete(key); });
-  activeInspections.set(key, work);
-  return work;
-}
-
 export function normaliserNomDocument(nomBrut: string): string | null {
   const nom = nomBrut.split(/[\\/]/).pop()?.replace(/[\u0000-\u001f\u007f]/g, "").trim();
   if (!nom || nom.length > 255 || nom === "." || nom === "..") return null;
@@ -133,18 +79,6 @@ function signatureValide(nom: string, prefixe: Buffer): boolean {
   return false;
 }
 
-async function lirePrefixe(fichier: File): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const morceaux: Buffer[] = [];
-    const flux = fichier.createReadStream({ start: 0, end: 7 });
-    flux.on("data", (morceau: Buffer | string) => {
-      morceaux.push(Buffer.isBuffer(morceau) ? morceau : Buffer.from(morceau));
-    });
-    flux.on("end", () => resolve(Buffer.concat(morceaux)));
-    flux.on("error", reject);
-  });
-}
-
 export class ObjectStorageService {
   getPrivateObjectDir(): string {
     const dir = process.env.PRIVATE_OBJECT_DIR || "";
@@ -155,21 +89,6 @@ export class ObjectStorageService {
       throw new Error("Les répertoires de documents privés et d'objets publics doivent être séparés.");
     }
     return dir;
-  }
-
-  async getObjectEntityUploadURL(): Promise<string> {
-    const fullPath = `${this.getPrivateObjectDir()}/uploads/${randomUUID()}`;
-    const { bucketName, objectName } = parseObjectPath(fullPath);
-    return signObjectURL({ bucketName, objectName, method: "PUT", ttlSec: 900 });
-  }
-
-  normalizeObjectEntityPath(rawPath: string): string {
-    if (!rawPath.startsWith("https://storage.googleapis.com/")) return rawPath;
-    const rawObjectPath = new URL(rawPath).pathname;
-    let privateDir = this.getPrivateObjectDir();
-    if (!privateDir.endsWith("/")) privateDir = `${privateDir}/`;
-    if (!rawObjectPath.startsWith(privateDir)) return rawObjectPath;
-    return `/objects/${rawObjectPath.slice(privateDir.length)}`;
   }
 
   async getObjectEntityFile(objectPath: string, generation?: string): Promise<File> {
@@ -184,61 +103,44 @@ export class ObjectStorageService {
     return file;
   }
 
-  async finalizeUploadedDocument(uploadPath: string, rawName: string): Promise<VerifiedDocument> {
-    if (!UPLOAD_PATH_PATTERN.test(uploadPath)) throw new InvalidDocumentError();
+  async finalizeUploadedDocument(bytes: Buffer, rawName: string): Promise<VerifiedDocument> {
     const name = normaliserNomDocument(rawName);
     if (!name || name !== rawName) throw new InvalidDocumentError();
     const expectedContentType = typeDocumentPourNom(name);
     if (!expectedContentType) throw new InvalidDocumentError();
-
-    const uploaded = await this.getObjectEntityFile(uploadPath);
-    const [sourceMetadata] = await uploaded.getMetadata();
-    const source = objectStorageClient.bucket(uploaded.bucket.name).file(uploaded.name, { generation: String(sourceMetadata.generation) });
-    const size = Number(sourceMetadata.size);
-    if (
-      !Number.isSafeInteger(size) ||
-      size < 1 ||
-      size > DOCUMENT_MAX_SIZE_BYTES ||
-      sourceMetadata.contentType !== expectedContentType ||
-      !signatureValide(name, await lirePrefixe(source))
-    ) {
-      await source.setMetadata({ metadata: {
-        ...sourceMetadata.metadata, originalName: name, securityStatus: "rejected",
-        securityPolicy: DOCUMENT_SECURITY_POLICY, securityReason: "INVALID_METADATA_OR_SIGNATURE",
-      } });
-      throw documentRejected();
-    }
-
-    await source.setMetadata({ metadata: { ...sourceMetadata.metadata, originalName: name, documentVerified: "false" } });
-    await inspectStoredFile(source, name, size, true);
-    const [scannedMetadata] = await source.getMetadata();
+    validateUploadBytes(name, bytes);
+    // Aucun objet n'est créé avant les contrôles de structure et l'antivirus.
+    const security = await inspectDocument(name, async () => bytes);
+    const size = bytes.length;
     const objectId = randomUUID();
     const { bucketName, objectName } = parseObjectPath(
       `${this.getPrivateObjectDir()}/documents/${objectId}`,
     );
     const destination = objectStorageClient.bucket(bucketName).file(objectName);
-    await source.copy(destination, { preconditionOpts: { ifGenerationMatch: 0 } });
-
-    const [copiedMetadata] = await destination.getMetadata();
-    const generation = String(copiedMetadata.generation);
-    const finalFile = objectStorageClient.bucket(bucketName).file(objectName, { generation });
-    const copiedSize = Number(copiedMetadata.size);
-    if (
-      copiedSize !== size ||
-      copiedMetadata.contentType !== expectedContentType ||
-      !signatureValide(name, await lirePrefixe(finalFile))
-    ) throw new InvalidDocumentError();
-
-    await finalFile.setMetadata({
-      contentType: expectedContentType,
-      metadata: {
-        ...scannedMetadata.metadata,
-        documentVerified: "true", securityStatus: "clean", securityGeneration: generation,
-        originalName: name,
-      },
-    });
-
-    await source.delete().catch(() => undefined);
+    let generation: string;
+    try {
+      await destination.save(bytes, {
+        resumable: false,
+        preconditionOpts: { ifGenerationMatch: 0 },
+        metadata: {
+          contentType: expectedContentType,
+          metadata: { ...security, originalName: name, documentVerified: "false", securityStatus: "clean" },
+        },
+      });
+      const [metadata] = await destination.getMetadata();
+      generation = String(metadata.generation);
+      if (Number(metadata.size) !== size || metadata.contentType !== expectedContentType) {
+        throw new InvalidDocumentError();
+      }
+      const finalFile = objectStorageClient.bucket(bucketName).file(objectName, { generation });
+      await finalFile.setMetadata({
+        metadata: { ...security, documentVerified: "true", securityStatus: "clean", securityGeneration: generation, originalName: name },
+      });
+    } catch (error) {
+      // Ne pas laisser de copie incomplète après un échec de stockage.
+      await destination.delete({ ignoreNotFound: true });
+      throw error;
+    }
     return {
       objectPath: `/objects/documents/${objectId}`,
       name,
@@ -297,34 +199,8 @@ function parseObjectPath(path: string): { bucketName: string; objectName: string
   };
 }
 
-async function signObjectURL({
-  bucketName,
-  objectName,
-  method,
-  ttlSec,
-}: {
-  bucketName: string;
-  objectName: string;
-  method: "GET" | "PUT" | "DELETE" | "HEAD";
-  ttlSec: number;
-}): Promise<string> {
-  const response = await fetch(`${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      bucket_name: bucketName,
-      object_name: objectName,
-      method,
-      expires_at: new Date(Date.now() + ttlSec * 1000).toISOString(),
-    }),
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) {
-    throw new Error(`Échec de création de l'URL de téléversement (${response.status}).`);
+export function validateUploadBytes(name: string, bytes: Buffer): void {
+  if (bytes.length < 1 || bytes.length > DOCUMENT_MAX_SIZE_BYTES || !signatureValide(name, bytes)) {
+    throw new InvalidDocumentError();
   }
-  const payload = await response.json() as { signed_url?: unknown };
-  if (typeof payload.signed_url !== "string") {
-    throw new Error("Le service de stockage n'a pas retourné d'URL valide.");
-  }
-  return payload.signed_url;
 }

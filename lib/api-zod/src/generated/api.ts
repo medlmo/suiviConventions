@@ -27,7 +27,7 @@ export const AntivirusReadinessResponse = zod.object({
 
 
 /**
- * @summary Obtenir une URL temporaire pour téléverser un document
+ * @summary Réserver un envoi contrôlé par le serveur (10 minutes, lié à la session)
  */
 export const requestUploadUrlBodyNameMax = 255;
 
@@ -42,9 +42,24 @@ export const RequestUploadUrlBody = zod.object({
 })
 
 export const RequestUploadUrlResponse = zod.object({
-  "uploadURL": zod.string().url(),
+  "uploadURL": zod.string().describe('Chemin relatif sur la même origine ; PUT avec cookie de session requis'),
   "objectPath": zod.string()
 })
+
+
+/**
+ * Session authentifiée du propriétaire requise. Usage unique et délai
+ * de réception de 60 secondes. Contrôle effectif de la taille (10 Mio),
+ * du type MIME et de la signature PDF/Word, même sans Content-Length.
+ * Conservation temporaire bornée en mémoire ; la finalisation effectue
+ * les contrôles de structure et antivirus avant tout stockage App Storage.
+ * @summary Recevoir les octets sans stockage persistant avant validation
+ */
+export const UploadDocumentBytesParams = zod.object({
+  "token": zod.coerce.string().uuid()
+})
+
+export const UploadDocumentBytesResponse = zod.void()
 
 
 /**

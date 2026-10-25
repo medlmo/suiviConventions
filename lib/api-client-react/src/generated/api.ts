@@ -30,6 +30,7 @@ import type {
   ConventionPage,
   ConventionUpdate,
   DeleteConventionParams,
+  DocumentUploadBytes,
   DownloadConventionDocumentParams,
   Erreur,
   GetAgendaParams,
@@ -245,7 +246,7 @@ export const getRequestUploadUrlUrl = () => {
 }
 
 /**
- * @summary Obtenir une URL temporaire pour téléverser un document
+ * @summary Réserver un envoi contrôlé par le serveur (10 minutes, lié à la session)
  */
 export const requestUploadUrl = async (uploadUrlInput: UploadUrlInput, options?: Parameters<typeof customFetch>[1]): Promise<UploadUrl> => {
 
@@ -311,7 +312,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RequestUploadUrlMutationVariables = {data: BodyType<UploadUrlInput>}
 
     /**
- * @summary Obtenir une URL temporaire pour téléverser un document
+ * @summary Réserver un envoi contrôlé par le serveur (10 minutes, lié à la session)
  */
 export const useRequestUploadUrl = <TError = ErrorType<Erreur | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -322,6 +323,86 @@ export const useRequestUploadUrl = <TError = ErrorType<Erreur | void>,
         TContext
       > => {
       return useMutation(getRequestUploadUrlMutationOptions(options));
+    }
+
+export const getUploadDocumentBytesUrl = (token: string,) => {
+
+
+
+
+  return `/api/storage/uploads/${token}`
+}
+
+/**
+ * Session authentifiée du propriétaire requise. Usage unique et délai
+ * de réception de 60 secondes. Contrôle effectif de la taille (10 Mio),
+ * du type MIME et de la signature PDF/Word, même sans Content-Length.
+ * Conservation temporaire bornée en mémoire ; la finalisation effectue
+ * les contrôles de structure et antivirus avant tout stockage App Storage.
+ * @summary Recevoir les octets sans stockage persistant avant validation
+ */
+export const uploadDocumentBytes = async (token: string,
+    uploadDocumentBytesBody: Blob | DocumentUploadBytes, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUploadDocumentBytesUrl(token),
+  {
+    ...options,
+    method: 'PUT'
+    ,
+    body: uploadDocumentBytesBody
+  }
+);}
+
+
+
+
+
+export const getUploadDocumentBytesMutationKey = () => ['uploadDocumentBytes'] as const;
+
+export const getUploadDocumentBytesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadDocumentBytes>>, TError,UploadDocumentBytesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadDocumentBytes>>, TError,UploadDocumentBytesMutationVariables, TContext> => {
+
+const mutationKey = getUploadDocumentBytesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadDocumentBytes>>, UploadDocumentBytesMutationVariables> = (props) => {
+          const {token,data} = props ?? {};
+
+          return  uploadDocumentBytes(token,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadDocumentBytesMutationResult = NonNullable<Awaited<ReturnType<typeof uploadDocumentBytes>>>
+    export type UploadDocumentBytesMutationBody = BodyType<Blob | DocumentUploadBytes>
+    export type UploadDocumentBytesMutationError = ErrorType<void>
+    export type UploadDocumentBytesMutationVariables = {token: string;data: BodyType<Blob | DocumentUploadBytes>}
+
+    /**
+ * @summary Recevoir les octets sans stockage persistant avant validation
+ */
+export const useUploadDocumentBytes = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadDocumentBytes>>, TError,UploadDocumentBytesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadDocumentBytes>>,
+        TError,
+        UploadDocumentBytesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUploadDocumentBytesMutationOptions(options));
     }
 
 export const getCompleteUploadUrl = () => {

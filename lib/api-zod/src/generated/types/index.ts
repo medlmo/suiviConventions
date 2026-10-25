@@ -34,6 +34,7 @@ export * from './conventionTypeSession';
 export * from './conventionUpdate';
 export * from './conventionUpdateTypeSession';
 export * from './deleteConventionParams';
+export * from './documentUploadBytes';
 export * from './downloadConventionDocumentParams';
 export * from './erreur';
 export * from './erreurCode';

@@ -64,7 +64,7 @@ paths:
     post:
       operationId: requestUploadUrl
       tags: [storage]
-      summary: Obtenir une URL temporaire pour téléverser un document
+      summary: Réserver un envoi contrôlé par le serveur (10 minutes, lié à la session)
       requestBody:
         required: true
         content:
@@ -83,11 +83,46 @@ paths:
               schema: { $ref: "#/components/schemas/Erreur" }
         "401": { description: Authentification requise }
         "403": { description: Rôle non autorisé à téléverser }
+        "429": { description: Limite de réservations simultanées atteinte }
         "500":
           description: Impossible de préparer le téléversement
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
+  /storage/uploads/{token}:
+    put:
+      operationId: uploadDocumentBytes
+      tags: [storage]
+      summary: Recevoir les octets sans stockage persistant avant validation
+      description: |
+        Session authentifiée du propriétaire requise. Usage unique et délai
+        de réception de 60 secondes. Contrôle effectif de la taille (10 Mio),
+        du type MIME et de la signature PDF/Word, même sans Content-Length.
+        Conservation temporaire bornée en mémoire ; la finalisation effectue
+        les contrôles de structure et antivirus avant tout stockage App Storage.
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/pdf:
+            schema: { $ref: "#/components/schemas/DocumentUploadBytes" }
+          application/msword:
+            schema: { $ref: "#/components/schemas/DocumentUploadBytes" }
+          application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+            schema: { $ref: "#/components/schemas/DocumentUploadBytes" }
+      responses:
+        "204": { description: "Octets reçus et contrôlés, en attente de finalisation" }
+        "400": { description: "Type, signature ou taille réelle différente de la réservation" }
+        "401": { description: Authentification requise }
+        "403": { description: Rôle non autorisé à téléverser }
+        "404": { description: "Réservation inconnue, expirée ou appartenant à un autre utilisateur" }
+        "409": { description: Réservation déjà utilisée }
+        "413": { description: Limite de 10 Mio dépassée pendant la réception }
+        "415": { description: Encodage compressé interdit }
   /storage/uploads/complete:
     post:
       operationId: completeUpload
@@ -116,13 +151,14 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
+        "409": { description: Réception inachevée ou finalisation déjà en cours }
         "423":
-          description: Document refusé après contrôle ; conservé mais inaccessible
+          description: Document refusé après contrôle ; octets provisoires supprimés sans stockage
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
         "503":
-          description: Analyse indisponible ou occupée ; document en quarantaine
+          description: Analyse indisponible ou occupée ; octets en mémoire jusqu'à expiration de la réservation
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
@@ -700,11 +736,16 @@ components:
             - application/pdf
             - application/msword
             - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    DocumentUploadBytes:
+      type: string
+      format: binary
     UploadUrl:
       type: object
       required: [uploadURL, objectPath]
       properties:
-        uploadURL: { type: string, format: uri }
+        uploadURL:
+          type: string
+          description: Chemin relatif sur la même origine ; PUT avec cookie de session requis
         objectPath: { type: string }
     CompleteUploadInput:
       type: object
