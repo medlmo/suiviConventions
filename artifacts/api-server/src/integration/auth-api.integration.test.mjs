@@ -375,7 +375,7 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.ok(contenuFiche.includes("28,75"), "le taux le plus récent doit figurer dans la fiche");
     assert.ok(contenuFiche.includes("Réestimation après contrôle"));
     assert.ok(contenuFiche.includes("Direction technique"));
-    assert.ok(contenuFiche.includes("SITUATION DES VERSEMENTS DE LA RÉGION SOUSS-MASSA"));
+    assert.ok(contenuFiche.includes("SITUATION DES VERSEMENTS DE LA RÉGION SOUSS MASSA"));
     assert.ok(contenuFiche.includes("Total programmé"));
     assert.ok(contenuFiche.includes("Tranches de versement"));
     assert.ok(contenuFiche.includes("Total versé"));

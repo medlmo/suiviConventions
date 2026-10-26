@@ -200,7 +200,7 @@ function tableauSituationVersements(convention: ConventionApi): Table {
           keepNext: true,
           spacing: { after: 0 },
           children: [new TextRun({
-            text: "07  SITUATION DES VERSEMENTS DE LA RÉGION SOUSS-MASSA (MAD)",
+            text: "07  SITUATION DES VERSEMENTS DE LA RÉGION SOUSS MASSA (MAD)",
             bold: true,
             size: 21,
             color: "FFFFFF",
