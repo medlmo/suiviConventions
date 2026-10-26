@@ -5,6 +5,7 @@ import {
 } from "docx";
 import logo from "./logo-crsm-word.png";
 import type { ConventionApi } from "./conventions-mapper";
+import { natureAvecAvancement } from "./avancement-physique";
 
 const NAVY = "17365D";
 const GOLD = "C38B37";
@@ -181,6 +182,205 @@ function tableauxMontage(convention: ConventionApi): Table[] {
   return tableaux;
 }
 
+function tableauSituationVersements(convention: ConventionApi): Table {
+  const lignes = [...(convention.situationVersements ?? [])].sort((a, b) => a.annee - b.annee);
+  const largeurs = [850, 1850, 3850, 1800, 1500];
+  const borders = {
+    top: RULE, bottom: RULE, left: RULE, right: RULE,
+    insideHorizontal: RULE, insideVertical: RULE,
+  };
+  const rows: TableRow[] = [
+    new TableRow({
+      cantSplit: true,
+      children: [new TableCell({
+        columnSpan: largeurs.length,
+        shading: { fill: NAVY },
+        margins: { top: 110, bottom: 90, left: 140, right: 140 },
+        children: [new Paragraph({
+          keepNext: true,
+          spacing: { after: 0 },
+          children: [new TextRun({
+            text: "07  SITUATION DES VERSEMENTS DE LA RÉGION SOUSS-MASSA (MAD)",
+            bold: true,
+            size: 21,
+            color: "FFFFFF",
+          })],
+        })],
+      })],
+    }),
+  ];
+
+  if (lignes.length === 0) {
+    rows.push(new TableRow({
+      cantSplit: true,
+      children: [new TableCell({
+        columnSpan: largeurs.length,
+        shading: { fill: LIGHT },
+        margins: { top: 90, bottom: 80, left: 100, right: 100 },
+        children: [texte("Aucune situation des versements n'est renseignée.", false, MUTED)],
+      })],
+    }));
+  } else {
+    rows.push(new TableRow({
+      cantSplit: true,
+      children: [
+        celluleMontage("Année", largeurs[0]!, { fill: LIGHT, bold: true, center: true }),
+        celluleMontage("Total programmé", largeurs[1]!, { fill: LIGHT, bold: true, center: true }),
+        celluleMontage("Tranches de versement", largeurs[2]!, { fill: LIGHT, bold: true }),
+        celluleMontage("Total versé", largeurs[3]!, { fill: LIGHT, bold: true, center: true }),
+        celluleMontage("Taux de versement", largeurs[4]!, { fill: LIGHT, bold: true, center: true }),
+      ],
+    }));
+
+    for (const ligne of lignes) {
+      const totalCentimes = ligne.tranches.reduce(
+        (total, tranche) => total + montantCentimes(tranche.montant),
+        0n,
+      );
+      const programmeCentimes = montantCentimes(ligne.montantProgramme);
+      const taux = programmeCentimes === 0n
+        ? "— (programmé nul)"
+        : `${(Number(totalCentimes) / Number(programmeCentimes) * 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %`;
+      const tranches = ligne.tranches.length > 0
+        ? ligne.tranches.map(tranche =>
+            texte(`${dateFr(tranche.dateVersement)} · ${montant(tranche.montant)} MAD`))
+        : [texte("—", false, MUTED)];
+
+      rows.push(new TableRow({
+        cantSplit: false,
+        children: [
+          celluleMontage(String(ligne.annee), largeurs[0]!, { center: true, bold: true }),
+          celluleMontage(montant(ligne.montantProgramme), largeurs[1]!, { center: true }),
+          new TableCell({
+            width: { size: largeurs[2]!, type: WidthType.DXA },
+            margins: { top: 90, bottom: 80, left: 100, right: 100 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: tranches,
+          }),
+          celluleMontage(formaterCentimes(totalCentimes), largeurs[3]!, { center: true, bold: true }),
+          celluleMontage(taux, largeurs[4]!, { center: true }),
+        ],
+      }));
+    }
+  }
+
+  return new Table({
+    width: { size: WIDTH, type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: largeurs,
+    borders,
+    rows,
+  });
+}
+
+function dateHeureFr(value?: string | null): string {
+  if (!value) return EMPTY;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return EMPTY;
+  return new Intl.DateTimeFormat("fr-MA", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Africa/Casablanca",
+  }).format(date);
+}
+
+function tableauAvancementPhysique(convention: ConventionApi): Table[] {
+  const historique = [...(convention.avancementPhysiqueHistorique ?? [])].sort((a, b) =>
+    a.dateConstat !== b.dateConstat
+      ? (a.dateConstat < b.dateConstat ? 1 : -1)
+      : (Date.parse(b.enregistreLe) || 0) - (Date.parse(a.enregistreLe) || 0));
+  const applicable = natureAvecAvancement(convention.nature);
+
+  // Keep archived observations visible after a nature change, while not adding
+  // an irrelevant empty section to conventions that never used this tracking.
+  if (!applicable && historique.length === 0) return [];
+
+  const largeurs = [1450, 1300, 3650, 1500, 1900];
+  const borders = {
+    top: RULE, bottom: RULE, left: RULE, right: RULE,
+    insideHorizontal: RULE, insideVertical: RULE,
+  };
+  const rows: TableRow[] = [
+    new TableRow({
+      cantSplit: true,
+      children: [new TableCell({
+        columnSpan: largeurs.length,
+        shading: { fill: NAVY },
+        margins: { top: 110, bottom: 90, left: 140, right: 140 },
+        children: [new Paragraph({
+          keepNext: true,
+          spacing: { after: 0 },
+          children: [new TextRun({
+            text: "08  AVANCEMENT PHYSIQUE DU PROJET",
+            bold: true,
+            size: 21,
+            color: "FFFFFF",
+          })],
+        })],
+      })],
+    }),
+  ];
+
+  if (!applicable) {
+    rows.push(new TableRow({
+      cantSplit: true,
+      children: [new TableCell({
+        columnSpan: largeurs.length,
+        shading: { fill: LIGHT },
+        margins: { top: 90, bottom: 80, left: 100, right: 100 },
+        children: [texte(
+          "La nature actuelle du projet ne relève pas du suivi physique ; l’historique conservé est présenté ci-dessous.",
+          false,
+          MUTED,
+        )],
+      })],
+    }));
+  }
+
+  if (historique.length === 0) {
+    rows.push(new TableRow({
+      cantSplit: true,
+      children: [new TableCell({
+        columnSpan: largeurs.length,
+        margins: { top: 90, bottom: 80, left: 100, right: 100 },
+        children: [texte("Aucun avancement physique n'a encore été constaté pour ce projet.", false, MUTED)],
+      })],
+    }));
+  } else {
+    rows.push(new TableRow({
+      cantSplit: true,
+      children: [
+        celluleMontage("Date du constat", largeurs[0]!, { fill: LIGHT, bold: true, center: true }),
+        celluleMontage("Taux estimé", largeurs[1]!, { fill: LIGHT, bold: true, center: true }),
+        celluleMontage("Commentaire", largeurs[2]!, { fill: LIGHT, bold: true }),
+        celluleMontage("Saisi par", largeurs[3]!, { fill: LIGHT, bold: true }),
+        celluleMontage("Enregistré le", largeurs[4]!, { fill: LIGHT, bold: true, center: true }),
+      ],
+    }));
+
+    for (const constat of historique) {
+      rows.push(new TableRow({
+        cantSplit: true,
+        children: [
+          celluleMontage(dateFr(constat.dateConstat), largeurs[0]!, { center: true }),
+          celluleMontage(`${constat.taux.toLocaleString("fr-MA", { maximumFractionDigits: 2 })} %`, largeurs[1]!, { center: true, bold: true }),
+          celluleMontage(constat.commentaire?.trim() || "—", largeurs[2]!),
+          celluleMontage(constat.auteur?.trim() || EMPTY, largeurs[3]!),
+          celluleMontage(dateHeureFr(constat.enregistreLe), largeurs[4]!, { center: true }),
+        ],
+      }));
+    }
+  }
+
+  return [new Table({
+    width: { size: WIDTH, type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: largeurs,
+    borders,
+    rows,
+  })];
+}
+
 function texte(value: string, bold = false, color = NAVY): Paragraph {
   const rtl = /[\u0600-\u06FF]/u.test(value);
   return new Paragraph({
@@ -299,6 +499,8 @@ export async function genererFicheTechnique(convention: ConventionApi): Promise<
           rows,
         }),
         ...tableauxMontage(convention),
+        tableauSituationVersements(convention),
+        ...tableauAvancementPhysique(convention),
       ],
     }],
   }));

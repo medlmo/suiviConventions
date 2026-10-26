@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test, { after, before } from "node:test";
+import yauzl from "yauzl";
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workspaceRoot = resolve(packageDir, "../..");
@@ -49,6 +50,109 @@ function insertUnattachedHistoricalConvention(name, responsableProjet) {
     query,
   ]);
   return { id: Number(output.trim()), nomConvention: name };
+}
+
+function insertConventionForFiche() {
+  const literal = value => `'${value.replaceAll("'", "''")}'`;
+  const nomConvention = "Fiche technique — suivi financier et physique";
+  const suiviFinancier = JSON.stringify({
+    annees: [2025, 2026],
+    lignes: [{
+      partenaire: "Partenaire de test",
+      contributions: [
+        { annee: 2025, montant: 1250.5 },
+        { annee: 2026, montant: 2000 },
+      ],
+    }],
+  });
+  const avancement = JSON.stringify([
+    {
+      id: "constat-initial",
+      dateConstat: "2025-04-15",
+      taux: 32.5,
+      commentaire: "Démarrage des travaux",
+      enregistreLe: "2025-04-15T11:30:00.000Z",
+      auteur: "Chef de projet",
+    },
+    {
+      id: "constat-revise",
+      dateConstat: "2026-03-12",
+      taux: 28.75,
+      commentaire: "Réestimation après contrôle",
+      enregistreLe: "2026-03-12T13:10:00.000Z",
+      auteur: "Direction technique",
+    },
+  ]);
+  const situationVersements = JSON.stringify([
+    {
+      annee: 2025,
+      montantProgramme: 10000,
+      montantVerse: 7500,
+      tranches: [
+        { montant: 5000, dateVersement: "2025-03-08" },
+        { montant: 2500, dateVersement: "2025-10-12" },
+      ],
+    },
+    {
+      annee: 2026,
+      montantProgramme: 8000,
+      montantVerse: 2500,
+      tranches: [
+        { montant: 1000, dateVersement: "2026-01-15" },
+        { montant: 1500, dateVersement: "2026-06-30" },
+      ],
+    },
+  ]);
+  const query = `
+    INSERT INTO conventions (
+      nom_convention, nature, suivi_financier, avancement_physique_historique, situation_versements
+    )
+    VALUES (
+      ${literal(nomConvention)},
+      'Infrastructure',
+      ${literal(suiviFinancier)}::jsonb,
+      ${literal(avancement)}::jsonb,
+      ${literal(situationVersements)}::jsonb
+    )
+    RETURNING id
+  `;
+  const output = run("psql", [
+    "--no-psqlrc", "-qAt", databaseUrl, "-v", "ON_ERROR_STOP=1", "-c", query,
+  ]);
+  return { id: Number(output.trim()), nomConvention };
+}
+
+function lireXmlDocumentWord(fichier) {
+  return new Promise((resolveXml, reject) => {
+    yauzl.fromBuffer(fichier, { lazyEntries: true }, (erreur, archive) => {
+      if (erreur || !archive) {
+        reject(erreur ?? new Error("Le document Word n'est pas une archive ZIP valide."));
+        return;
+      }
+      archive.on("error", reject);
+      archive.on("entry", entree => {
+        if (entree.fileName !== "word/document.xml") {
+          archive.readEntry();
+          return;
+        }
+        archive.openReadStream(entree, (erreurFlux, flux) => {
+          if (erreurFlux || !flux) {
+            reject(erreurFlux ?? new Error("Le contenu Word ne peut pas être lu."));
+            archive.close();
+            return;
+          }
+          const morceaux = [];
+          flux.on("data", morceau => morceaux.push(morceau));
+          flux.on("error", reject);
+          flux.on("end", () => {
+            archive.close();
+            resolveXml(Buffer.concat(morceaux).toString("utf8"));
+          });
+        });
+      });
+      archive.readEntry();
+    });
+  });
 }
 
 async function findAvailablePort() {
@@ -252,6 +356,41 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.ok(cookieHeader, "la connexion doit émettre le cookie de session");
     const cookie = cookieHeader.split(";", 1)[0];
 
+    const conventionFiche = insertConventionForFiche();
+    const ficheTechnique = await apiRequest(
+      baseUrl,
+      `/conventions/${conventionFiche.id}/fiche-technique`,
+      { cookie },
+    );
+    assert.equal(ficheTechnique.status, 200);
+    assert.match(
+      ficheTechnique.headers.get("content-type") ?? "",
+      /application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document/,
+    );
+    const contenuFiche = await lireXmlDocumentWord(Buffer.from(await ficheTechnique.arrayBuffer()));
+    assert.ok(contenuFiche.includes("MONTAGE FINANCIER"), "le tableau financier reste présent dans la fiche");
+    assert.ok(contenuFiche.includes("Partenaire de test"));
+    assert.ok(contenuFiche.includes("1.250,50"), "le montant financier est rendu au format MAD");
+    assert.ok(contenuFiche.includes("AVANCEMENT PHYSIQUE DU PROJET"));
+    assert.ok(contenuFiche.includes("28,75"), "le taux le plus récent doit figurer dans la fiche");
+    assert.ok(contenuFiche.includes("Réestimation après contrôle"));
+    assert.ok(contenuFiche.includes("Direction technique"));
+    assert.ok(contenuFiche.includes("SITUATION DES VERSEMENTS DE LA RÉGION SOUSS-MASSA"));
+    assert.ok(contenuFiche.includes("Total programmé"));
+    assert.ok(contenuFiche.includes("Tranches de versement"));
+    assert.ok(contenuFiche.includes("Total versé"));
+    assert.ok(contenuFiche.includes("Taux de versement"));
+    assert.ok(contenuFiche.includes("08/03/2025"));
+    assert.ok(contenuFiche.includes("12/10/2025"));
+    assert.ok(contenuFiche.includes("30/06/2026"));
+    assert.ok(contenuFiche.includes("7.500,00"));
+    assert.ok(contenuFiche.includes("75 %"));
+    assert.ok(contenuFiche.includes("31,25 %"));
+    assert.ok(
+      contenuFiche.indexOf("12/03/2026") < contenuFiche.indexOf("15/04/2025"),
+      "les constats doivent être présentés du plus récent au plus ancien",
+    );
+
     const currentSession = await fetch(`${baseUrl}/auth/me`, {
       headers: { cookie },
     });
@@ -420,6 +559,7 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       dgsConvention.nomConvention,
       unattachedConvention.nomConvention,
       unattachedHistoricalConvention.nomConvention,
+      conventionFiche.nomConvention,
     ];
     const chefServiceList = await apiRequest(baseUrl, "/conventions", {
       cookie: cookies.chef_service,
