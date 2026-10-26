@@ -45,6 +45,12 @@ Plusieurs comptes utilisés dans une même administration peuvent partager la m�
 
 **How to apply:** Ne jamais traiter une limite par IP comme une limite par personne. Calibrer les budgets IP pour l'usage simultané de l'administration et éviter qu'une protection globale par IP pénalise les autres comptes.
 
+Après examen du trafic de production, l'utilisateur a choisi de conserver les seuils actuels et de ne pas ajouter de sonde révélant l'adresse effectivement reçue par l'application.
+
+**Why:** Les journaux n'enregistrent pas `req.ip`, aucun blocage 429 n'a été observé sur la période consultée, et l'utilisateur a refusé une instrumentation temporaire.
+
+**How to apply:** Ne pas ajouter de sonde ou de journalisation d'adresse IP sans nouvel accord. Garder les seuils en place jusqu'à ce que de nouvelles données de trafic ou un signal de blocage justifient une révision ; tenir compte du fait qu'Autoscale n'offre pas d'affinité de session et que les compteurs en mémoire restent locaux à chaque instance.
+
 La limitation des connexions réserve une tentative avant toute vérification asynchrone du mot de passe et contrôle l'IP ainsi que le couple identifiant/IP, sans verrouillage global du compte. Une connexion réussie ne remet à zéro que ce couple, jamais le budget collectif de l'IP. Un plafond de capacité ne doit pas effacer les restrictions encore actives.
 
 **Why:** Un verrouillage sur le seul identifiant permettait à un tiers de bloquer le compte depuis une autre adresse. Réserver après le contrôle laisserait passer une rafale simultanée, et évincer des clés actives permettrait d'effacer leurs restrictions.
