@@ -212,6 +212,17 @@ export interface SuiviFinancier {
   lignes: LigneFinanciere[];
 }
 
+export interface TrancheVersement {
+  /**
+     * Montant de cette tranche en MAD
+     * @maximum 9999999999999.99
+     * @exclusiveMinimum 0
+     */
+  montant: number;
+  /** Date de versement de cette tranche */
+  dateVersement: string;
+}
+
 export interface SituationVersementAnnuelle {
   /**
      * @minimum 1900
@@ -231,10 +242,35 @@ export interface SituationVersementAnnuelle {
      */
   montantVerse: number;
   /**
-     * Date réelle du dernier versement
-     * @nullable
+     * Tranches effectivement versées pendant l'année. Le total de leurs montants doit égaler montantVerse.
+     * @maxItems 100
      */
-  dateDernierVersement: string | null;
+  tranches: TrancheVersement[];
+}
+
+export interface SituationVersementAnnuelleInput {
+  /**
+     * @minimum 1900
+     * @maximum 2200
+     */
+  annee: number;
+  /**
+     * Montant annuel programmé par la Région Souss-Massa en MAD
+     * @minimum 0
+     * @maximum 9999999999999.99
+     */
+  montantProgramme: number;
+  /**
+     * Total annuel des tranches
+     * @minimum 0
+     * @maximum 9999999999999.99
+     */
+  montantVerse: number;
+  /**
+     * Tranches effectivement versées pendant l'année.
+     * @maxItems 100
+     */
+  tranches: TrancheVersement[];
 }
 
 export interface AvancementPhysiqueInput {
@@ -466,7 +502,7 @@ export interface ConventionUpdate {
      * Remplace la situation annuelle de la Région. Une liste vide efface les lignes, une clé absente les préserve.
      * @maxItems 301
      */
-  situationVersements?: SituationVersementAnnuelle[];
+  situationVersements?: SituationVersementAnnuelleInput[];
   /** Ajoute un constat sans modifier les précédents, uniquement pour les infrastructures et prestations. */
   avancementPhysiqueAjoute?: AvancementPhysiqueInput;
   /** @minimum 1 */

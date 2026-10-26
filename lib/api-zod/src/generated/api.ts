@@ -459,6 +459,11 @@ export const listConventionsResponseItemsItemSituationVersementsItemMontantProgr
 export const listConventionsResponseItemsItemSituationVersementsItemMontantVerseMin = 0;
 export const listConventionsResponseItemsItemSituationVersementsItemMontantVerseMax = 9999999999999.99;
 
+export const listConventionsResponseItemsItemSituationVersementsItemTranchesItemMontantExclusiveMin = 0;
+export const listConventionsResponseItemsItemSituationVersementsItemTranchesItemMontantMax = 9999999999999.99;
+
+export const listConventionsResponseItemsItemSituationVersementsItemTranchesMax = 100;
+
 export const listConventionsResponseItemsItemSituationVersementsMax = 301;
 
 export const listConventionsResponseItemsItemAvancementPhysiqueHistoriqueItemTauxMin = 0;
@@ -500,7 +505,10 @@ export const ListConventionsResponse = zod.object({
   "annee": zod.number().int().min(listConventionsResponseItemsItemSituationVersementsItemAnneeMin).max(listConventionsResponseItemsItemSituationVersementsItemAnneeMax),
   "montantProgramme": zod.number().min(listConventionsResponseItemsItemSituationVersementsItemMontantProgrammeMin).max(listConventionsResponseItemsItemSituationVersementsItemMontantProgrammeMax).describe('Montant annuel programmé par la Région Souss-Massa en MAD'),
   "montantVerse": zod.number().min(listConventionsResponseItemsItemSituationVersementsItemMontantVerseMin).max(listConventionsResponseItemsItemSituationVersementsItemMontantVerseMax).describe('Montant annuel effectivement versé par la Région Souss-Massa en MAD'),
-  "dateDernierVersement": zod.coerce.date().nullable().describe('Date réelle du dernier versement')
+  "tranches": zod.array(zod.object({
+  "montant": zod.number().gt(listConventionsResponseItemsItemSituationVersementsItemTranchesItemMontantExclusiveMin).max(listConventionsResponseItemsItemSituationVersementsItemTranchesItemMontantMax).describe('Montant de cette tranche en MAD'),
+  "dateVersement": zod.coerce.date().describe('Date de versement de cette tranche')
+})).max(listConventionsResponseItemsItemSituationVersementsItemTranchesMax).describe('Tranches effectivement versées pendant l\'année. Le total de leurs montants doit égaler montantVerse.')
 })).max(listConventionsResponseItemsItemSituationVersementsMax).optional().describe('Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.'),
   "avancementPhysiqueHistorique": zod.array(zod.object({
   "id": zod.string(),
@@ -625,6 +633,11 @@ export const createConventionResponseSituationVersementsItemMontantProgrammeMax 
 export const createConventionResponseSituationVersementsItemMontantVerseMin = 0;
 export const createConventionResponseSituationVersementsItemMontantVerseMax = 9999999999999.99;
 
+export const createConventionResponseSituationVersementsItemTranchesItemMontantExclusiveMin = 0;
+export const createConventionResponseSituationVersementsItemTranchesItemMontantMax = 9999999999999.99;
+
+export const createConventionResponseSituationVersementsItemTranchesMax = 100;
+
 export const createConventionResponseSituationVersementsMax = 301;
 
 export const createConventionResponseAvancementPhysiqueHistoriqueItemTauxMin = 0;
@@ -665,7 +678,10 @@ export const CreateConventionResponse = zod.object({
   "annee": zod.number().int().min(createConventionResponseSituationVersementsItemAnneeMin).max(createConventionResponseSituationVersementsItemAnneeMax),
   "montantProgramme": zod.number().min(createConventionResponseSituationVersementsItemMontantProgrammeMin).max(createConventionResponseSituationVersementsItemMontantProgrammeMax).describe('Montant annuel programmé par la Région Souss-Massa en MAD'),
   "montantVerse": zod.number().min(createConventionResponseSituationVersementsItemMontantVerseMin).max(createConventionResponseSituationVersementsItemMontantVerseMax).describe('Montant annuel effectivement versé par la Région Souss-Massa en MAD'),
-  "dateDernierVersement": zod.coerce.date().nullable().describe('Date réelle du dernier versement')
+  "tranches": zod.array(zod.object({
+  "montant": zod.number().gt(createConventionResponseSituationVersementsItemTranchesItemMontantExclusiveMin).max(createConventionResponseSituationVersementsItemTranchesItemMontantMax).describe('Montant de cette tranche en MAD'),
+  "dateVersement": zod.coerce.date().describe('Date de versement de cette tranche')
+})).max(createConventionResponseSituationVersementsItemTranchesMax).describe('Tranches effectivement versées pendant l\'année. Le total de leurs montants doit égaler montantVerse.')
 })).max(createConventionResponseSituationVersementsMax).optional().describe('Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.'),
   "avancementPhysiqueHistorique": zod.array(zod.object({
   "id": zod.string(),
@@ -773,6 +789,11 @@ export const listAlertesResponseSituationVersementsItemMontantProgrammeMax = 999
 export const listAlertesResponseSituationVersementsItemMontantVerseMin = 0;
 export const listAlertesResponseSituationVersementsItemMontantVerseMax = 9999999999999.99;
 
+export const listAlertesResponseSituationVersementsItemTranchesItemMontantExclusiveMin = 0;
+export const listAlertesResponseSituationVersementsItemTranchesItemMontantMax = 9999999999999.99;
+
+export const listAlertesResponseSituationVersementsItemTranchesMax = 100;
+
 export const listAlertesResponseSituationVersementsMax = 301;
 
 export const listAlertesResponseAvancementPhysiqueHistoriqueItemTauxMin = 0;
@@ -813,7 +834,10 @@ export const ListAlertesResponseItem = zod.object({
   "annee": zod.number().int().min(listAlertesResponseSituationVersementsItemAnneeMin).max(listAlertesResponseSituationVersementsItemAnneeMax),
   "montantProgramme": zod.number().min(listAlertesResponseSituationVersementsItemMontantProgrammeMin).max(listAlertesResponseSituationVersementsItemMontantProgrammeMax).describe('Montant annuel programmé par la Région Souss-Massa en MAD'),
   "montantVerse": zod.number().min(listAlertesResponseSituationVersementsItemMontantVerseMin).max(listAlertesResponseSituationVersementsItemMontantVerseMax).describe('Montant annuel effectivement versé par la Région Souss-Massa en MAD'),
-  "dateDernierVersement": zod.coerce.date().nullable().describe('Date réelle du dernier versement')
+  "tranches": zod.array(zod.object({
+  "montant": zod.number().gt(listAlertesResponseSituationVersementsItemTranchesItemMontantExclusiveMin).max(listAlertesResponseSituationVersementsItemTranchesItemMontantMax).describe('Montant de cette tranche en MAD'),
+  "dateVersement": zod.coerce.date().describe('Date de versement de cette tranche')
+})).max(listAlertesResponseSituationVersementsItemTranchesMax).describe('Tranches effectivement versées pendant l\'année. Le total de leurs montants doit égaler montantVerse.')
 })).max(listAlertesResponseSituationVersementsMax).optional().describe('Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.'),
   "avancementPhysiqueHistorique": zod.array(zod.object({
   "id": zod.string(),
@@ -897,6 +921,11 @@ export const getAgendaResponseConventionsItemSituationVersementsItemMontantProgr
 export const getAgendaResponseConventionsItemSituationVersementsItemMontantVerseMin = 0;
 export const getAgendaResponseConventionsItemSituationVersementsItemMontantVerseMax = 9999999999999.99;
 
+export const getAgendaResponseConventionsItemSituationVersementsItemTranchesItemMontantExclusiveMin = 0;
+export const getAgendaResponseConventionsItemSituationVersementsItemTranchesItemMontantMax = 9999999999999.99;
+
+export const getAgendaResponseConventionsItemSituationVersementsItemTranchesMax = 100;
+
 export const getAgendaResponseConventionsItemSituationVersementsMax = 301;
 
 export const getAgendaResponseConventionsItemAvancementPhysiqueHistoriqueItemTauxMin = 0;
@@ -941,7 +970,10 @@ export const GetAgendaResponseItem = zod.object({
   "annee": zod.number().int().min(getAgendaResponseConventionsItemSituationVersementsItemAnneeMin).max(getAgendaResponseConventionsItemSituationVersementsItemAnneeMax),
   "montantProgramme": zod.number().min(getAgendaResponseConventionsItemSituationVersementsItemMontantProgrammeMin).max(getAgendaResponseConventionsItemSituationVersementsItemMontantProgrammeMax).describe('Montant annuel programmé par la Région Souss-Massa en MAD'),
   "montantVerse": zod.number().min(getAgendaResponseConventionsItemSituationVersementsItemMontantVerseMin).max(getAgendaResponseConventionsItemSituationVersementsItemMontantVerseMax).describe('Montant annuel effectivement versé par la Région Souss-Massa en MAD'),
-  "dateDernierVersement": zod.coerce.date().nullable().describe('Date réelle du dernier versement')
+  "tranches": zod.array(zod.object({
+  "montant": zod.number().gt(getAgendaResponseConventionsItemSituationVersementsItemTranchesItemMontantExclusiveMin).max(getAgendaResponseConventionsItemSituationVersementsItemTranchesItemMontantMax).describe('Montant de cette tranche en MAD'),
+  "dateVersement": zod.coerce.date().describe('Date de versement de cette tranche')
+})).max(getAgendaResponseConventionsItemSituationVersementsItemTranchesMax).describe('Tranches effectivement versées pendant l\'année. Le total de leurs montants doit égaler montantVerse.')
 })).max(getAgendaResponseConventionsItemSituationVersementsMax).optional().describe('Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.'),
   "avancementPhysiqueHistorique": zod.array(zod.object({
   "id": zod.string(),
@@ -1047,6 +1079,11 @@ export const getConventionResponseSituationVersementsItemMontantProgrammeMax = 9
 export const getConventionResponseSituationVersementsItemMontantVerseMin = 0;
 export const getConventionResponseSituationVersementsItemMontantVerseMax = 9999999999999.99;
 
+export const getConventionResponseSituationVersementsItemTranchesItemMontantExclusiveMin = 0;
+export const getConventionResponseSituationVersementsItemTranchesItemMontantMax = 9999999999999.99;
+
+export const getConventionResponseSituationVersementsItemTranchesMax = 100;
+
 export const getConventionResponseSituationVersementsMax = 301;
 
 export const getConventionResponseAvancementPhysiqueHistoriqueItemTauxMin = 0;
@@ -1087,7 +1124,10 @@ export const GetConventionResponse = zod.object({
   "annee": zod.number().int().min(getConventionResponseSituationVersementsItemAnneeMin).max(getConventionResponseSituationVersementsItemAnneeMax),
   "montantProgramme": zod.number().min(getConventionResponseSituationVersementsItemMontantProgrammeMin).max(getConventionResponseSituationVersementsItemMontantProgrammeMax).describe('Montant annuel programmé par la Région Souss-Massa en MAD'),
   "montantVerse": zod.number().min(getConventionResponseSituationVersementsItemMontantVerseMin).max(getConventionResponseSituationVersementsItemMontantVerseMax).describe('Montant annuel effectivement versé par la Région Souss-Massa en MAD'),
-  "dateDernierVersement": zod.coerce.date().nullable().describe('Date réelle du dernier versement')
+  "tranches": zod.array(zod.object({
+  "montant": zod.number().gt(getConventionResponseSituationVersementsItemTranchesItemMontantExclusiveMin).max(getConventionResponseSituationVersementsItemTranchesItemMontantMax).describe('Montant de cette tranche en MAD'),
+  "dateVersement": zod.coerce.date().describe('Date de versement de cette tranche')
+})).max(getConventionResponseSituationVersementsItemTranchesMax).describe('Tranches effectivement versées pendant l\'année. Le total de leurs montants doit égaler montantVerse.')
 })).max(getConventionResponseSituationVersementsMax).optional().describe('Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.'),
   "avancementPhysiqueHistorique": zod.array(zod.object({
   "id": zod.string(),
@@ -1165,6 +1205,11 @@ export const updateConventionBodySituationVersementsItemMontantProgrammeMax = 99
 export const updateConventionBodySituationVersementsItemMontantVerseMin = 0;
 export const updateConventionBodySituationVersementsItemMontantVerseMax = 9999999999999.99;
 
+export const updateConventionBodySituationVersementsItemTranchesItemMontantExclusiveMin = 0;
+export const updateConventionBodySituationVersementsItemTranchesItemMontantMax = 9999999999999.99;
+
+export const updateConventionBodySituationVersementsItemTranchesMax = 100;
+
 export const updateConventionBodySituationVersementsMax = 301;
 
 export const updateConventionBodyAvancementPhysiqueAjouteTauxMin = 0;
@@ -1197,8 +1242,11 @@ export const UpdateConventionBody = zod.object({
   "situationVersements": zod.array(zod.object({
   "annee": zod.number().int().min(updateConventionBodySituationVersementsItemAnneeMin).max(updateConventionBodySituationVersementsItemAnneeMax),
   "montantProgramme": zod.number().min(updateConventionBodySituationVersementsItemMontantProgrammeMin).max(updateConventionBodySituationVersementsItemMontantProgrammeMax).describe('Montant annuel programmé par la Région Souss-Massa en MAD'),
-  "montantVerse": zod.number().min(updateConventionBodySituationVersementsItemMontantVerseMin).max(updateConventionBodySituationVersementsItemMontantVerseMax).describe('Montant annuel effectivement versé par la Région Souss-Massa en MAD'),
-  "dateDernierVersement": zod.coerce.date().nullable().describe('Date réelle du dernier versement')
+  "montantVerse": zod.number().min(updateConventionBodySituationVersementsItemMontantVerseMin).max(updateConventionBodySituationVersementsItemMontantVerseMax).describe('Total annuel des tranches'),
+  "tranches": zod.array(zod.object({
+  "montant": zod.number().gt(updateConventionBodySituationVersementsItemTranchesItemMontantExclusiveMin).max(updateConventionBodySituationVersementsItemTranchesItemMontantMax).describe('Montant de cette tranche en MAD'),
+  "dateVersement": zod.coerce.date().describe('Date de versement de cette tranche')
+})).max(updateConventionBodySituationVersementsItemTranchesMax).describe('Tranches effectivement versées pendant l\'année.')
 })).max(updateConventionBodySituationVersementsMax).optional().describe('Remplace la situation annuelle de la Région. Une liste vide efface les lignes, une clé absente les préserve.'),
   "avancementPhysiqueAjoute": zod.object({
   "dateConstat": zod.coerce.date().describe('Date de constat de l\'état d\'exécution'),
@@ -1271,6 +1319,11 @@ export const updateConventionResponseSituationVersementsItemMontantProgrammeMax 
 export const updateConventionResponseSituationVersementsItemMontantVerseMin = 0;
 export const updateConventionResponseSituationVersementsItemMontantVerseMax = 9999999999999.99;
 
+export const updateConventionResponseSituationVersementsItemTranchesItemMontantExclusiveMin = 0;
+export const updateConventionResponseSituationVersementsItemTranchesItemMontantMax = 9999999999999.99;
+
+export const updateConventionResponseSituationVersementsItemTranchesMax = 100;
+
 export const updateConventionResponseSituationVersementsMax = 301;
 
 export const updateConventionResponseAvancementPhysiqueHistoriqueItemTauxMin = 0;
@@ -1311,7 +1364,10 @@ export const UpdateConventionResponse = zod.object({
   "annee": zod.number().int().min(updateConventionResponseSituationVersementsItemAnneeMin).max(updateConventionResponseSituationVersementsItemAnneeMax),
   "montantProgramme": zod.number().min(updateConventionResponseSituationVersementsItemMontantProgrammeMin).max(updateConventionResponseSituationVersementsItemMontantProgrammeMax).describe('Montant annuel programmé par la Région Souss-Massa en MAD'),
   "montantVerse": zod.number().min(updateConventionResponseSituationVersementsItemMontantVerseMin).max(updateConventionResponseSituationVersementsItemMontantVerseMax).describe('Montant annuel effectivement versé par la Région Souss-Massa en MAD'),
-  "dateDernierVersement": zod.coerce.date().nullable().describe('Date réelle du dernier versement')
+  "tranches": zod.array(zod.object({
+  "montant": zod.number().gt(updateConventionResponseSituationVersementsItemTranchesItemMontantExclusiveMin).max(updateConventionResponseSituationVersementsItemTranchesItemMontantMax).describe('Montant de cette tranche en MAD'),
+  "dateVersement": zod.coerce.date().describe('Date de versement de cette tranche')
+})).max(updateConventionResponseSituationVersementsItemTranchesMax).describe('Tranches effectivement versées pendant l\'année. Le total de leurs montants doit égaler montantVerse.')
 })).max(updateConventionResponseSituationVersementsMax).optional().describe('Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.'),
   "avancementPhysiqueHistorique": zod.array(zod.object({
   "id": zod.string(),

@@ -33,7 +33,18 @@ export type SuiviFinancier = {
   }[];
 };
 
+export type TrancheVersement = {
+  montant: number;
+  dateVersement: string;
+};
+
 export type SituationVersementAnnuelle = {
+  annee: number;
+  montantProgramme: number;
+  montantVerse: number;
+  tranches: TrancheVersement[];
+} | {
+  /** Format historique des lignes enregistrées avant la gestion des tranches. */
   annee: number;
   montantProgramme: number;
   montantVerse: number;

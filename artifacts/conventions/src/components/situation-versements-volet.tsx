@@ -13,15 +13,14 @@ import { dateCalendaireValide } from "@/components/avancement-physique-volet";
 export type VersementBrouillon = {
   annee: number;
   montantProgramme: string;
-  montantVerse: string;
-  dateDernierVersement: string;
+  tranches: { montant: string; dateVersement: string }[];
 };
 
 export type VersementApi = {
   annee: number;
   montantProgramme: number;
   montantVerse: number;
-  dateDernierVersement: string | null;
+  tranches: { montant: number; dateVersement: string | Date }[];
 };
 
 export const VERSEMENTS_MAX_LIGNES = 301;
@@ -29,24 +28,42 @@ export const VERSEMENTS_MAX_LIGNES = 301;
 export function versBrouillonVersements(values?: VersementApi[] | null): VersementBrouillon[] {
   return [...(values ?? [])]
     .sort((a, b) => a.annee - b.annee)
-    .map((v) => ({
-      annee: v.annee,
-      montantProgramme: String(v.montantProgramme),
-      montantVerse: String(v.montantVerse),
-      dateDernierVersement: v.dateDernierVersement ?? "",
-    }));
+    .map((v) => {
+      const historique = v as typeof v & { dateDernierVersement?: string | Date | null };
+      const tranches = "tranches" in v && Array.isArray(v.tranches)
+        ? v.tranches.map((t) => ({
+            montant: String(t.montant),
+            dateVersement: t.dateVersement instanceof Date ? t.dateVersement.toISOString().slice(0, 10) : t.dateVersement,
+          }))
+        : historique.montantVerse > 0 && historique.dateDernierVersement
+          ? [{
+              montant: String(historique.montantVerse),
+              dateVersement: historique.dateDernierVersement instanceof Date
+                ? historique.dateDernierVersement.toISOString().slice(0, 10)
+                : historique.dateDernierVersement,
+            }]
+          : [];
+      return {
+        annee: v.annee,
+        montantProgramme: String(v.montantProgramme),
+        tranches,
+      };
+    });
 }
 
 /** À n'appeler qu'après validation par erreursVersements. */
 export function versApiVersements(draft: VersementBrouillon[]): VersementApi[] {
   return [...draft].sort((a, b) => a.annee - b.annee).map((v) => {
-    const verse = parseMontant(v.montantVerse) ?? 0;
-    const date = v.dateDernierVersement.trim();
+    const tranches = v.tranches.map((t) => ({
+      montant: parseMontant(t.montant) ?? 0,
+      dateVersement: t.dateVersement,
+    }));
+    const verse = tranches.reduce((total, t) => total + t.montant, 0);
     return {
       annee: v.annee,
       montantProgramme: parseMontant(v.montantProgramme) ?? 0,
       montantVerse: verse,
-      dateDernierVersement: verse > 0 && date ? date : null,
+      tranches,
     };
   });
 }
@@ -62,13 +79,19 @@ export function erreursVersements(draft: VersementBrouillon[]): string[] {
     vues.add(a);
     if (v.montantProgramme.trim() === "") erreurs.push(`Versements ${a} : montant programmé obligatoire (saisissez 0 si nul).`);
     else if (parseMontant(v.montantProgramme) === null) erreurs.push(`Versements ${a} : montant programmé invalide (0 à 9 999 999 999 999,99 MAD, 2 décimales max).`);
-    const verse = v.montantVerse.trim() === "" ? undefined : parseMontant(v.montantVerse);
-    if (verse === undefined) erreurs.push(`Versements ${a} : montant versé obligatoire (saisissez 0 si aucun versement).`);
-    else if (verse === null) erreurs.push(`Versements ${a} : montant versé invalide (0 à 9 999 999 999 999,99 MAD, 2 décimales max).`);
-    const date = v.dateDernierVersement.trim();
-    if (date && !dateCalendaireValide(date)) erreurs.push(`Versements ${a} : date du dernier versement invalide (AAAA-MM-JJ).`);
-    if (typeof verse === "number" && verse > 0 && !date) erreurs.push(`Versements ${a} : date du dernier versement obligatoire lorsqu'un montant a été versé.`);
-    if (verse === 0 && date) erreurs.push(`Versements ${a} : aucune date ne doit être saisie lorsque le montant versé est nul.`);
+    if (v.tranches.length > 100) erreurs.push(`Versements ${a} : 100 tranches au maximum.`);
+    v.tranches.forEach((t, index) => {
+      const tranche = index + 1;
+      const montant = t.montant.trim() === "" ? undefined : parseMontant(t.montant);
+      if (montant === undefined) erreurs.push(`Versements ${a}, tranche ${tranche} : montant obligatoire.`);
+      else if (montant === null || montant <= 0) erreurs.push(`Versements ${a}, tranche ${tranche} : montant invalide ou nul (0 à 9 999 999 999 999,99 MAD, 2 décimales max).`);
+      const date = t.dateVersement.trim();
+      if (!date) erreurs.push(`Versements ${a}, tranche ${tranche} : date de versement obligatoire.`);
+      else if (!dateCalendaireValide(date)) erreurs.push(`Versements ${a}, tranche ${tranche} : date de versement invalide (AAAA-MM-JJ).`);
+      else if (Number(date.slice(0, 4)) !== a) erreurs.push(`Versements ${a}, tranche ${tranche} : la date doit appartenir à cette année.`);
+    });
+    const montantVerse = totalVerse(v);
+    if (montantVerse > 9999999999999.99) erreurs.push(`Versements ${a} : le total versé dépasse la limite autorisée.`);
   }
   return erreurs;
 }
@@ -77,14 +100,20 @@ const fmt = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFr
 const fmtDate = (d: string) => { const [a, m, j] = d.split("-"); return a && m && j ? `${j}/${m}/${a}` : d; };
 
 type Taux = { valeur: number } | { indisponible: string };
+function totalVerse(v: VersementBrouillon): number {
+  const centimes = v.tranches.reduce((total, tranche) => {
+    const montant = parseMontant(tranche.montant);
+    return total + (montant === null ? 0 : Math.round(montant * 100));
+  }, 0);
+  return centimes / 100;
+}
+
 function calculTaux(v: VersementBrouillon): Taux {
   const p = parseMontant(v.montantProgramme);
-  const s = parseMontant(v.montantVerse);
   if (p === null) return { indisponible: "Montant programmé non renseigné ou invalide." };
   if (p === 0) return { indisponible: "Montant programmé nul : division par zéro impossible." };
-  if (s === null) return { indisponible: "Montant versé non renseigné ou invalide." };
   // Calcul en centimes pour éviter les erreurs d'arrondi flottant.
-  return { valeur: (Math.round(s * 100) / Math.round(p * 100)) * 100 };
+  return { valeur: (Math.round(totalVerse(v) * 100) / Math.round(p * 100)) * 100 };
 }
 
 function CelluleMontant({ brut }: { brut: string }) {
@@ -112,18 +141,28 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
     if (!/^\d{4}$/.test(s) || n < 1900 || n > 2200) return setErreurAnnee("Année entière entre 1900 et 2200.");
     if (value.some((v) => v.annee === n)) return setErreurAnnee("Cette année existe déjà.");
     if (value.length >= VERSEMENTS_MAX_LIGNES) return setErreurAnnee(`${VERSEMENTS_MAX_LIGNES} années au maximum.`);
-    onChange([...value, { annee: n, montantProgramme: "", montantVerse: "", dateDernierVersement: "" }].sort((a, b) => a.annee - b.annee));
+    onChange([...value, { annee: n, montantProgramme: "", tranches: [] }].sort((a, b) => a.annee - b.annee));
     setNouvelleAnnee(""); setErreurAnnee("");
   };
 
   const retirerDirect = (annee: number) => onChange(value.filter((v) => v.annee !== annee));
   const retirer = (v: VersementBrouillon) => {
-    const saisi = [v.montantProgramme, v.montantVerse, v.dateDernierVersement].some((x) => x.trim() !== "");
+    const saisi = v.montantProgramme.trim() !== "" || v.tranches.some((t) => t.montant.trim() !== "" || t.dateVersement.trim() !== "");
     if (saisi) setConfirmation(v.annee); else retirerDirect(v.annee);
   };
 
   const maj = (annee: number, patch: Partial<VersementBrouillon>) =>
     onChange(value.map((v) => (v.annee === annee ? { ...v, ...patch } : v)));
+  const ajouterTranche = (annee: number) =>
+    onChange(value.map((v) => v.annee === annee ? { ...v, tranches: [...v.tranches, { montant: "", dateVersement: "" }] } : v));
+  const majTranche = (annee: number, index: number, patch: Partial<VersementBrouillon["tranches"][number]>) =>
+    onChange(value.map((v) => v.annee === annee
+      ? { ...v, tranches: v.tranches.map((t, i) => i === index ? { ...t, ...patch } : t) }
+      : v));
+  const retirerTranche = (annee: number, index: number) =>
+    onChange(value.map((v) => v.annee === annee
+      ? { ...v, tranches: v.tranches.filter((_, i) => i !== index) }
+      : v));
 
   return (
     <Card id="situation-versements" className="shadow-sm scroll-mt-6" data-testid="card-situation-versements">
@@ -162,7 +201,7 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
             <p className="mt-1">
               {readOnly
                 ? "Les montants programmés et versés par la Région n'ont pas encore été saisis pour cette convention."
-                : "Ajoutez une année pour saisir le montant programmé, le montant versé par la Région et la date du dernier versement."}
+                : "Ajoutez une année pour saisir le montant programmé et les tranches de versement de la Région."}
             </p>
           </div>
         ) : (
@@ -172,8 +211,8 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
                 <tr>
                   <th className="text-start font-semibold px-3 py-2 border-b border-border w-20">Année</th>
                   <th className="text-end font-semibold px-3 py-2 border-b border-s border-border min-w-[170px]">Total programmé (MAD)</th>
-                  <th className="text-end font-semibold px-3 py-2 border-b border-s border-border min-w-[170px]">Total versé (MAD)</th>
-                  <th className="text-start font-semibold px-3 py-2 border-b border-s border-border min-w-[160px]">Date du dernier versement</th>
+                  <th className="text-start font-semibold px-3 py-2 border-b border-s border-border min-w-[300px]">Tranches de versement</th>
+                  <th className="text-end font-semibold px-3 py-2 border-b border-s border-border min-w-[150px]">Total versé (MAD)</th>
                   <th className="text-end font-semibold px-3 py-2 border-b border-s border-border min-w-[140px] bg-accent/60">Taux de versement</th>
                   {!readOnly && <th className="border-b border-border w-10"><span className="sr-only">Actions</span></th>}
                 </tr>
@@ -182,10 +221,7 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
                 {lignes.map((v) => {
                   const taux = calculTaux(v);
                   const progInv = v.montantProgramme.trim() !== "" && parseMontant(v.montantProgramme) === null;
-                  const verse = parseMontant(v.montantVerse);
-                  const verseInv = v.montantVerse.trim() !== "" && verse === null;
-                  const date = v.dateDernierVersement.trim();
-                  const dateInv = (date !== "" && !dateCalendaireValide(date)) || (verse !== null && verse > 0 && !date) || (verse === 0 && date !== "");
+                  const verse = totalVerse(v);
                   const ko = "border-destructive focus-visible:ring-destructive";
                   return (
                     <tr key={v.annee} className="hover:bg-muted/20" data-testid={`row-versement-${v.annee}`}>
@@ -198,23 +234,54 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
                             onChange={(e) => maj(v.annee, { montantProgramme: e.target.value })} />
                         )}
                       </td>
-                      <td className="px-3 py-2 border-b border-s border-border text-end tabular-nums align-top">
-                        {readOnly ? <span data-testid={`text-verse-${v.annee}`}><CelluleMontant brut={v.montantVerse} /></span> : (
-                          <Input value={v.montantVerse} inputMode="decimal" placeholder="Obligatoire" aria-invalid={verseInv}
-                            aria-label={`Montant versé ${v.annee} (MAD)`} data-testid={`input-verse-${v.annee}`}
-                            className={`text-end tabular-nums ${verseInv ? ko : ""}`}
-                            onChange={(e) => maj(v.annee, { montantVerse: e.target.value })} />
-                        )}
+                      <td className="px-3 py-2 border-b border-s border-border align-top">
+                        <div className="space-y-2">
+                          {v.tranches.length === 0 && readOnly && <span className="text-muted-foreground">—</span>}
+                          {v.tranches.map((tranche, index) => {
+                            const trancheMontant = tranche.montant.trim() === "" ? null : parseMontant(tranche.montant);
+                            const date = tranche.dateVersement.trim();
+                            const invalideMontant = trancheMontant === null || trancheMontant <= 0;
+                            const invalideDate = !date || !dateCalendaireValide(date) || Number(date.slice(0, 4)) !== v.annee;
+                            return (
+                              <div key={index} className="flex flex-wrap items-center gap-2" data-testid={`row-tranche-${v.annee}-${index + 1}`}>
+                                {readOnly ? (
+                                  <>
+                                    <span className="tabular-nums">{date ? fmtDate(date) : "—"}</span>
+                                    <span className="text-muted-foreground">·</span>
+                                    <span className="tabular-nums"><CelluleMontant brut={tranche.montant} /> MAD</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Input type="date" value={tranche.dateVersement}
+                                      aria-label={`Date de versement ${v.annee}, tranche ${index + 1}`}
+                                      data-testid={`input-date-versement-${v.annee}-${index + 1}`}
+                                      aria-invalid={invalideDate} className={`w-40 ${invalideDate && date ? ko : ""}`}
+                                      onChange={(e) => majTranche(v.annee, index, { dateVersement: e.target.value })} />
+                                    <Input value={tranche.montant} inputMode="decimal" placeholder="Montant (MAD)"
+                                      aria-label={`Montant de la tranche ${index + 1} en ${v.annee}`}
+                                      data-testid={`input-montant-tranche-${v.annee}-${index + 1}`}
+                                      aria-invalid={invalideMontant} className={`w-36 text-end tabular-nums ${invalideMontant && tranche.montant ? ko : ""}`}
+                                      onChange={(e) => majTranche(v.annee, index, { montant: e.target.value })} />
+                                    <Button type="button" variant="ghost" size="icon"
+                                      aria-label={`Retirer la tranche ${index + 1} de ${v.annee}`}
+                                      data-testid={`button-retirer-tranche-${v.annee}-${index + 1}`}
+                                      className="text-muted-foreground hover:text-destructive"
+                                      onClick={() => retirerTranche(v.annee, index)}><Trash2 className="w-4 h-4" /></Button>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {!readOnly && (
+                            <Button type="button" variant="outline" size="sm" data-testid={`button-ajouter-tranche-${v.annee}`}
+                              disabled={v.tranches.length >= 100} onClick={() => ajouterTranche(v.annee)}>
+                              <Plus className="w-4 h-4 me-1" />Ajouter une tranche
+                            </Button>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-3 py-2 border-b border-s border-border tabular-nums align-top">
-                        {readOnly ? (
-                          <span data-testid={`text-date-versement-${v.annee}`}>{date ? fmtDate(date) : <span className="text-muted-foreground">—</span>}</span>
-                        ) : (
-                          <Input type="date" value={v.dateDernierVersement} aria-invalid={dateInv}
-                            aria-label={`Date du dernier versement ${v.annee}`} data-testid={`input-date-versement-${v.annee}`}
-                            disabled={verse === 0 && date === ""} className={dateInv ? ko : ""}
-                            onChange={(e) => maj(v.annee, { dateDernierVersement: e.target.value })} />
-                        )}
+                      <td className="px-3 py-2 border-b border-s border-border text-end tabular-nums align-top">
+                        <span data-testid={`text-verse-${v.annee}`}>{fmt.format(verse)}</span>
                       </td>
                       <td className="px-3 py-2 border-b border-s border-border text-end tabular-nums bg-accent/30 align-top" data-testid={`text-taux-versement-${v.annee}`}>
                         {"valeur" in taux ? (

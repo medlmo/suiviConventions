@@ -5,6 +5,7 @@
  * Suivi des conventions de partenariat de la Région Souss-Massa. Le statut d'alerte n'est jamais stocké : il est recalculé à chaque requête par rapport à la date du jour.
  * OpenAPI spec version: 0.1.0
  */
+import type { TrancheVersement } from './trancheVersement';
 
 export interface SituationVersementAnnuelle {
   /**
@@ -25,8 +26,8 @@ export interface SituationVersementAnnuelle {
      */
   montantVerse: number;
   /**
-     * Date réelle du dernier versement
-     * @nullable
+     * Tranches effectivement versées pendant l'année. Le total de leurs montants doit égaler montantVerse.
+     * @maxItems 100
      */
-  dateDernierVersement: Date | null;
+  tranches: TrancheVersement[];
 }

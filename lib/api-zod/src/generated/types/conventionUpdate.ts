@@ -8,7 +8,7 @@
 import type { AvancementPhysiqueInput } from './avancementPhysiqueInput';
 import type { ConventionDocumentInput } from './conventionDocumentInput';
 import type { ConventionUpdateTypeSession } from './conventionUpdateTypeSession';
-import type { SituationVersementAnnuelle } from './situationVersementAnnuelle';
+import type { SituationVersementAnnuelleInput } from './situationVersementAnnuelleInput';
 import type { SuiviFinancier } from './suiviFinancier';
 
 export interface ConventionUpdate {
@@ -17,7 +17,7 @@ export interface ConventionUpdate {
      * Remplace la situation annuelle de la Région. Une liste vide efface les lignes, une clé absente les préserve.
      * @maxItems 301
      */
-  situationVersements?: SituationVersementAnnuelle[];
+  situationVersements?: SituationVersementAnnuelleInput[];
   /** Ajoute un constat sans modifier les précédents, uniquement pour les infrastructures et prestations. */
   avancementPhysiqueAjoute?: AvancementPhysiqueInput;
   /** @minimum 1 */

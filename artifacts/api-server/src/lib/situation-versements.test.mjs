@@ -6,7 +6,7 @@ const ligne = (valeurs = {}) => ({
   annee: 2026,
   montantProgramme: 100,
   montantVerse: 0,
-  dateDernierVersement: null,
+  tranches: [],
   ...valeurs,
 });
 
@@ -18,30 +18,33 @@ test("un montant versé nul est valide sans date", () => {
   assert.equal(erreurSituationVersements([ligne()]), null);
 });
 
-test("un montant versé positif exige une date valide", () => {
+test("les tranches datées totalisent le montant versé", () => {
   assert.equal(erreurSituationVersements([
-    ligne({ montantVerse: 25, dateDernierVersement: "2026-03-15" }),
+    ligne({
+      montantVerse: 25,
+      tranches: [{ montant: 25, dateVersement: "2026-03-15" }],
+    }),
   ]), null);
 
   assert.match(
     erreurSituationVersements([ligne({ montantVerse: 25 })]) ?? "",
-    /Renseignez la date du dernier versement/,
+    /total versé doit être égal à la somme des tranches/,
   );
 });
 
-test("une date de versement est interdite si le montant versé est nul", () => {
+test("une tranche doit avoir un montant positif", () => {
   assert.match(
     erreurSituationVersements([
-      ligne({ dateDernierVersement: "2026-03-15" }),
+      ligne({ tranches: [{ montant: 0, dateVersement: "2026-03-15" }] }),
     ]) ?? "",
-    /laissez-la vide si le montant versé est nul/,
+    /montant de chaque tranche doit être supérieur à zéro/,
   );
 });
 
 test("les dates calendaires impossibles sont refusées", () => {
   assert.match(
     erreurSituationVersements([
-      ligne({ montantVerse: 25, dateDernierVersement: "2026-02-30" }),
+      ligne({ montantVerse: 25, tranches: [{ montant: 25, dateVersement: "2026-02-30" }] }),
     ]) ?? "",
     /date réelle/,
   );

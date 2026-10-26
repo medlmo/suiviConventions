@@ -1,5 +1,5 @@
 import { getTableColumns, sql, type SQL } from "drizzle-orm";
-import { conventionsTable, type SuiviFinancier } from "@workspace/db";
+import { conventionsTable, type SituationVersementAnnuelle, type SuiviFinancier } from "@workspace/db";
 import { documentsConvention } from "./document-history-mapper";
 export { documentsConvention } from "./document-history-mapper";
 import {
@@ -27,6 +27,24 @@ function nombreOuNull(valeur: string | null): number | null {
   return Number.isFinite(nombre) ? nombre : null;
 }
 
+function versementsVersApi(lignes: SituationVersementAnnuelle[]) {
+  return lignes.map((ligne) => {
+    if ("tranches" in ligne) {
+      const tranches = ligne.tranches.map((tranche) => ({
+        montant: tranche.montant,
+        dateVersement: tranche.dateVersement,
+      }));
+      const montantVerseCentimes = tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0);
+      const montantVerse = montantVerseCentimes / 100;
+      return { annee: ligne.annee, montantProgramme: ligne.montantProgramme, montantVerse, tranches };
+    }
+    const tranches = ligne.montantVerse > 0 && ligne.dateDernierVersement
+      ? [{ montant: ligne.montantVerse, dateVersement: ligne.dateDernierVersement }]
+      : [];
+    return { annee: ligne.annee, montantProgramme: ligne.montantProgramme, montantVerse: ligne.montantVerse, tranches };
+  });
+}
+
 /** Ligne de base -> objet Convention du contrat OpenAPI. */
 export function versApi(ligne: LigneConvention) {
   return {
@@ -50,7 +68,7 @@ export function versApi(ligne: LigneConvention) {
       (ligne.maitriseOuvrageDeleguee ? [ligne.maitriseOuvrageDeleguee] : []),
     partenaires: ligne.partenaires ?? [],
     suiviFinancier: ligne.suiviFinancier ?? { annees: [], lignes: [] },
-    situationVersements: ligne.situationVersements ?? [],
+    situationVersements: versementsVersApi(ligne.situationVersements ?? []),
     avancementPhysiqueHistorique: ligne.avancementPhysiqueHistorique ?? [],
     provincesPrefectures: ligne.provincesPrefectures ?? [],
     communes: ligne.communes ?? [],
@@ -137,7 +155,7 @@ type ChampsEcrivables = Partial<
     annee: number;
     montantProgramme: number;
     montantVerse: number;
-    dateDernierVersement: string | Date | null;
+    tranches: { montant: number; dateVersement: string | Date }[];
   }[];
 };
 
@@ -168,8 +186,13 @@ export function versColonnes(corps: ChampsEcrivables): Record<string, unknown> {
   if (corps.suiviFinancier !== undefined) valeurs.suiviFinancier = corps.suiviFinancier;
   if (corps.situationVersements !== undefined) {
     valeurs.situationVersements = corps.situationVersements.map(ligne => ({
-      ...ligne,
-      dateDernierVersement: versJourCalendaire(ligne.dateDernierVersement),
+      annee: ligne.annee,
+      montantProgramme: ligne.montantProgramme,
+      montantVerse: ligne.tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0) / 100,
+      tranches: ligne.tranches.map((tranche) => ({
+        montant: tranche.montant,
+        dateVersement: versJourCalendaire(tranche.dateVersement)!,
+      })),
     })).sort((a, b) => a.annee - b.annee);
   }
 

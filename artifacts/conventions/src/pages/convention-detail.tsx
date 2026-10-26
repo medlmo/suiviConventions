@@ -110,8 +110,10 @@ const conventionSchema = z.object({
   situationVersements: z.array(z.object({
     annee: z.number(),
     montantProgramme: z.string(),
-    montantVerse: z.string(),
-    dateDernierVersement: z.string(),
+    tranches: z.array(z.object({
+      montant: z.string(),
+      dateVersement: z.string(),
+    })).max(100),
   })).max(301).default([]),
   avancementPhysiqueAjoute: z.object({
     dateConstat: z.string(),
