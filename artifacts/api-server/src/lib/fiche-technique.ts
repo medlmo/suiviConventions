@@ -184,7 +184,7 @@ function tableauxMontage(convention: ConventionApi): Table[] {
 
 function tableauSituationVersements(convention: ConventionApi): Table {
   const lignes = [...(convention.situationVersements ?? [])].sort((a, b) => a.annee - b.annee);
-  const largeurs = [850, 1850, 3850, 1800, 1500];
+  const largeurs = [700, 1700, 1900, 1850, 1900, 1750];
   const borders = {
     top: RULE, bottom: RULE, left: RULE, right: RULE,
     insideHorizontal: RULE, insideVertical: RULE,
@@ -226,9 +226,10 @@ function tableauSituationVersements(convention: ConventionApi): Table {
       children: [
         celluleMontage("Année", largeurs[0]!, { fill: LIGHT, bold: true, center: true }),
         celluleMontage("Total programmé", largeurs[1]!, { fill: LIGHT, bold: true, center: true }),
-        celluleMontage("Tranches de versement", largeurs[2]!, { fill: LIGHT, bold: true }),
-        celluleMontage("Total versé", largeurs[3]!, { fill: LIGHT, bold: true, center: true }),
-        celluleMontage("Taux de versement", largeurs[4]!, { fill: LIGHT, bold: true, center: true }),
+        celluleMontage("Date de versement", largeurs[2]!, { fill: LIGHT, bold: true, center: true }),
+        celluleMontage("Montant des tranches", largeurs[3]!, { fill: LIGHT, bold: true, center: true }),
+        celluleMontage("Total versé", largeurs[4]!, { fill: LIGHT, bold: true, center: true }),
+        celluleMontage("Taux de versement", largeurs[5]!, { fill: LIGHT, bold: true, center: true }),
       ],
     }));
 
@@ -241,9 +242,11 @@ function tableauSituationVersements(convention: ConventionApi): Table {
       const taux = programmeCentimes === 0n
         ? "— (programmé nul)"
         : `${(Number(totalCentimes) / Number(programmeCentimes) * 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %`;
-      const tranches = ligne.tranches.length > 0
-        ? ligne.tranches.map(tranche =>
-            texte(`${dateFr(tranche.dateVersement)} · ${montant(tranche.montant)} MAD`))
+      const dates = ligne.tranches.length > 0
+        ? ligne.tranches.map(tranche => texte(dateFr(tranche.dateVersement)))
+        : [texte("—", false, MUTED)];
+      const montantsTranches = ligne.tranches.length > 0
+        ? ligne.tranches.map(tranche => texte(`${montant(tranche.montant)} MAD`))
         : [texte("—", false, MUTED)];
 
       rows.push(new TableRow({
@@ -255,10 +258,16 @@ function tableauSituationVersements(convention: ConventionApi): Table {
             width: { size: largeurs[2]!, type: WidthType.DXA },
             margins: { top: 90, bottom: 80, left: 100, right: 100 },
             verticalAlign: VerticalAlign.CENTER,
-            children: tranches,
+            children: dates,
           }),
-          celluleMontage(formaterCentimes(totalCentimes), largeurs[3]!, { center: true, bold: true }),
-          celluleMontage(taux, largeurs[4]!, { center: true }),
+          new TableCell({
+            width: { size: largeurs[3]!, type: WidthType.DXA },
+            margins: { top: 90, bottom: 80, left: 100, right: 100 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: montantsTranches,
+          }),
+          celluleMontage(formaterCentimes(totalCentimes), largeurs[4]!, { center: true, bold: true }),
+          celluleMontage(taux, largeurs[5]!, { center: true }),
         ],
       }));
     }

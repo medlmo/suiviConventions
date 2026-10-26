@@ -377,7 +377,8 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.ok(contenuFiche.includes("Direction technique"));
     assert.ok(contenuFiche.includes("SITUATION DES VERSEMENTS DE LA RÉGION SOUSS MASSA"));
     assert.ok(contenuFiche.includes("Total programmé"));
-    assert.ok(contenuFiche.includes("Tranches de versement"));
+    assert.ok(contenuFiche.includes("Date de versement"));
+    assert.ok(contenuFiche.includes("Montant des tranches"));
     assert.ok(contenuFiche.includes("Total versé"));
     assert.ok(contenuFiche.includes("Taux de versement"));
     assert.ok(contenuFiche.includes("08/03/2025"));
