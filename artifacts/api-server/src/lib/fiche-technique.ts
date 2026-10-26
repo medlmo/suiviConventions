@@ -246,7 +246,7 @@ function tableauSituationVersements(convention: ConventionApi): Table {
         ? ligne.tranches.map(tranche => texte(dateFr(tranche.dateVersement)))
         : [texte("—", false, MUTED)];
       const montantsTranches = ligne.tranches.length > 0
-        ? ligne.tranches.map(tranche => texte(`${montant(tranche.montant)} MAD`))
+        ? ligne.tranches.map(tranche => texte(montant(tranche.montant)))
         : [texte("—", false, MUTED)];
 
       rows.push(new TableRow({
