@@ -91,6 +91,29 @@ async function loginAs(baseUrl, origin, username) {
   return cookieHeader.split(";", 1)[0];
 }
 
+async function assertAccountAdminRequired(baseUrl, origin, cookie, expectedStatus) {
+  const requests = [
+    { path: "/admin/users", method: "GET" },
+    {
+      path: "/admin/users",
+      method: "POST",
+      body: { username: "unauthorized-account", password: fixturePassword, role: "directeur_general_services" },
+    },
+    { path: "/admin/users/999999", method: "PATCH", body: { username: "unauthorized-update" } },
+    { path: "/admin/users/999999", method: "DELETE" },
+    { path: "/admin/users/999999/password", method: "POST", body: { password: fixturePassword } },
+  ];
+  for (const request of requests) {
+    const response = await apiRequest(baseUrl, request.path, {
+      cookie,
+      origin,
+      method: request.method,
+      body: request.body,
+    });
+    assert.equal(response.status, expectedStatus, `${request.method} ${request.path} doit refuser l'accès`);
+  }
+}
+
 async function createConvention(baseUrl, cookie, origin, body) {
   const response = await apiRequest(baseUrl, "/conventions", {
     cookie,
@@ -204,6 +227,8 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.equal(forbiddenOrigin.status, 403);
 
     const origin = `http://127.0.0.1:${port}`;
+    await assertAccountAdminRequired(baseUrl, origin, undefined, 401);
+
     const invalidPassword = await fetch(`${baseUrl}/auth/login`, {
       method: "POST",
       headers: { origin, "content-type": "application/json" },
@@ -279,6 +304,73 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       assert.equal(creation.status, 201, `le compte ${account.username} doit être créé`);
       cookies[account.key] = await loginAs(baseUrl, origin, account.username);
     }
+
+    await assertAccountAdminRequired(baseUrl, origin, cookies.chef_service, 403);
+
+    const managedAccount = await apiRequest(baseUrl, "/admin/users", {
+      cookie,
+      origin,
+      method: "POST",
+      body: {
+        username: "admin-managed-account",
+        password: fixturePassword,
+        role: "directeur_general_services",
+      },
+    });
+    assert.equal(managedAccount.status, 201, "l'administrateur peut créer un compte");
+    const createdAccount = await managedAccount.json();
+    assert.equal(createdAccount.username, "admin-managed-account");
+    assert.equal(createdAccount.active, true);
+    assert.equal(Object.hasOwn(createdAccount, "passwordHash"), false);
+
+    const accountSession = await loginAs(baseUrl, origin, createdAccount.username);
+    const persistedCreate = await apiRequest(baseUrl, "/admin/users", { cookie });
+    assert.equal(persistedCreate.status, 200);
+    const usersAfterCreate = await persistedCreate.json();
+    assert.ok(
+      usersAfterCreate.some(user => user.id === createdAccount.id && user.username === "admin-managed-account"),
+      "le compte créé est enregistré en base",
+    );
+
+    const updateAccount = await apiRequest(baseUrl, `/admin/users/${createdAccount.id}`, {
+      cookie,
+      origin,
+      method: "PATCH",
+      body: { username: "admin-managed-account-renamed" },
+    });
+    assert.equal(updateAccount.status, 200, "l'administrateur peut modifier un compte");
+    assert.equal((await updateAccount.json()).username, "admin-managed-account-renamed");
+
+    const deactivateAccount = await apiRequest(baseUrl, `/admin/users/${createdAccount.id}`, {
+      cookie,
+      origin,
+      method: "PATCH",
+      body: { active: false },
+    });
+    assert.equal(deactivateAccount.status, 200, "l'administrateur peut désactiver un compte");
+    assert.equal((await deactivateAccount.json()).active, false);
+    const usersAfterDeactivate = await apiRequest(baseUrl, "/admin/users", { cookie });
+    assert.equal(usersAfterDeactivate.status, 200);
+    const deactivatedUser = (await usersAfterDeactivate.json()).find(user => user.id === createdAccount.id);
+    assert.equal(deactivatedUser?.username, "admin-managed-account-renamed");
+    assert.equal(deactivatedUser?.active, false, "la désactivation est persistée");
+
+    const disabledSession = await apiRequest(baseUrl, "/auth/me", { cookie: accountSession });
+    assert.equal(disabledSession.status, 401, "la session d'un compte désactivé ne donne plus accès");
+
+    const deleteAccount = await apiRequest(baseUrl, `/admin/users/${createdAccount.id}`, {
+      cookie,
+      origin,
+      method: "DELETE",
+    });
+    assert.equal(deleteAccount.status, 204, "l'administrateur peut supprimer un compte");
+    const usersAfterDelete = await apiRequest(baseUrl, "/admin/users", { cookie });
+    assert.equal(usersAfterDelete.status, 200);
+    assert.equal(
+      (await usersAfterDelete.json()).some(user => user.id === createdAccount.id),
+      false,
+      "la suppression est persistée",
+    );
 
     const ownService = await createConvention(baseUrl, cookie, origin, {
       nomConvention: "Test périmètre — service propre",
