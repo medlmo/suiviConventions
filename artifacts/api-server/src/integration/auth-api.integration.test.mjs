@@ -36,6 +36,21 @@ function run(command, args, options = {}) {
   });
 }
 
+function insertUnattachedHistoricalConvention(name, responsableProjet) {
+  const literal = value => `'${value.replaceAll("'", "''")}'`;
+  const query = `INSERT INTO conventions (nom_convention, rattachement, responsable_projet) VALUES (${literal(name)}, NULL, ${literal(responsableProjet)}) RETURNING id`;
+  const output = run("psql", [
+    "--no-psqlrc",
+    "-qAt",
+    databaseUrl,
+    "-v",
+    "ON_ERROR_STOP=1",
+    "-c",
+    query,
+  ]);
+  return { id: Number(output.trim()), nomConvention: name };
+}
+
 async function findAvailablePort() {
   const server = createServer();
   await new Promise((resolveListen, reject) => {
@@ -49,6 +64,50 @@ async function findAvailablePort() {
     server.close(error => error ? reject(error) : resolveClose());
   });
   return port;
+}
+
+async function apiRequest(baseUrl, path, { cookie, origin, method = "GET", body } = {}) {
+  const headers = {};
+  if (cookie) headers.cookie = cookie;
+  if (origin) headers.origin = origin;
+  if (body !== undefined) headers["content-type"] = "application/json";
+  return fetch(`${baseUrl}${path}`, {
+    method,
+    headers,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+}
+
+async function loginAs(baseUrl, origin, username) {
+  const response = await apiRequest(baseUrl, "/auth/login", {
+    origin,
+    method: "POST",
+    body: { username, password: fixturePassword },
+  });
+  assert.equal(response.status, 200, `la connexion de ${username} doit réussir`);
+  const cookieHeader = response.headers.getSetCookie()
+    .find(cookie => cookie.startsWith("region_session="));
+  assert.ok(cookieHeader, `la connexion de ${username} doit émettre le cookie de session`);
+  return cookieHeader.split(";", 1)[0];
+}
+
+async function createConvention(baseUrl, cookie, origin, body) {
+  const response = await apiRequest(baseUrl, "/conventions", {
+    cookie,
+    origin,
+    method: "POST",
+    body,
+  });
+  assert.equal(response.status, 201, `la convention « ${body.nomConvention} » doit être créée`);
+  return response.json();
+}
+
+function assertConventionNames(payload, expectedNames, message) {
+  assert.deepEqual(
+    payload.items.map(item => item.nomConvention).sort(),
+    [...expectedNames].sort(),
+    message,
+  );
 }
 
 before(() => {
@@ -89,7 +148,7 @@ after(() => {
   if (temporaryDirectory) rmSync(temporaryDirectory, { recursive: true, force: true });
 });
 
-test("les routes d'authentification créent, valident et révoquent une session en base", {
+test("les sessions et les périmètres de conventions sont vérifiés en base", {
   timeout: 45_000,
 }, async () => {
   const port = await findAvailablePort();
@@ -174,6 +233,288 @@ test("les routes d'authentification créent, valident et révoquent une session 
     assert.equal(currentSession.status, 200);
     assert.equal((await currentSession.json()).username, "admin");
 
+    const direction = "Direction des Affaires Financières, Territoriales et des Ressources";
+    const division = "Division des Ressources Humaines et des Moyens Généraux";
+    const otherDivision = "Division des Affaires Financières, du Budget et de la Programmation";
+    const otherDirectionDivision = "Division de l'Inclusion Sociale et Solidaire";
+    const service = "Service de la Formation et du Développement des Compétences";
+    const peerService = "Service des Moyens Généraux";
+    const otherDivisionService = "Service du Budget et de la Comptabilité";
+    const otherDirectionService = "Service de l'Économie Sociale et Solidaire";
+    const dgsService = "Service Coopération";
+    const roles = [
+      {
+        key: "chef_service",
+        username: "chef-service-fixture",
+        profile: { role: "chef_service", direction, division, service },
+      },
+      {
+        key: "chef_division",
+        username: "chef-division-fixture",
+        profile: { role: "chef_division", direction, division },
+      },
+      {
+        key: "directeur",
+        username: "directeur-fixture",
+        profile: { role: "directeur", direction },
+      },
+      {
+        key: "directeur_general_services",
+        username: "dgs-fixture",
+        profile: { role: "directeur_general_services" },
+      },
+    ];
+    const cookies = {};
+    for (const account of roles) {
+      const creation = await apiRequest(baseUrl, "/admin/users", {
+        cookie,
+        origin,
+        method: "POST",
+        body: {
+          username: account.username,
+          password: fixturePassword,
+          ...account.profile,
+        },
+      });
+      assert.equal(creation.status, 201, `le compte ${account.username} doit être créé`);
+      cookies[account.key] = await loginAs(baseUrl, origin, account.username);
+    }
+
+    const ownService = await createConvention(baseUrl, cookie, origin, {
+      nomConvention: "Test périmètre — service propre",
+      rattachement: division,
+      responsableProjet: service,
+    });
+    const peerServiceConvention = await createConvention(baseUrl, cookie, origin, {
+      nomConvention: "Test périmètre — service voisin",
+      rattachement: division,
+      responsableProjet: peerService,
+    });
+    const divisionWithoutService = await createConvention(baseUrl, cookie, origin, {
+      nomConvention: "Test périmètre — service non renseigné",
+      rattachement: division,
+    });
+    const otherDivisionConvention = await createConvention(baseUrl, cookie, origin, {
+      nomConvention: "Test périmètre — autre division",
+      rattachement: otherDivision,
+      responsableProjet: otherDivisionService,
+    });
+    const otherDirectionConvention = await createConvention(baseUrl, cookie, origin, {
+      nomConvention: "Test périmètre — autre direction",
+      rattachement: otherDirectionDivision,
+      responsableProjet: otherDirectionService,
+    });
+    const dgsConvention = await createConvention(baseUrl, cookie, origin, {
+      nomConvention: "Test périmètre — DGS",
+      rattachement: "Direction Générale des Services",
+      responsableProjet: dgsService,
+    });
+    const unattachedConvention = await createConvention(baseUrl, cookie, origin, {
+      nomConvention: "Test périmètre — sans rattachement historique",
+      rattachement: null,
+      responsableProjet: null,
+    });
+    const unattachedHistoricalConvention = insertUnattachedHistoricalConvention(
+      "Test périmètre — service connu sans rattachement",
+      service,
+    );
+
+    const expectedAll = [
+      ownService.nomConvention,
+      peerServiceConvention.nomConvention,
+      divisionWithoutService.nomConvention,
+      otherDivisionConvention.nomConvention,
+      otherDirectionConvention.nomConvention,
+      dgsConvention.nomConvention,
+      unattachedConvention.nomConvention,
+      unattachedHistoricalConvention.nomConvention,
+    ];
+    const chefServiceList = await apiRequest(baseUrl, "/conventions", {
+      cookie: cookies.chef_service,
+    });
+    assert.equal(chefServiceList.status, 200);
+    const chefServiceData = await chefServiceList.json();
+    assertConventionNames(chefServiceData, [ownService.nomConvention], "le chef de service ne voit que son service");
+    assert.equal(chefServiceData.total, 1);
+
+    const chefServiceFilter = await apiRequest(
+      baseUrl,
+      `/conventions?rattachement=${encodeURIComponent(otherDivision)}&responsableProjet=${encodeURIComponent(otherDivisionService)}`,
+      { cookie: cookies.chef_service },
+    );
+    assert.equal(chefServiceFilter.status, 200);
+    assertConventionNames(await chefServiceFilter.json(), [], "un filtre hors périmètre ne doit pas élargir la liste");
+    const chefServiceOtherId = await apiRequest(baseUrl, `/conventions/${peerServiceConvention.id}`, {
+      cookie: cookies.chef_service,
+    });
+    assert.equal(chefServiceOtherId.status, 404, "un identifiant voisin ne donne pas accès à une autre convention");
+    const chefServiceUnattachedId = await apiRequest(baseUrl, `/conventions/${unattachedConvention.id}`, {
+      cookie: cookies.chef_service,
+    });
+    assert.equal(chefServiceUnattachedId.status, 404, "une convention sans rattachement n'est pas attribuée au service");
+    const chefServiceHistoricalId = await apiRequest(
+      baseUrl,
+      `/conventions/${unattachedHistoricalConvention.id}`,
+      { cookie: cookies.chef_service },
+    );
+    assert.equal(chefServiceHistoricalId.status, 404, "le service historique seul ne rattache pas implicitement la convention");
+
+    const chefDivisionList = await apiRequest(baseUrl, "/conventions", {
+      cookie: cookies.chef_division,
+    });
+    assert.equal(chefDivisionList.status, 200);
+    const chefDivisionData = await chefDivisionList.json();
+    assertConventionNames(
+      chefDivisionData,
+      [ownService.nomConvention, peerServiceConvention.nomConvention, divisionWithoutService.nomConvention],
+      "le chef de division voit les services de sa division, pas les autres rattachements",
+    );
+    const chefDivisionFilter = await apiRequest(
+      baseUrl,
+      `/conventions?rattachement=${encodeURIComponent(otherDivision)}`,
+      { cookie: cookies.chef_division },
+    );
+    assert.equal(chefDivisionFilter.status, 200);
+    assertConventionNames(await chefDivisionFilter.json(), [], "un filtre explicite ne doit pas outrepasser le périmètre de division");
+    const chefDivisionOtherId = await apiRequest(baseUrl, `/conventions/${otherDivisionConvention.id}`, {
+      cookie: cookies.chef_division,
+    });
+    assert.equal(chefDivisionOtherId.status, 404);
+    const chefDivisionUnattachedId = await apiRequest(baseUrl, `/conventions/${unattachedConvention.id}`, {
+      cookie: cookies.chef_division,
+    });
+    assert.equal(chefDivisionUnattachedId.status, 404, "une convention sans rattachement n'est pas attribuée à la division");
+    const chefDivisionHistoricalId = await apiRequest(
+      baseUrl,
+      `/conventions/${unattachedHistoricalConvention.id}`,
+      { cookie: cookies.chef_division },
+    );
+    assert.equal(chefDivisionHistoricalId.status, 404, "un service historique sans rattachement ne donne pas accès à la convention");
+
+    for (const role of ["directeur", "directeur_general_services"]) {
+      const response = await apiRequest(baseUrl, "/conventions", { cookie: cookies[role] });
+      assert.equal(response.status, 200);
+      assertConventionNames(await response.json(), expectedAll, `${role} conserve la lecture transversale, y compris sans rattachement`);
+    }
+
+    const chefServiceUpdate = await apiRequest(baseUrl, `/conventions/${ownService.id}`, {
+      cookie: cookies.chef_service,
+      origin,
+      method: "PATCH",
+      body: { version: ownService.version, nomConvention: "Test périmètre — service modifié" },
+    });
+    assert.equal(chefServiceUpdate.status, 200, "le chef de service peut modifier une convention de son service");
+    const chefServiceEscalation = await apiRequest(baseUrl, `/conventions/${ownService.id}`, {
+      cookie: cookies.chef_service,
+      origin,
+      method: "PATCH",
+      body: { version: ownService.version + 1, responsableProjet: peerService },
+    });
+    assert.equal(chefServiceEscalation.status, 403, "le chef de service ne peut pas réaffecter une convention à un service voisin");
+    const chefServiceUpdateOther = await apiRequest(baseUrl, `/conventions/${peerServiceConvention.id}`, {
+      cookie: cookies.chef_service,
+      origin,
+      method: "PATCH",
+      body: { version: peerServiceConvention.version, nomConvention: "Modification hors service" },
+    });
+    assert.equal(chefServiceUpdateOther.status, 404);
+    const chefServiceDeleteOther = await apiRequest(
+      baseUrl,
+      `/conventions/${peerServiceConvention.id}?version=${peerServiceConvention.version}`,
+      { cookie: cookies.chef_service, origin, method: "DELETE" },
+    );
+    assert.equal(chefServiceDeleteOther.status, 404);
+    const chefServiceCreate = await createConvention(baseUrl, cookies.chef_service, origin, {
+      nomConvention: "Test périmètre — création du service",
+    });
+    assert.equal(chefServiceCreate.rattachement, division);
+    assert.equal(chefServiceCreate.responsableProjet, service);
+    const chefServiceCreateOther = await apiRequest(baseUrl, "/conventions", {
+      cookie: cookies.chef_service,
+      origin,
+      method: "POST",
+      body: {
+        nomConvention: "Test périmètre — création interdite",
+        rattachement: division,
+        responsableProjet: peerService,
+      },
+    });
+    assert.equal(chefServiceCreateOther.status, 403);
+
+    const chefDivisionUpdateOther = await apiRequest(baseUrl, `/conventions/${otherDivisionConvention.id}`, {
+      cookie: cookies.chef_division,
+      origin,
+      method: "PATCH",
+      body: {
+        version: otherDivisionConvention.version,
+        rattachement: division,
+        responsableProjet: service,
+      },
+    });
+    assert.equal(chefDivisionUpdateOther.status, 404, "un identifiant hors division reste inaccessible même si le corps demande une réaffectation locale");
+    const chefDivisionEscalation = await apiRequest(baseUrl, `/conventions/${peerServiceConvention.id}`, {
+      cookie: cookies.chef_division,
+      origin,
+      method: "PATCH",
+      body: {
+        version: peerServiceConvention.version,
+        rattachement: otherDivision,
+        responsableProjet: otherDivisionService,
+      },
+    });
+    assert.equal(chefDivisionEscalation.status, 403, "le chef de division ne peut pas déplacer une convention hors de sa division");
+    const chefDivisionUpdate = await apiRequest(baseUrl, `/conventions/${peerServiceConvention.id}`, {
+      cookie: cookies.chef_division,
+      origin,
+      method: "PATCH",
+      body: { version: peerServiceConvention.version, nomConvention: "Test périmètre — division modifiée" },
+    });
+    assert.equal(chefDivisionUpdate.status, 200, "le chef de division peut modifier une convention de sa division");
+    const chefDivisionCreate = await createConvention(baseUrl, cookies.chef_division, origin, {
+      nomConvention: "Test périmètre — création de division",
+      responsableProjet: peerService,
+    });
+    assert.equal(chefDivisionCreate.rattachement, division);
+    const chefDivisionCreateOther = await apiRequest(baseUrl, "/conventions", {
+      cookie: cookies.chef_division,
+      origin,
+      method: "POST",
+      body: {
+        nomConvention: "Test périmètre — création hors division",
+        rattachement: otherDivision,
+        responsableProjet: otherDivisionService,
+      },
+    });
+    assert.equal(chefDivisionCreateOther.status, 403);
+    const chefDivisionDeleteOther = await apiRequest(
+      baseUrl,
+      `/conventions/${otherDivisionConvention.id}?version=${otherDivisionConvention.version}`,
+      { cookie: cookies.chef_division, origin, method: "DELETE" },
+    );
+    assert.equal(chefDivisionDeleteOther.status, 404);
+
+    for (const role of ["directeur", "directeur_general_services"]) {
+      const deniedCreate = await apiRequest(baseUrl, "/conventions", {
+        cookie: cookies[role],
+        origin,
+        method: "POST",
+        body: { nomConvention: `Test périmètre — création interdite ${role}` },
+      });
+      assert.equal(deniedCreate.status, 403, `${role} ne peut pas créer de convention`);
+      const deniedUpdate = await apiRequest(baseUrl, `/conventions/${ownService.id}`, {
+        cookie: cookies[role],
+        origin,
+        method: "PATCH",
+        body: { version: ownService.version + 1 },
+      });
+      assert.equal(deniedUpdate.status, 403, `${role} ne peut pas modifier de convention`);
+      const deniedDelete = await apiRequest(
+        baseUrl,
+        `/conventions/${ownService.id}?version=${ownService.version + 1}`,
+        { cookie: cookies[role], origin, method: "DELETE" },
+      );
+      assert.equal(deniedDelete.status, 403, `${role} ne peut pas supprimer de convention`);
+    }
     const logout = await fetch(`${baseUrl}/auth/logout`, {
       method: "POST",
       headers: { origin, cookie },
