@@ -1,5 +1,5 @@
 import type { ResumeAlertes } from "@workspace/api-client-react";
-import { ArrowRight, DollarSign, Files, Wallet } from "lucide-react";
+import { ArrowRight, Banknote, Files, Wallet } from "lucide-react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,7 +47,7 @@ export function DashboardTotals({
     {
       titre: "Total des contributions de la Région",
       valeur: `${formaterMontant(resume.contributionRegionTotale)} MAD`,
-      Icon: DollarSign,
+      Icon: Banknote,
     },
   ];
 
