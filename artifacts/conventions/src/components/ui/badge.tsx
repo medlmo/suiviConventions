@@ -11,15 +11,15 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          // Flat status surface; hover elevation is handled separately.
-          'border-transparent bg-primary text-primary-foreground',
+          // @replit shadow-xs instead of shadow, no hover because we use hover-elevate
+          'border-transparent bg-primary text-primary-foreground shadow-xs',
         secondary:
           // @replit no hover because we use hover-elevate
           'border-transparent bg-secondary text-secondary-foreground',
         destructive:
-          // Flat status surface; hover elevation is handled separately.
-          'border-transparent bg-destructive text-destructive-foreground',
-        // Use the shared outline color.
+          // @replit shadow-xs instead of shadow, no hover because we use hover-elevate
+          'border-transparent bg-destructive text-destructive-foreground shadow-xs',
+        // @replit shadow-xs" - use badge outline variable
         outline: 'text-foreground border [border-color:var(--badge-outline)]',
       },
     },

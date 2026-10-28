@@ -468,12 +468,12 @@ export default function ConventionDetail() {
   }
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-20 animate-in fade-in duration-300">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => setLocation("/conventions")} className="rounded-full">
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-2xl font-semibold">Fiche Convention</h1>
+        <h1 className="text-2xl font-bold">Fiche Convention</h1>
         <div className="ml-auto flex items-center gap-3 flex-wrap justify-end">
           <AlerteBadge alerte={convention.alerte} className="text-base px-3 py-1 mr-4" />
           {canEdit && <>
@@ -496,14 +496,14 @@ export default function ConventionDetail() {
           <fieldset disabled={!canEdit || saving} className="space-y-6 min-w-0">
           
           {/* Titre Principal Large */}
-          <Card className="border-t-2 border-t-primary bg-card">
+          <Card className="border-t-4 border-t-primary shadow-md bg-card">
             <CardContent className="pt-6">
               <FormField
                 control={form.control}
                 name="nomConvention"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-semibold text-primary">Objet de la convention (arabe)</FormLabel>
+                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-primary">Objet de la convention (arabe)</FormLabel>
                     <FormControl>
                       <Textarea 
                         {...field} 
@@ -520,7 +520,7 @@ export default function ConventionDetail() {
                 name="objetConventionFr"
                 render={({ field }) => (
                   <FormItem className="mt-5">
-                    <FormLabel className="text-sm font-semibold text-primary">Objet de la convention (français)</FormLabel>
+                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-primary">Objet de la convention (français)</FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
@@ -542,7 +542,7 @@ export default function ConventionDetail() {
             {/* Colonne Gauche */}
             <div className="space-y-6">
               
-              <Card>
+              <Card className="shadow-sm">
                 <CardHeader className="bg-muted/30 pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Info className="w-5 h-5 text-secondary" />
@@ -734,7 +734,7 @@ export default function ConventionDetail() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="shadow-sm">
                 <CardHeader className="bg-muted/30 pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Wallet className="w-5 h-5 text-secondary" />
@@ -834,20 +834,20 @@ export default function ConventionDetail() {
             <div className="space-y-6">
               
               {/* Le coeur métier : Le Comité */}
-              <Card>
-                <CardHeader className="pb-4 border-b">
-                  <CardTitle className="flex items-center gap-2 text-lg text-foreground">
-                    <CalendarIcon className="w-5 h-5 text-secondary" />
+              <Card className="shadow-sm border-orange-200">
+                <CardHeader className="bg-orange-50/50 pb-4 border-b border-orange-100">
+                  <CardTitle className="flex items-center gap-2 text-lg text-orange-900">
+                    <CalendarIcon className="w-5 h-5 text-orange-600" />
                     Comité de Suivi
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-5">
-                  <div className="grid grid-cols-2 gap-4 bg-muted/40 p-4 rounded-md border">
+                  <div className="grid grid-cols-2 gap-4 bg-red-50/30 p-4 rounded-lg border border-red-100">
                     <FormField control={form.control} name="prochaineEcheance" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold text-foreground">Date Prochaine Échéance</FormLabel>
-                        <FormControl><Input type="date" {...field} value={echeanceCalculee?.date ?? field.value ?? ""} readOnly={!!echeanceCalculee} data-testid="input-prochaine-echeance" className="font-semibold" /></FormControl>
-                        <p data-testid="status-calcul-echeance" className="text-xs text-muted-foreground">
+                        <FormLabel className="font-bold text-red-900">Date Prochaine Échéance</FormLabel>
+                        <FormControl><Input type="date" {...field} value={echeanceCalculee?.date ?? field.value ?? ""} readOnly={!!echeanceCalculee} data-testid="input-prochaine-echeance" className="font-bold border-red-200 focus-visible:ring-red-500" /></FormControl>
+                        <p data-testid="status-calcul-echeance" className="text-[11px] text-red-600/80">
                           {dateHistoriqueManuelle && calculTheorique
                             ? `Date enregistrée conservée. Calcul attendu : ${calculTheorique.date}.`
                             : echeanceCalculee
@@ -917,7 +917,7 @@ export default function ConventionDetail() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="shadow-sm">
                 <CardHeader className="bg-muted/30 pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <FileText className="w-5 h-5 text-secondary" />
@@ -960,7 +960,7 @@ export default function ConventionDetail() {
 
             </div>
           </div>
-          <Card id="suivi-financier" className="scroll-mt-6">
+          <Card id="suivi-financier" className="shadow-sm scroll-mt-6">
             <CardHeader className="bg-muted/30 pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Wallet className="w-5 h-5 text-secondary" />

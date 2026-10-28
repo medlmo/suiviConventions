@@ -3,19 +3,18 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function AlerteBadge({ alerte, className }: { alerte: Alerte; className?: string }) {
-  // Teintes claires + texte foncé : contraste lisible en petit corps, sémantique conservée.
   const colors = {
-    rouge: "bg-[#fde8e6] hover:bg-[#fde8e6] text-[#9b1c1c] border-[#f3b9b3]",
-    orange: "bg-[#fdecdc] hover:bg-[#fdecdc] text-[#8a3a07] border-[#f2c39c]",
-    jaune: "bg-[#fbf3d2] hover:bg-[#fbf3d2] text-[#6b4e05] border-[#e8d48a]",
-    vert: "bg-[#e3f2e6] hover:bg-[#e3f2e6] text-[#1d5e2c] border-[#a9d3b2]",
-    gris: "bg-[#eceef1] hover:bg-[#eceef1] text-[#3d4756] border-[#cdd2d9]",
+    rouge: "bg-[#dc2626] hover:bg-[#dc2626]/90 text-white border-transparent",
+    orange: "bg-[#ea580c] hover:bg-[#ea580c]/90 text-white border-transparent",
+    jaune: "bg-[#eab308] hover:bg-[#eab308]/90 text-white border-transparent",
+    vert: "bg-[#16a34a] hover:bg-[#16a34a]/90 text-white border-transparent",
+    gris: "bg-[#64748b] hover:bg-[#64748b]/90 text-white border-transparent",
   };
 
-  const colorClass = colors[alerte.couleur] || "bg-[#eceef1] text-[#3d4756] border-[#cdd2d9]";
+  const colorClass = colors[alerte.couleur] || "bg-gray-500 text-white";
 
   return (
-    <Badge className={cn("font-medium whitespace-nowrap rounded-sm", colorClass, className)}>
+    <Badge className={cn("font-medium whitespace-nowrap shadow-sm", colorClass, className)}>
       {alerte.libelle}
     </Badge>
   );

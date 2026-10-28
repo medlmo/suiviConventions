@@ -94,10 +94,10 @@ export default function ConventionsList() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Conventions ({data?.total || 0})</h1>
+          <h1 className="text-2xl font-bold text-foreground">Conventions ({data?.total || 0})</h1>
           <p className="text-muted-foreground text-sm">Gérez et suivez le portefeuille de conventions.</p>
         </div>
         <div className="flex items-center gap-3">
@@ -106,7 +106,7 @@ export default function ConventionsList() {
               <Download className="w-4 h-4" /> Export Excel (.xlsx)
             </a>
           </Button>
-          {user?.role !== "directeur" && user?.role !== "directeur_general_services" && <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          {user?.role !== "directeur" && user?.role !== "directeur_general_services" && <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
             <Link href="/conventions/nouvelle" className="flex items-center gap-2">
               <Plus className="w-4 h-4" /> Nouvelle Convention
             </Link>
@@ -114,7 +114,7 @@ export default function ConventionsList() {
         </div>
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardContent className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
@@ -214,7 +214,7 @@ export default function ConventionsList() {
       </Card>
 
       {isError && <Card><CardContent className="p-8 text-center"><p role="alert" className="text-destructive">{errorMessage(error)}</p><Button variant="outline" className="mt-4" onClick={() => void refetch()}>Réessayer</Button></CardContent></Card>}
-      {!isError && <div className="bg-card rounded-md border overflow-hidden flex flex-col">
+      {!isError && <div className="bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col">
         {/* Sur mobile, le tableau devient une liste de cartes : un tableau à six
             colonnes forcerait un défilement horizontal, et les noms arabes,
             alignés à droite, démarreraient hors de l'écran. */}
@@ -267,7 +267,7 @@ export default function ConventionsList() {
 
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="text-xs font-semibold text-muted-foreground bg-muted/50 border-b border-border">
+            <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
               <tr>
                 <th className="px-4 py-4 cursor-pointer hover:text-foreground transition-colors group w-12" onClick={() => handleSort("urgence")}>
                   <div className="flex items-center gap-1">Alerte <SortIcon field="urgence" /></div>
@@ -310,7 +310,7 @@ export default function ConventionsList() {
                 data?.items.map((conv, i) => (
                   <tr 
                     key={conv.id} 
-                    className="hover:bg-accent/30 transition-colors"
+                    className="hover:bg-accent/30 transition-colors animate-in fade-in slide-in-from-bottom-2"
                     style={{ animationDelay: `${i * 30}ms`, animationFillMode: 'both' }}
                   >
                     <td className="px-4 py-4 align-top">

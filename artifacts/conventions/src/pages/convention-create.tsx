@@ -186,13 +186,13 @@ export default function ConventionCreate() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-20">
+    <div className="space-y-6 max-w-4xl mx-auto pb-20 animate-in fade-in duration-300">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => setLocation("/conventions")} className="rounded-full">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold">Nouvelle Convention</h1>
+          <h1 className="text-2xl font-bold">Nouvelle Convention</h1>
           <p className="text-muted-foreground text-sm">Ajoutez une nouvelle convention au suivi.</p>
         </div>
       </div>
@@ -201,14 +201,14 @@ export default function ConventionCreate() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <fieldset disabled={createMutation.isPending} className="space-y-8 min-w-0">
           
-          <Card className="border-t-2 border-t-primary bg-card">
+          <Card className="border-t-4 border-t-primary shadow-sm bg-card">
             <CardContent className="pt-6">
               <FormField
                 control={form.control}
                 name="nomConvention"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base font-semibold text-primary">Objet de la convention (arabe) *</FormLabel>
+                    <FormLabel className="text-base font-bold uppercase tracking-wider text-primary">Objet de la convention (arabe) *</FormLabel>
                     <FormControl>
                       <Textarea 
                         {...field} 
@@ -226,7 +226,7 @@ export default function ConventionCreate() {
                 name="objetConventionFr"
                 render={({ field }) => (
                   <FormItem className="mt-5">
-                    <FormLabel className="text-base font-semibold text-primary">Objet de la convention (français)</FormLabel>
+                    <FormLabel className="text-base font-bold uppercase tracking-wider text-primary">Objet de la convention (français)</FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
@@ -243,7 +243,7 @@ export default function ConventionCreate() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="bg-muted/30 pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Info className="w-5 h-5 text-secondary" />
@@ -389,7 +389,7 @@ export default function ConventionCreate() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="bg-muted/30 pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Wallet className="w-5 h-5 text-secondary" />
@@ -475,10 +475,10 @@ export default function ConventionCreate() {
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader className="pb-4 border-b">
-              <CardTitle className="flex items-center gap-2 text-lg text-foreground">
-                <CalendarIcon className="w-5 h-5 text-secondary" />
+          <Card className="shadow-sm border-orange-200">
+            <CardHeader className="bg-orange-50/50 pb-4 border-b border-orange-100">
+              <CardTitle className="flex items-center gap-2 text-lg text-orange-900">
+                <CalendarIcon className="w-5 h-5 text-orange-600" />
                 Comité & Échéances (Initialisation)
               </CardTitle>
               <CardDescription>
@@ -486,11 +486,11 @@ export default function ConventionCreate() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/40 p-5 rounded-md border">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-red-50/30 p-5 rounded-lg border border-red-100">
                 <FormField control={form.control} name="prochaineEcheance" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-semibold text-foreground">Date Prochaine Échéance</FormLabel>
-                    <FormControl><Input type="date" {...field} value={echeanceCalculee?.date ?? field.value ?? ""} readOnly={!!echeanceCalculee} data-testid="input-prochaine-echeance" /></FormControl>
+                    <FormLabel className="font-bold text-red-900">Date Prochaine Échéance</FormLabel>
+                    <FormControl><Input type="date" {...field} value={echeanceCalculee?.date ?? field.value ?? ""} readOnly={!!echeanceCalculee} data-testid="input-prochaine-echeance" className="border-red-200 focus-visible:ring-red-500" /></FormControl>
                     <p data-testid="status-calcul-echeance" className="text-xs text-muted-foreground">
                       {echeanceCalculee
                         ? `Calcul automatique : ${echeanceCalculee.source === "visa" ? "date de visa" : "dernier comité tenu"} + ${echeanceCalculee.mois} mois.`
@@ -546,7 +546,7 @@ export default function ConventionCreate() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="bg-muted/30 pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <FileText className="w-5 h-5 text-secondary" />
@@ -580,7 +580,7 @@ export default function ConventionCreate() {
             <Button type="button" variant="outline" onClick={() => setLocation("/conventions")}>
               Annuler
             </Button>
-             <Button type="submit" size="lg" disabled={createMutation.isPending || uploadsEnCours > 0 || !reference.data} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+             <Button type="submit" size="lg" disabled={createMutation.isPending || uploadsEnCours > 0 || !reference.data} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
               <Save className="w-5 h-5 mr-2" />
               {createMutation.isPending ? "Création..." : "Créer la convention"}
             </Button>

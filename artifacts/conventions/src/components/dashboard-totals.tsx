@@ -24,7 +24,7 @@ export function DashboardTotals({
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {Array.from({ length: 3 }, (_, index) => (
-          <Skeleton key={index} className="h-36 rounded-md" />
+          <Skeleton key={index} className="h-36 rounded-xl" />
         ))}
       </div>
     );
@@ -54,13 +54,13 @@ export function DashboardTotals({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {indicateurs.map(({ titre, valeur, Icon, lien }) => (
-        <Card key={titre} className="min-w-0">
+        <Card key={titre} className="shadow-sm min-w-0">
           <CardContent className="p-5">
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-sm font-semibold text-muted-foreground">{titre}</h2>
               <Icon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             </div>
-            <p className="mt-3 text-2xl font-semibold text-foreground break-words tabular-nums">
+            <p className="mt-3 text-2xl font-bold tracking-tight text-foreground break-words tabular-nums">
               {valeur}
             </p>
             {lien && (

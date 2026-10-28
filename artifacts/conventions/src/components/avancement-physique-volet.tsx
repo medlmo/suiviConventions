@@ -78,7 +78,7 @@ export function AvancementPhysiqueVolet({
   const maj = (patch: Partial<BrouillonAvancement>) => brouillon && onChange({ ...brouillon, ...patch });
 
   return (
-    <Card id="avancement-physique" className="scroll-mt-6" data-testid="card-avancement-physique">
+    <Card id="avancement-physique" className="shadow-sm scroll-mt-6" data-testid="card-avancement-physique">
       <CardHeader className="bg-muted/30 pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Activity className="w-5 h-5 text-secondary" />
@@ -88,7 +88,7 @@ export function AvancementPhysiqueVolet({
       <CardContent className="pt-6 space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-[220px] flex-1 space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Taux courant</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Taux courant</p>
             {courant ? (
               <>
                 <p className="text-3xl font-bold text-primary tabular-nums" data-testid="text-taux-courant">{fmtTaux(courant.taux)}</p>
@@ -138,7 +138,7 @@ export function AvancementPhysiqueVolet({
         {erreurs.racine && <p role="alert" className="flex items-center gap-2 text-sm text-destructive"><AlertTriangle className="w-4 h-4" />{erreurs.racine}</p>}
 
         <div className="space-y-3">
-          <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><History className="w-4 h-4" />Historique des constats</p>
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"><History className="w-4 h-4" />Historique des constats</p>
           {tries.length === 0 ? (
             <div className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground" data-testid="empty-avancement">
               Aucun avancement physique n'a encore été constaté pour ce projet.
