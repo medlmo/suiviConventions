@@ -32,7 +32,6 @@ export default function SignIn() {
       <div className="hidden lg:flex items-center gap-2 text-xs text-sidebar-foreground/55"><ShieldCheck className="w-4 h-4" /> Accès réservé aux comptes autorisés</div>
     </section>
     <section className="flex items-center justify-center p-6 md:p-14 lg:p-20"><div className="w-full max-w-[420px] py-8">
-      <span className="text-secondary text-xs font-bold uppercase tracking-[.22em]">Accès sécurisé</span>
       <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mt-4 text-foreground">Bienvenue.</h2>
       <p className="text-muted-foreground mt-3 mb-10">Connectez-vous avec votre identifiant.</p>
       <form onSubmit={submit} className="space-y-6">
