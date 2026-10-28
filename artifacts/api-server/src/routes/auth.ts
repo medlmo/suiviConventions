@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, sessionsTable, usersTable } from "@workspace/db";
 import { LoginBody } from "@workspace/api-zod";
 import {
@@ -37,7 +37,9 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
   try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1);
+    const [user] = await db.select().from(usersTable)
+      .where(sql`lower(${usersTable.username}) = lower(${username})`)
+      .limit(1);
     const valide = await verifyPassword(parsed.data.password, user?.passwordHash);
     if (!user || !user.active || !valide || !estRole(user.role)) {
       res.status(401).json({ error: "Identifiant ou mot de passe invalide." });

@@ -56,3 +56,9 @@ La limitation des connexions réserve une tentative avant toute vérification as
 **Why:** Un verrouillage sur le seul identifiant permettait à un tiers de bloquer le compte depuis une autre adresse. Réserver après le contrôle laisserait passer une rafale simultanée, et évincer des clés actives permettrait d'effacer leurs restrictions.
 
 **How to apply:** Conserver une admission synchrone, bornée et à expirations fixes. Ne pas réintroduire un blocage global par identifiant sans protection supplémentaire. Ce compromis ne supprime ni les limites communes aux utilisateurs d'une même IP, ni le risque de tentatives réparties entre de nombreuses IP.
+
+La connexion ignore la casse de l'identifiant, en cohérence avec l'unicité en base ; le nom stocké reste inchangé.
+
+**Why:** L'utilisateur a choisi que la casse ne distingue pas les noms de compte, car la base empêche déjà leur coexistence.
+
+**How to apply:** Comparer les noms avec la fonction SQL `lower()` et conserver la normalisation sans casse de la clé identifiant/IP utilisée par la limitation des tentatives. Ne pas renommer les comptes lors de la connexion.
