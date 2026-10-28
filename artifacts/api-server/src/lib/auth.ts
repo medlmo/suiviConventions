@@ -79,7 +79,7 @@ export async function bootstrapAdmin(): Promise<void> {
     passwordHash: await hashPassword(password),
     role: "admin",
     active: true,
-  }).onConflictDoNothing({ target: usersTable.username });
+  }).onConflictDoNothing();
 }
 
 export async function creerSession(userId: number, req: Request, res: Response): Promise<void> {

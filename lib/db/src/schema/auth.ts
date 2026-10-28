@@ -1,10 +1,11 @@
-import { boolean, index, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const usersTable = pgTable(
   "app_users",
   {
     id: serial("id").primaryKey(),
-    username: text("username").notNull().unique(),
+    username: text("username").notNull(),
     passwordHash: text("password_hash").notNull(),
     role: text("role").notNull(),
     direction: text("direction"),
@@ -15,7 +16,10 @@ export const usersTable = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("app_users_role_idx").on(table.role)],
+  (table) => [
+    index("app_users_role_idx").on(table.role),
+    uniqueIndex("app_users_username_lower_uq").on(sql`lower(${table.username})`),
+  ],
 );
 
 export const sessionsTable = pgTable(
