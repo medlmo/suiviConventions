@@ -198,6 +198,7 @@ interface FiltresListe {
   rattachement?: string;
   partenaires?: string[];
   responsableProjet?: string;
+  nature?: string;
   natureFonds?: string;
   decision?: string;
 }
@@ -246,6 +247,9 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
   }
   if (filtres.responsableProjet) {
     conditions.push(eq(conventionsTable.responsableProjet, filtres.responsableProjet));
+  }
+  if (filtres.nature) {
+    conditions.push(eq(conventionsTable.nature, filtres.nature));
   }
   if (filtres.natureFonds) {
     conditions.push(eq(conventionsTable.natureFonds, filtres.natureFonds));
@@ -624,10 +628,11 @@ router.get("/conventions/options-filtres", async (req, res): Promise<void> => {
       .filter((valeur): valeur is string => valeur !== null);
   }
 
-  const [rattachements, responsables, statuts, naturesFonds, decisions, lignesPartenaires] = await Promise.all([
+  const [rattachements, responsables, statuts, naturesProjet, naturesFonds, decisions, lignesPartenaires] = await Promise.all([
     valeursDistinctes(conventionsTable.rattachement),
     valeursDistinctes(conventionsTable.responsableProjet),
     valeursDistinctes(conventionsTable.statutConvention),
+    valeursDistinctes(conventionsTable.nature),
     valeursDistinctes(conventionsTable.natureFonds),
     valeursDistinctes(conventionsTable.decision),
     db
@@ -643,6 +648,7 @@ router.get("/conventions/options-filtres", async (req, res): Promise<void> => {
       rattachements,
       responsables,
       statuts,
+      naturesProjet,
       naturesFonds,
       decisions,
       partenaires,

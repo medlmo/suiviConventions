@@ -10,6 +10,7 @@ export interface OptionsFiltres {
   rattachements: string[];
   responsables: string[];
   statuts: string[];
+  naturesProjet: string[];
   naturesFonds: string[];
   decisions: string[];
   partenaires: string[];

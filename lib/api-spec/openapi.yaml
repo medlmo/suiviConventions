@@ -451,6 +451,10 @@ paths:
         - name: responsableProjet
           in: query
           schema: { type: string }
+        - name: nature
+          in: query
+          description: Filtre sur la nature du projet
+          schema: { type: string }
         - name: natureFonds
           in: query
           schema: { type: string }
@@ -1187,6 +1191,7 @@ components:
         - rattachements
         - responsables
         - statuts
+        - naturesProjet
         - naturesFonds
         - decisions
         - partenaires
@@ -1198,6 +1203,9 @@ components:
           type: array
           items: { type: string }
         statuts:
+          type: array
+          items: { type: string }
+        naturesProjet:
           type: array
           items: { type: string }
         naturesFonds:

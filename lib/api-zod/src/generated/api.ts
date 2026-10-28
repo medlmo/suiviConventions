@@ -426,6 +426,7 @@ export const ListConventionsQueryParams = zod.object({
   "statutConvention": zod.coerce.string().optional(),
   "rattachement": zod.coerce.string().optional(),
   "responsableProjet": zod.coerce.string().optional(),
+  "nature": zod.coerce.string().optional().describe('Filtre sur la nature du projet'),
   "natureFonds": zod.coerce.string().optional(),
   "decision": zod.coerce.string().optional(),
   "page": zod.coerce.number().int().min(1).default(listConventionsQueryPageDefault),
@@ -1028,6 +1029,7 @@ export const GetOptionsFiltresResponse = zod.object({
   "rattachements": zod.array(zod.string()),
   "responsables": zod.array(zod.string()),
   "statuts": zod.array(zod.string()),
+  "naturesProjet": zod.array(zod.string()),
   "naturesFonds": zod.array(zod.string()),
   "decisions": zod.array(zod.string()),
   "partenaires": zod.array(zod.string())

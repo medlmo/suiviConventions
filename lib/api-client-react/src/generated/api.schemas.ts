@@ -642,6 +642,7 @@ export interface OptionsFiltres {
   rattachements: string[];
   responsables: string[];
   statuts: string[];
+  naturesProjet: string[];
   naturesFonds: string[];
   decisions: string[];
   partenaires: string[];
@@ -864,6 +865,10 @@ alerte?: NiveauAlerte;
 statutConvention?: string;
 rattachement?: string;
 responsableProjet?: string;
+/**
+ * Filtre sur la nature du projet
+ */
+nature?: string;
 natureFonds?: string;
 decision?: string;
 /**

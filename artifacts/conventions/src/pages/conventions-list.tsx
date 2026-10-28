@@ -41,6 +41,7 @@ export default function ConventionsList() {
   const [service, setService] = useState<string | undefined>();
   const [partenaires, setPartenaires] = useState<string[]>([]);
   const [statutConvention, setStatutConvention] = useState<string | undefined>();
+  const [natureProjet, setNatureProjet] = useState<string | undefined>();
   const [tri, setTri] = useState<ListConventionsTri>("urgence");
   // Urgence ascendante = les retards en tête (rang 0), « À qualifier » en fin.
   const [ordre, setOrdre] = useState<ListConventionsOrdre>("asc");
@@ -59,6 +60,7 @@ export default function ConventionsList() {
     responsableProjet: serviceFiltre === "all" ? undefined : serviceFiltre,
     partenaires: partenaires.length ? partenaires : undefined,
     statutConvention: statutConvention === "all" ? undefined : statutConvention,
+    nature: natureProjet,
     tri,
     ordre,
   });
@@ -82,6 +84,7 @@ export default function ConventionsList() {
     if (serviceFiltre && serviceFiltre !== "all") params.append("responsableProjet", serviceFiltre);
     partenaires.forEach((partenaire) => params.append("partenaires", partenaire));
     if (statutConvention && statutConvention !== "all") params.append("statutConvention", statutConvention);
+    if (natureProjet) params.append("nature", natureProjet);
     if (tri) params.append("tri", tri);
     if (ordre) params.append("ordre", ordre);
     
@@ -175,6 +178,20 @@ export default function ConventionsList() {
                 </Select>
               )}
 
+              {(options?.naturesProjet.length ?? 0) > 0 && (
+                <Select value={natureProjet || "all"} onValueChange={(v) => { setNatureProjet(v === "all" ? undefined : v); setPage(1); }}>
+                  <SelectTrigger className="w-[200px] h-10 [&>span]:truncate" data-testid="select-filter-nature-projet">
+                    <SelectValue placeholder="Nature du projet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les natures</SelectItem>
+                    {options?.naturesProjet.map((nature) => (
+                      <SelectItem key={nature} value={nature}>{nature}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
               {user?.role !== "chef_service" && user?.role !== "chef_division" && (options?.rattachements.length ?? 0) > 0 && (
               <Select value={rattachement || "all"} onValueChange={(v) => { setRattachement(v); setPage(1); }}>
                 <SelectTrigger className="w-[200px] h-10 [&>span]:truncate">
@@ -197,11 +214,11 @@ export default function ConventionsList() {
                 />
               )}
 
-              {(q || alerte || rattachementFiltre || serviceFiltre || partenaires.length > 0 || statutConvention) && (
+              {(q || alerte || rattachementFiltre || serviceFiltre || partenaires.length > 0 || statutConvention || natureProjet) && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setService(undefined); setPartenaires([]); setStatutConvention(undefined); setPage(1); }}
+                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setService(undefined); setPartenaires([]); setStatutConvention(undefined); setNatureProjet(undefined); setPage(1); }}
                   className="h-10 w-10 text-muted-foreground hover:text-destructive"
                   title="Effacer les filtres"
                 >

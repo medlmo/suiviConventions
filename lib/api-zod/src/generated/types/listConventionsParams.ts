@@ -25,6 +25,10 @@ alerte?: NiveauAlerte;
 statutConvention?: string;
 rattachement?: string;
 responsableProjet?: string;
+/**
+ * Filtre sur la nature du projet
+ */
+nature?: string;
 natureFonds?: string;
 decision?: string;
 /**
