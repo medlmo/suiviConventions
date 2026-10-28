@@ -411,8 +411,6 @@ export const ListAuditResponse = zod.object({
 /**
  * @summary Liste paginée et filtrée des conventions
  */
-export const listConventionsQuerySessionDuRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
-export const listConventionsQuerySessionAuRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const listConventionsQueryPageDefault = 1;
 
 export const listConventionsQueryPageSizeDefault = 25;
@@ -429,8 +427,6 @@ export const ListConventionsQueryParams = zod.object({
   "rattachement": zod.coerce.string().optional(),
   "responsableProjet": zod.coerce.string().optional(),
   "nature": zod.coerce.string().optional().describe('Filtre sur la nature du projet'),
-  "sessionDu": zod.coerce.string().regex(listConventionsQuerySessionDuRegExp).optional().describe('Date minimale incluse de la session (AAAA-MM-JJ)'),
-  "sessionAu": zod.coerce.string().regex(listConventionsQuerySessionAuRegExp).optional().describe('Date maximale incluse de la session (AAAA-MM-JJ)'),
   "natureFonds": zod.coerce.string().optional(),
   "decision": zod.coerce.string().optional(),
   "page": zod.coerce.number().int().min(1).default(listConventionsQueryPageDefault),

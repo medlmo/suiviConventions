@@ -42,8 +42,6 @@ export default function ConventionsList() {
   const [partenaires, setPartenaires] = useState<string[]>([]);
   const [statutConvention, setStatutConvention] = useState<string | undefined>();
   const [natureProjet, setNatureProjet] = useState<string | undefined>();
-  const [sessionDu, setSessionDu] = useState<string | undefined>();
-  const [sessionAu, setSessionAu] = useState<string | undefined>();
   const [tri, setTri] = useState<ListConventionsTri>("urgence");
   // Urgence ascendante = les retards en tête (rang 0), « À qualifier » en fin.
   const [ordre, setOrdre] = useState<ListConventionsOrdre>("asc");
@@ -63,24 +61,11 @@ export default function ConventionsList() {
     partenaires: partenaires.length ? partenaires : undefined,
     statutConvention: statutConvention === "all" ? undefined : statutConvention,
     nature: natureProjet,
-    sessionDu: sessionDu || undefined,
-    sessionAu: sessionAu || undefined,
     tri,
     ordre,
   });
 
   const { data: options } = useGetOptionsFiltres();
-  const hasActiveFilters = Boolean(
-    q ||
-    alerte ||
-    (rattachementFiltre && rattachementFiltre !== "all") ||
-    (serviceFiltre && serviceFiltre !== "all") ||
-    partenaires.length ||
-    (statutConvention && statutConvention !== "all") ||
-    natureProjet ||
-    sessionDu ||
-    sessionAu
-  );
 
   const handleSort = (field: ListConventionsTri) => {
     if (tri === field) {
@@ -100,8 +85,6 @@ export default function ConventionsList() {
     partenaires.forEach((partenaire) => params.append("partenaires", partenaire));
     if (statutConvention && statutConvention !== "all") params.append("statutConvention", statutConvention);
     if (natureProjet) params.append("nature", natureProjet);
-    if (sessionDu) params.append("sessionDu", sessionDu);
-    if (sessionAu) params.append("sessionAu", sessionAu);
     if (tri) params.append("tri", tri);
     if (ordre) params.append("ordre", ordre);
     
@@ -135,178 +118,115 @@ export default function ConventionsList() {
       </div>
 
       <Card className="shadow-sm">
-        <CardContent className="space-y-5 p-4 sm:p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative min-w-0 flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
+        <CardContent className="p-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
                 placeholder="Rechercher (intitulé en arabe ou en français, responsable, etc.)..."
                 value={q}
-                onChange={(event) => { setQ(event.target.value); setPage(1); }}
-                className="h-10 w-full bg-background pl-9"
+                onChange={(e) => { setQ(e.target.value); setPage(1); }}
+                className="pl-9 h-10 w-full bg-accent/20"
                 dir="auto"
               />
             </div>
-            {hasActiveFilters && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setQ("");
-                  setAlerte(undefined);
-                  setRattachement(undefined);
-                  setService(undefined);
-                  setPartenaires([]);
-                  setStatutConvention(undefined);
-                  setNatureProjet(undefined);
-                  setSessionDu(undefined);
-                  setSessionAu(undefined);
-                  setPage(1);
-                }}
-                className="h-10 shrink-0 gap-2"
-              >
-                <FilterX className="h-4 w-4" />
-                Effacer les filtres
-              </Button>
-            )}
-          </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-wrap items-center gap-3 [&_button[role=combobox]]:w-full lg:[&_button[role=combobox]]:w-auto">
+              <Select value={alerte || "all"} onValueChange={(v) => { setAlerte(v === "all" ? undefined : v as NiveauAlerte); setPage(1); }}>
+                <SelectTrigger className="w-[160px] h-10">
+                  <SelectValue placeholder="Niveau d'alerte" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les alertes</SelectItem>
+                  <SelectItem value="EN_RETARD">En retard</SelectItem>
+                  <SelectItem value="A_DECLENCHER">À déclencher</SelectItem>
+                  <SelectItem value="A_PREPARER">À préparer</SelectItem>
+                  <SelectItem value="A_JOUR">À jour</SelectItem>
+                  <SelectItem value="A_SURVEILLER">À surveiller</SelectItem>
+                  <SelectItem value="A_QUALIFIER">À qualifier</SelectItem>
+                </SelectContent>
+              </Select>
 
-          <section className="space-y-3 border-t border-border pt-4" aria-labelledby="conventions-filter-heading">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <h2 id="conventions-filter-heading" className="text-sm font-semibold text-foreground">Affiner la liste</h2>
-              <span className="text-xs text-muted-foreground">Filtres facultatifs</span>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              <div className="min-w-0 space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Niveau d’alerte</span>
-                <Select value={alerte || "all"} onValueChange={(value) => { setAlerte(value === "all" ? undefined : value as NiveauAlerte); setPage(1); }}>
-                  <SelectTrigger className="h-10 w-full">
-                    <SelectValue placeholder="Toutes les alertes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes les alertes</SelectItem>
-                    <SelectItem value="EN_RETARD">En retard</SelectItem>
-                    <SelectItem value="A_DECLENCHER">À déclencher</SelectItem>
-                    <SelectItem value="A_PREPARER">À préparer</SelectItem>
-                    <SelectItem value="A_JOUR">À jour</SelectItem>
-                    <SelectItem value="A_SURVEILLER">À surveiller</SelectItem>
-                    <SelectItem value="A_QUALIFIER">À qualifier</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+              {/* Les colonnes « statut » et « rattachement » sont vides dans le
+                  fichier Excel importé : afficher un filtre sans option laisserait
+                  croire à un bug. Il n'apparaît qu'une fois des valeurs saisies. */}
               {(options?.statuts.length ?? 0) > 0 && (
-                <div className="min-w-0 space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Statut</span>
-                  <Select value={statutConvention || "all"} onValueChange={(value) => { setStatutConvention(value); setPage(1); }}>
-                    <SelectTrigger className="h-10 w-full">
-                      <SelectValue placeholder="Tous les statuts" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les statuts</SelectItem>
-                      {options?.statuts.map((statut) => (
-                        <SelectItem key={statut} value={statut}>{statut}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <Select value={statutConvention || "all"} onValueChange={(v) => { setStatutConvention(v); setPage(1); }}>
+                <SelectTrigger className="w-[160px] h-10">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  {options?.statuts.map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               )}
 
               {user?.role === "chef_division" && (options?.responsables.length ?? 0) > 0 && (
-                <div className="min-w-0 space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Service</span>
-                  <Select value={service || "all"} onValueChange={(value) => { setService(value === "all" ? undefined : value); setPage(1); }}>
-                    <SelectTrigger className="h-10 w-full" data-testid="select-filter-service">
-                      <SelectValue placeholder="Tous les services" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les services</SelectItem>
-                      {options?.responsables.map((responsable) => (
-                        <SelectItem key={responsable} value={responsable}>{responsable}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={service || "all"} onValueChange={(v) => { setService(v === "all" ? undefined : v); setPage(1); }}>
+                  <SelectTrigger className="w-[200px] h-10 [&>span]:truncate" data-testid="select-filter-service">
+                    <SelectValue placeholder="Service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les services</SelectItem>
+                    {options?.responsables.map((responsable) => (
+                      <SelectItem key={responsable} value={responsable}>{responsable}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
 
               {(options?.naturesProjet.length ?? 0) > 0 && (
-                <div className="min-w-0 space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Nature du projet</span>
-                  <Select value={natureProjet || "all"} onValueChange={(value) => { setNatureProjet(value === "all" ? undefined : value); setPage(1); }}>
-                    <SelectTrigger className="h-10 w-full [&>span]:truncate" data-testid="select-filter-nature-projet">
-                      <SelectValue placeholder="Toutes les natures" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Toutes les natures</SelectItem>
-                      {options?.naturesProjet.map((nature) => (
-                        <SelectItem key={nature} value={nature}>{nature}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={natureProjet || "all"} onValueChange={(v) => { setNatureProjet(v === "all" ? undefined : v); setPage(1); }}>
+                  <SelectTrigger className="w-[200px] h-10 [&>span]:truncate" data-testid="select-filter-nature-projet">
+                    <SelectValue placeholder="Nature du projet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les natures</SelectItem>
+                    {options?.naturesProjet.map((nature) => (
+                      <SelectItem key={nature} value={nature}>{nature}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
 
               {user?.role !== "chef_service" && user?.role !== "chef_division" && (options?.rattachements.length ?? 0) > 0 && (
-                <div className="min-w-0 space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Rattachement</span>
-                  <Select value={rattachement || "all"} onValueChange={(value) => { setRattachement(value); setPage(1); }}>
-                    <SelectTrigger className="h-10 w-full [&>span]:truncate">
-                      <SelectValue placeholder="Tous les rattachements" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les rattachements</SelectItem>
-                      {options?.rattachements.map((rattachement) => (
-                        <SelectItem key={rattachement} value={rattachement}>{rattachement}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <Select value={rattachement || "all"} onValueChange={(v) => { setRattachement(v); setPage(1); }}>
+                <SelectTrigger className="w-[200px] h-10 [&>span]:truncate">
+                  <SelectValue placeholder="Rattachement" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les rattachements</SelectItem>
+                  {options?.rattachements.map(r => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               )}
 
               {(options?.partenaires.length ?? 0) > 0 && (
-                <div className="min-w-0 space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Partenaires</span>
-                  <PartenaireMultiSelect
-                    options={options?.partenaires ?? []}
-                    selected={partenaires}
-                    onChange={(next) => { setPartenaires(next); setPage(1); }}
-                  />
-                </div>
+                <PartenaireMultiSelect
+                  options={options?.partenaires ?? []}
+                  selected={partenaires}
+                  onChange={(next) => { setPartenaires(next); setPage(1); }}
+                />
               )}
 
-              <div className="min-w-0 space-y-1.5" data-testid="filter-session-range">
-                <span className="text-xs font-medium text-muted-foreground">Date de session</span>
-                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
-                  <div className="min-w-0 space-y-1">
-                    <label htmlFor="filter-session-du" className="text-[11px] text-muted-foreground">Du</label>
-                    <Input
-                      id="filter-session-du"
-                      type="date"
-                      aria-label="Session à partir du"
-                      value={sessionDu ?? ""}
-                      max={sessionAu || undefined}
-                      onChange={(event) => { setSessionDu(event.target.value || undefined); setPage(1); }}
-                      className="h-10 min-w-0 w-full px-2"
-                    />
-                  </div>
-                  <span className="pb-2 text-xs text-muted-foreground" aria-hidden="true">au</span>
-                  <div className="min-w-0 space-y-1">
-                    <label htmlFor="filter-session-au" className="text-[11px] text-muted-foreground">Au</label>
-                    <Input
-                      id="filter-session-au"
-                      type="date"
-                      aria-label="Session jusqu'au"
-                      value={sessionAu ?? ""}
-                      min={sessionDu || undefined}
-                      onChange={(event) => { setSessionAu(event.target.value || undefined); setPage(1); }}
-                      className="h-10 min-w-0 w-full px-2"
-                    />
-                  </div>
-                </div>
-              </div>
+              {(q || alerte || rattachementFiltre || serviceFiltre || partenaires.length > 0 || statutConvention || natureProjet) && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setService(undefined); setPartenaires([]); setStatutConvention(undefined); setNatureProjet(undefined); setPage(1); }}
+                  className="h-10 w-10 text-muted-foreground hover:text-destructive"
+                  title="Effacer les filtres"
+                >
+                  <FilterX className="w-4 h-4" />
+                </Button>
+              )}
             </div>
-          </section>
+          </div>
         </CardContent>
       </Card>
 
