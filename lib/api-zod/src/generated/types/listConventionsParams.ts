@@ -29,6 +29,16 @@ responsableProjet?: string;
  * Filtre sur la nature du projet
  */
 nature?: string;
+/**
+ * Date minimale incluse de la session (AAAA-MM-JJ)
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
+sessionDu?: string;
+/**
+ * Date maximale incluse de la session (AAAA-MM-JJ)
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
+sessionAu?: string;
 natureFonds?: string;
 decision?: string;
 /**

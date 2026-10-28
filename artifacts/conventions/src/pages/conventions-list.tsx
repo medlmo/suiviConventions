@@ -42,6 +42,8 @@ export default function ConventionsList() {
   const [partenaires, setPartenaires] = useState<string[]>([]);
   const [statutConvention, setStatutConvention] = useState<string | undefined>();
   const [natureProjet, setNatureProjet] = useState<string | undefined>();
+  const [sessionDu, setSessionDu] = useState<string | undefined>();
+  const [sessionAu, setSessionAu] = useState<string | undefined>();
   const [tri, setTri] = useState<ListConventionsTri>("urgence");
   // Urgence ascendante = les retards en tête (rang 0), « À qualifier » en fin.
   const [ordre, setOrdre] = useState<ListConventionsOrdre>("asc");
@@ -61,6 +63,8 @@ export default function ConventionsList() {
     partenaires: partenaires.length ? partenaires : undefined,
     statutConvention: statutConvention === "all" ? undefined : statutConvention,
     nature: natureProjet,
+    sessionDu: sessionDu || undefined,
+    sessionAu: sessionAu || undefined,
     tri,
     ordre,
   });
@@ -85,6 +89,8 @@ export default function ConventionsList() {
     partenaires.forEach((partenaire) => params.append("partenaires", partenaire));
     if (statutConvention && statutConvention !== "all") params.append("statutConvention", statutConvention);
     if (natureProjet) params.append("nature", natureProjet);
+    if (sessionDu) params.append("sessionDu", sessionDu);
+    if (sessionAu) params.append("sessionAu", sessionAu);
     if (tri) params.append("tri", tri);
     if (ordre) params.append("ordre", ordre);
     
@@ -192,6 +198,39 @@ export default function ConventionsList() {
                 </Select>
               )}
 
+              <div className="col-span-1 flex w-full flex-col gap-1 sm:col-span-2 lg:col-span-1 lg:w-[340px]" data-testid="filter-session-range">
+                <span className="text-xs text-muted-foreground">Date de session</span>
+                <div className="flex items-end gap-2">
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="filter-session-du" className="sr-only">Session à partir du</label>
+                    <Input
+                      id="filter-session-du"
+                      type="date"
+                      aria-label="Session à partir du"
+                      title="Session à partir du"
+                      value={sessionDu ?? ""}
+                      max={sessionAu || undefined}
+                      onChange={(event) => { setSessionDu(event.target.value || undefined); setPage(1); }}
+                      className="h-10 w-full"
+                    />
+                  </div>
+                  <span className="pb-2 text-sm text-muted-foreground" aria-hidden="true">au</span>
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="filter-session-au" className="sr-only">Session jusqu'au</label>
+                    <Input
+                      id="filter-session-au"
+                      type="date"
+                      aria-label="Session jusqu'au"
+                      title="Session jusqu'au"
+                      value={sessionAu ?? ""}
+                      min={sessionDu || undefined}
+                      onChange={(event) => { setSessionAu(event.target.value || undefined); setPage(1); }}
+                      className="h-10 w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {user?.role !== "chef_service" && user?.role !== "chef_division" && (options?.rattachements.length ?? 0) > 0 && (
               <Select value={rattachement || "all"} onValueChange={(v) => { setRattachement(v); setPage(1); }}>
                 <SelectTrigger className="w-[200px] h-10 [&>span]:truncate">
@@ -214,11 +253,11 @@ export default function ConventionsList() {
                 />
               )}
 
-              {(q || alerte || rattachementFiltre || serviceFiltre || partenaires.length > 0 || statutConvention || natureProjet) && (
+              {(q || alerte || rattachementFiltre || serviceFiltre || partenaires.length > 0 || statutConvention || natureProjet || sessionDu || sessionAu) && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setService(undefined); setPartenaires([]); setStatutConvention(undefined); setNatureProjet(undefined); setPage(1); }}
+                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setService(undefined); setPartenaires([]); setStatutConvention(undefined); setNatureProjet(undefined); setSessionDu(undefined); setSessionAu(undefined); setPage(1); }}
                   className="h-10 w-10 text-muted-foreground hover:text-destructive"
                   title="Effacer les filtres"
                 >

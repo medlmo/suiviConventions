@@ -89,6 +89,17 @@ async function documentVerifie(path: string): Promise<VerifiedDocument | null> {
 
 const JOUR_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
+function estDateCalendrierIso(valeur: unknown): valeur is string {
+  if (typeof valeur !== "string" || !JOUR_ISO.test(valeur)) return false;
+  const [annee, mois, jour] = valeur.split("-").map(Number);
+  const controle = new Date(Date.UTC(annee!, mois! - 1, jour!));
+  return (
+    controle.getUTCFullYear() === annee &&
+    controle.getUTCMonth() === mois! - 1 &&
+    controle.getUTCDate() === jour
+  );
+}
+
 /**
  * Contrôle strict des dates et des montants avant la validation de contrat.
  *
@@ -131,13 +142,7 @@ function normaliserCorps(corps: unknown): { ok: true; valeur: Record<string, unk
     if (typeof brut !== "string" || !JOUR_ISO.test(brut)) {
       return { ok: false, erreur: `Le champ « ${champ} » doit être une date au format AAAA-MM-JJ.` };
     }
-    const [annee, mois, jour] = brut.split("-").map(Number);
-    const controle = new Date(Date.UTC(annee!, mois! - 1, jour!));
-    if (
-      controle.getUTCFullYear() !== annee ||
-      controle.getUTCMonth() !== mois! - 1 ||
-      controle.getUTCDate() !== jour
-    ) {
+    if (!estDateCalendrierIso(brut)) {
       return { ok: false, erreur: `Le champ « ${champ} » ne correspond pas à une date réelle du calendrier.` };
     }
   }
@@ -178,6 +183,22 @@ function normaliserCorps(corps: unknown): { ok: true; valeur: Record<string, unk
   return { ok: true, valeur };
 }
 
+function erreurFiltresSession(sessionDu: unknown, sessionAu: unknown): string | undefined {
+  for (const [champ, valeur] of [["sessionDu", sessionDu], ["sessionAu", sessionAu]] as const) {
+    if (valeur === undefined) continue;
+    if (typeof valeur !== "string" || !JOUR_ISO.test(valeur)) {
+      return `Le filtre « ${champ} » doit être une date au format AAAA-MM-JJ.`;
+    }
+    if (!estDateCalendrierIso(valeur)) {
+      return `Le filtre « ${champ} » ne correspond pas à une date réelle du calendrier.`;
+    }
+  }
+  if (typeof sessionDu === "string" && typeof sessionAu === "string" && sessionDu > sessionAu) {
+    return "La date de début de session doit être antérieure ou égale à la date de fin.";
+  }
+  return undefined;
+}
+
 /**
  * Valide une réponse contre le contrat puis renvoie l'objet d'origine.
  *
@@ -199,6 +220,8 @@ interface FiltresListe {
   partenaires?: string[];
   responsableProjet?: string;
   nature?: string;
+  sessionDu?: string;
+  sessionAu?: string;
   natureFonds?: string;
   decision?: string;
 }
@@ -250,6 +273,12 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
   }
   if (filtres.nature) {
     conditions.push(eq(conventionsTable.nature, filtres.nature));
+  }
+  if (filtres.sessionDu) {
+    conditions.push(gte(conventionsTable.session, filtres.sessionDu));
+  }
+  if (filtres.sessionAu) {
+    conditions.push(lte(conventionsTable.session, filtres.sessionAu));
   }
   if (filtres.natureFonds) {
     conditions.push(eq(conventionsTable.natureFonds, filtres.natureFonds));
@@ -433,6 +462,11 @@ function construireTri(tri: string, ordre: string): SQL[] {
 }
 
 router.get("/conventions", async (req, res): Promise<void> => {
+  const erreurSession = erreurFiltresSession(req.query.sessionDu, req.query.sessionAu);
+  if (erreurSession) {
+    res.status(400).json({ error: erreurSession });
+    return;
+  }
   const partenaires = req.query.partenaires;
   const query = ListConventionsQueryParams.safeParse({
     ...req.query,
@@ -663,6 +697,11 @@ router.get("/conventions/options-filtres", async (req, res): Promise<void> => {
  * acceptés, sans pagination.
  */
 router.get("/conventions/export", async (req, res): Promise<void> => {
+  const erreurSession = erreurFiltresSession(req.query.sessionDu, req.query.sessionAu);
+  if (erreurSession) {
+    res.status(400).json({ error: erreurSession });
+    return;
+  }
   const partenaires = req.query.partenaires;
   const query = ListConventionsQueryParams.safeParse({
     ...req.query,
