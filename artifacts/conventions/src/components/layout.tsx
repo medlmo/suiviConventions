@@ -63,7 +63,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 flex bg-background overflow-hidden">
       {/* Sidebar */}
-      <div className="hidden md:flex w-72 flex-col bg-sidebar border-r border-sidebar-border shadow-xl z-10">
+      <div className="hidden md:flex w-72 flex-col bg-sidebar border-r border-sidebar-border z-10">
         <div className="h-16 flex items-center px-6 border-b border-sidebar-border bg-sidebar/50">
           <div className="w-10 h-10 rounded-md bg-white flex items-center justify-center mr-3 shadow-sm overflow-hidden">
             <img
@@ -78,7 +78,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="px-6 py-4">
-          <div className="text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold mb-4">
+          <div className="text-xs text-sidebar-foreground/60 font-medium mb-4">
             Suivi des conventions
           </div>
 
@@ -92,7 +92,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                   )}
                 >
@@ -114,7 +114,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 lg:px-8 shadow-sm z-10 shrink-0">
+        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 lg:px-8 z-10 shrink-0">
           <div className="md:hidden flex items-center gap-2">
             <Sheet>
               <SheetTrigger asChild>
@@ -141,7 +141,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <div className="px-6 py-4">
-                  <div className="text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold mb-4">
+                  <div className="text-xs text-sidebar-foreground/60 font-medium mb-4">
                     Suivi des conventions
                   </div>
 
@@ -155,7 +155,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                           className={cn(
                             "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
                             isActive
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
                               : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                           )}
                         >

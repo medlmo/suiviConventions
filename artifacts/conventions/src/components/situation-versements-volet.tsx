@@ -165,7 +165,7 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
       : v));
 
   return (
-    <Card id="situation-versements" className="shadow-sm scroll-mt-6" data-testid="card-situation-versements">
+    <Card id="situation-versements" className="scroll-mt-6" data-testid="card-situation-versements">
       <CardHeader className="bg-muted/30 pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Landmark className="w-5 h-5 text-secondary" />

@@ -144,10 +144,10 @@ export default function Dashboard() {
 
   return (
     <Dialog>
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Pilotage des Conventions</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Pilotage des Conventions</h1>
         <div className="text-muted-foreground text-lg">
           {resumeLoading ? (
             <Skeleton className="h-6 w-64" />
@@ -178,7 +178,7 @@ export default function Dashboard() {
       <DashboardTotals resume={resume} isLoading={resumeLoading} />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {resumeLoading ? (
-          Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
+          Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-md" />)
         ) : (
           resume?.compteurs.map((compteur) => {
             const Icon = ICONS[compteur.couleur] || Activity;
@@ -189,13 +189,13 @@ export default function Dashboard() {
                 key={compteur.niveau}
                 href={`/conventions?alerte=${encodeURIComponent(compteur.niveau)}`}
                 aria-label={`Voir les conventions : ${compteur.libelle} (${compteur.nombre})`}
-                className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="group block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-              <Card className={cn("h-full border shadow-sm overflow-hidden transition-shadow group-hover:shadow-md", bgClass)}>
+              <Card className={cn("h-full border overflow-hidden transition-colors group-hover:border-foreground/30", bgClass)}>
                 <CardContent className="p-5 flex flex-col items-center justify-center text-center h-full">
                   <Icon className="w-6 h-6 mb-2 opacity-80" />
-                  <div className="text-3xl font-black mb-1">{compteur.nombre}</div>
-                  <div className="text-xs font-semibold uppercase tracking-wider opacity-90">
+                  <div className="text-3xl font-semibold tabular-nums mb-1">{compteur.nombre}</div>
+                  <div className="text-sm font-medium opacity-90">
                     {compteur.libelle}
                   </div>
                   <span className="mt-3 flex items-center gap-1 text-xs font-medium group-hover:underline">
@@ -256,13 +256,11 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Actions urgentes */}
-        <Card className="xl:col-span-2 shadow-md border-t-4 border-t-primary">
+        <Card className="xl:col-span-2 border-t-2 border-t-primary">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-primary" />
-                </div>
+                <AlertCircle className="w-5 h-5 text-primary" />
                 <div>
                   <CardTitle className="text-xl">Priorités d'action</CardTitle>
                   <CardDescription>Les conventions nécessitant une attention immédiate</CardDescription>
@@ -335,7 +333,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Agenda */}
-        <Card className="shadow-md">
+        <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <div className="p-2 bg-secondary/10 rounded-lg">
@@ -371,7 +369,7 @@ export default function Dashboard() {
                     <span className="absolute left-0 top-1 w-4 h-4 flex items-center justify-center rounded-full border-2 border-primary bg-card">
                       <span className="w-1.5 h-1.5 bg-primary rounded-full" />
                     </span>
-                    <h4 className="text-sm font-bold uppercase tracking-wider text-primary">
+                    <h4 className="text-sm font-semibold text-primary">
                       {mois.libelle}
                     </h4>
 
@@ -383,7 +381,7 @@ export default function Dashboard() {
                       ) : (
                         mois.conventions.map(conv => (
                           <Link key={conv.id} href={`/conventions/${conv.id}`}>
-                            <div className="bg-card border shadow-sm rounded-lg p-3 hover:border-primary/50 transition-colors cursor-pointer group">
+                            <div className="bg-card border rounded-md p-3 hover:border-primary/50 transition-colors cursor-pointer group">
                               <div className="flex justify-between items-start mb-1 gap-2">
                                 <span className="text-xs font-bold text-foreground bg-muted px-2 py-1 rounded">
                                   {conv.prochaineEcheance ? format(new Date(conv.prochaineEcheance), "dd MMM") : "-"}

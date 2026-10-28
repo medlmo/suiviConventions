@@ -65,7 +65,7 @@ export default function AdminReferentiel() {
   };
   return <div className="space-y-6 pb-16">
     <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
-      <div><span className="text-xs font-bold uppercase tracking-widest text-secondary">Administration / données de référence</span><h1 className="text-3xl font-semibold mt-2">Référentiel</h1><p className="text-muted-foreground mt-1">Organigramme et maîtrises d’ouvrage utilisés dans les conventions et les comptes.</p></div>
+      <div><span className="text-sm font-medium text-muted-foreground">Administration / données de référence</span><h1 className="text-2xl font-semibold mt-1">Référentiel</h1><p className="text-muted-foreground mt-1">Organigramme et maîtrises d’ouvrage utilisés dans les conventions et les comptes.</p></div>
       <Button data-testid="button-add-reference" onClick={() => begin(activeSection === "organisation" ? { kind: "directions", nom: "" } : { kind: "maitrises-ouvrage", nom: "" })}>
         <Plus className="w-4 h-4 mr-2" /> {activeSection === "organisation" ? "Nouvelle direction" : "Ajouter une maîtrise"}
       </Button>
@@ -90,9 +90,9 @@ export default function AdminReferentiel() {
         <Building2 className="mr-2 h-4 w-4" /> Maîtrises d’ouvrage
       </Button>
     </div>
-    {query.isPending ? <Skeleton className="h-96 rounded-xl" /> :
+    {query.isPending ? <Skeleton className="h-96 rounded-md" /> :
       query.isError ? <Card><CardContent className="py-12 text-center"><p role="alert" className="text-destructive">Le référentiel n’a pas pu être chargé : {errorMessage(query.error)}</p><Button variant="outline" className="mt-4" onClick={() => void query.refetch()}>Réessayer</Button></CardContent></Card> :
-      activeSection === "organisation" ? <Card className="overflow-hidden shadow-sm">
+      activeSection === "organisation" ? <Card className="overflow-hidden">
         <div className="p-5 border-b bg-muted/30 flex flex-wrap gap-3 justify-between items-center">
           <div><h2 className="font-semibold text-lg flex items-center gap-2"><FolderTree className="w-5 h-5 text-secondary" /> Organigramme</h2><p className="text-sm text-muted-foreground">Directions, divisions et services</p></div>
         </div>
@@ -115,7 +115,7 @@ export default function AdminReferentiel() {
             </div>
           </section>)}
         </CardContent>
-      </Card> : <Card className="overflow-hidden shadow-sm">
+      </Card> : <Card className="overflow-hidden">
         <div className="p-5 border-b bg-muted/30 space-y-4">
           <div><h2 className="font-semibold text-lg">Catalogue des organismes</h2><p className="text-sm text-muted-foreground">Recherchez par nom pour retrouver rapidement une entrée.</p></div>
           <div className="relative max-w-lg">
