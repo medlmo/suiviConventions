@@ -1,0 +1,196 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap");
+
+:root:has(.crsm-documentaire) {
+  --background: 42 31% 95%;
+  --foreground: 157 25% 17%;
+  --border: 39 18% 79%;
+  --card: 42 38% 98%;
+  --card-foreground: 157 25% 17%;
+  --card-border: 39 18% 82%;
+  --sidebar: 158 35% 19%;
+  --sidebar-foreground: 42 30% 94%;
+  --sidebar-border: 158 34% 15%;
+  --sidebar-primary: 39 62% 62%;
+  --sidebar-primary-foreground: 158 35% 14%;
+  --sidebar-accent: 158 30% 25%;
+  --sidebar-accent-foreground: 42 30% 96%;
+  --sidebar-ring: 39 62% 62%;
+  --popover: 42 38% 98%;
+  --popover-foreground: 157 25% 17%;
+  --popover-border: 39 18% 82%;
+  --primary: 158 36% 25%;
+  --primary-foreground: 42 38% 98%;
+  --secondary: 34 47% 44%;
+  --secondary-foreground: 42 38% 98%;
+  --muted: 39 24% 90%;
+  --muted-foreground: 155 12% 38%;
+  --accent: 40 30% 90%;
+  --accent-foreground: 158 36% 22%;
+  --destructive: 3 58% 42%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 39 18% 76%;
+  --ring: 158 36% 25%;
+  --radius: 0.28rem;
+}
+
+.crsm-documentaire {
+  font-family: "Source Sans 3", "IBM Plex Sans Arabic", sans-serif;
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  font-kerning: normal;
+}
+
+.crsm-documentaire [dir="auto"] {
+  text-align: start;
+  font-family: "IBM Plex Sans Arabic", "Source Sans 3", sans-serif;
+  line-height: 1.7;
+}
+
+.crsm-documentaire [data-ui="app-shell"] {
+  background: hsl(var(--background));
+}
+
+.crsm-documentaire [data-ui="sidebar"] {
+  border-right: 1px solid hsl(158 25% 31%);
+  box-shadow: none;
+}
+
+.crsm-documentaire [data-ui="sidebar"] > div:first-child {
+  background: hsl(var(--sidebar));
+  border-bottom-color: hsl(158 25% 31%);
+}
+
+.crsm-documentaire [data-ui="sidebar"] h1,
+.crsm-documentaire [data-ui="topbar"] h2 {
+  font-family: "Source Serif 4", "IBM Plex Sans Arabic", serif;
+  letter-spacing: -0.025em;
+}
+
+.crsm-documentaire [data-ui="nav-link"] {
+  border-radius: 2px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.crsm-documentaire [data-ui="nav-link"][data-active="true"] {
+  box-shadow: inset 3px 0 0 hsl(var(--sidebar-primary));
+}
+
+.crsm-documentaire [data-ui="topbar"] {
+  background: hsl(42 38% 98%);
+  border-bottom-color: hsl(var(--border));
+  box-shadow: none;
+}
+
+.crsm-documentaire main {
+  background-color: hsl(var(--background));
+}
+
+.crsm-documentaire [data-ui="dashboard"] > div:first-child h1 {
+  font-family: "Source Serif 4", "IBM Plex Sans Arabic", serif;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.16;
+}
+
+.crsm-documentaire [data-ui="dashboard"] [data-ui="card"] {
+  border: 1px solid hsl(var(--card-border));
+  border-radius: 3px;
+  background-color: hsl(var(--card));
+  box-shadow: none;
+}
+
+.crsm-documentaire [data-ui="dashboard"] [data-section="priorities"] {
+  border-top: 2px solid hsl(var(--primary));
+}
+
+.crsm-documentaire [data-ui="dashboard"] [data-section="priorities"] [data-ui="priority-row"] {
+  border-color: hsl(39 18% 82%);
+  border-radius: 2px;
+  background-color: hsl(42 38% 98%);
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.crsm-documentaire [data-ui="dashboard"] [data-ui="priority-row"]:hover {
+  background-color: hsl(42 30% 93%);
+}
+
+.crsm-documentaire [data-ui="dashboard"] [data-section="agenda"] [data-ui="agenda-item"] {
+  border-color: hsl(39 18% 82%);
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.crsm-documentaire [data-ui="dashboard"] [data-ui="agenda-item"]:hover {
+  background-color: hsl(42 30% 94%);
+}
+
+.crsm-documentaire [data-ui="alert-counters"] > a {
+  border-radius: 2px;
+}
+
+.crsm-documentaire [data-ui="alert-counters"] [data-ui="card"] {
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.crsm-documentaire [data-ui="alert-counters"] [data-alert="jaune"] [data-ui="card"],
+.crsm-documentaire [data-ui="alert-counters"] [data-alert="jaune"] [data-ui="card"] * {
+  color: #593d08;
+}
+
+.crsm-documentaire [data-ui="alert-counters"] [data-alert="jaune"] [data-ui="card"] {
+  background: #f3e6bd;
+  border-color: #d8c27f;
+}
+
+.crsm-documentaire [data-ui="alert-counters"] [data-alert="rouge"] [data-ui="card"] {
+  background: #f4e4df;
+  border-color: #dfb9ae;
+}
+
+.crsm-documentaire [data-ui="alert-counters"] [data-alert="orange"] [data-ui="card"] {
+  background: #f5e9d8;
+  border-color: #dfc39b;
+}
+
+.crsm-documentaire [data-ui="alert-counters"] [data-alert="vert"] [data-ui="card"] {
+  background: #e5ede3;
+  border-color: #bfd0ba;
+}
+
+.crsm-documentaire [data-ui="alert-counters"] [data-alert="gris"] [data-ui="card"] {
+  background: #ecebe6;
+  border-color: #d0cec4;
+}
+
+.crsm-documentaire [data-ui="dashboard"] [data-section="agenda"] h4,
+.crsm-documentaire [data-ui="dashboard"] [data-section="agenda"] .uppercase {
+  letter-spacing: 0.075em;
+}
+
+.crsm-documentaire [data-ui="dashboard"] button,
+.crsm-documentaire [data-ui="dashboard"] a {
+  transition-duration: 140ms;
+}
+
+.crsm-documentaire :focus-visible {
+  outline-color: hsl(var(--secondary));
+}
+
+@media (max-width: 767px) {
+  .crsm-documentaire [data-ui="topbar"] {
+    padding-inline: 1rem;
+  }
+
+  .crsm-documentaire main {
+    padding: 1.15rem;
+  }
+
+  .crsm-documentaire [data-ui="dashboard"] {
+    gap: 1.35rem;
+  }
+
+  .crsm-documentaire [data-ui="dashboard"] > div:first-child h1 {
+    font-size: 1.8rem;
+  }
+}
