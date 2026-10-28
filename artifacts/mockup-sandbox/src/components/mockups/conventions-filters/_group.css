@@ -1,0 +1,55 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  --background: 40 20% 98%;
+  --foreground: 220 40% 15%;
+  --border: 40 10% 85%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 40% 15%;
+  --card-border: 40 10% 92%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 40% 15%;
+  --popover-border: 40 10% 92%;
+  --primary: 215 60% 25%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 30 70% 45%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 40 10% 92%;
+  --muted-foreground: 220 10% 40%;
+  --accent: 40 15% 94%;
+  --accent-foreground: 215 60% 25%;
+  --destructive: 0 70% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 40 10% 85%;
+  --ring: 215 60% 25%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 40 20% 98%;
+  --foreground: 220 40% 15%;
+  --border: 40 10% 85%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 40% 15%;
+  --card-border: 40 10% 92%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 40% 15%;
+  --popover-border: 40 10% 92%;
+  --primary: 215 60% 25%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 30 70% 45%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 40 10% 92%;
+  --muted-foreground: 220 10% 40%;
+  --accent: 40 15% 94%;
+  --accent-foreground: 215 60% 25%;
+  --destructive: 0 70% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 40 10% 85%;
+  --ring: 215 60% 25%;
+}
+
+body {
+  font-family: Inter, Outfit, "IBM Plex Sans Arabic", sans-serif;
+}

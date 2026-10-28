@@ -52,7 +52,7 @@ export function PartenaireMultiSelect({ options, selected, onChange }: Props) {
           aria-label="Filtrer par partenaires"
           aria-expanded={open}
           data-testid="button-filter-partners"
-          className="h-10 w-full justify-between font-normal lg:w-[220px]"
+          className="h-10 w-full justify-between font-normal"
         >
           <span className="truncate">
             {selected.length
