@@ -19,8 +19,8 @@ app.use("/api", (_req, res, next) => {
 
 app.use(httpLogging);
 app.use("/api", csrfOriginGuard);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ inflate: false }));
+app.use(express.urlencoded({ extended: true, inflate: false }));
 
 app.use("/api", router);
 

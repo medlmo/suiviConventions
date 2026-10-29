@@ -42,10 +42,10 @@ import { ArrowLeft, Save, CalendarIcon, FileText, Info, Wallet } from "lucide-re
 // Un champ montant vidé doit repartir à NULL, pas à 0 : z.coerce.number()
 // convertit "" en 0, ce qui enregistrerait un budget nul au lieu d'effacer
 // l'information.
-const montantOptionnel = z.preprocess(
-  (valeur) => (valeur === "" || valeur === null || valeur === undefined ? null : valeur),
-  z.coerce.number().nonnegative().nullable(),
-).optional();
+const montantOptionnel = z.union([z.string(), z.number(), z.null()])
+  .transform((valeur) => (valeur === "" || valeur === null ? null : valeur))
+  .pipe(z.coerce.number<string | number | null>().nonnegative().nullable())
+  .optional();
 
 const conventionSchema = z.object({
   nomConvention: z.string().min(1, "Le nom est requis"),
@@ -94,7 +94,8 @@ const conventionSchema = z.object({
   }
 });
 
-type FormValues = z.infer<typeof conventionSchema>;
+type FormInput = z.input<typeof conventionSchema>;
+type FormValues = z.output<typeof conventionSchema>;
 
 export default function ConventionCreate() {
   const [, setLocation] = useLocation();
@@ -106,7 +107,7 @@ export default function ConventionCreate() {
   const createMutation = useCreateConvention();
   const [uploadsEnCours, setUploadsEnCours] = useState(0);
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(conventionSchema),
     defaultValues: {
       nomConvention: "",

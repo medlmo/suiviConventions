@@ -60,10 +60,10 @@ import { format } from "date-fns";
 // Un champ montant vidé doit repartir à NULL, pas à 0 : z.coerce.number()
 // convertit "" en 0, ce qui enregistrerait un budget nul au lieu d'effacer
 // l'information.
-const montantOptionnel = z.preprocess(
-  (valeur) => (valeur === "" || valeur === null || valeur === undefined ? null : valeur),
-  z.coerce.number().nonnegative().nullable(),
-).optional();
+const montantOptionnel = z.union([z.string(), z.number(), z.null()])
+  .transform((valeur) => (valeur === "" || valeur === null ? null : valeur))
+  .pipe(z.coerce.number<string | number | null>().nonnegative().nullable())
+  .optional();
 
 const conventionSchema = z.object({
   nomConvention: z.string().min(1, "Le nom est requis"),
@@ -105,7 +105,7 @@ const conventionSchema = z.object({
   commentaires: z.string().nullable().optional(),
   suiviFinancier: z.object({
     annees: z.array(z.number()).max(301),
-    lignes: z.array(z.object({ partenaire: z.string(), montants: z.record(z.string()) })).max(500),
+    lignes: z.array(z.object({ partenaire: z.string(), montants: z.record(z.string(), z.string()) })).max(500),
   }).default({ annees: [], lignes: [] }),
   situationVersements: z.array(z.object({
     annee: z.number(),
@@ -158,7 +158,8 @@ const conventionSchema = z.object({
   }
 });
 
-type FormValues = z.infer<typeof conventionSchema>;
+type FormInput = z.input<typeof conventionSchema>;
+type FormValues = z.output<typeof conventionSchema>;
 
 // Les anciennes réponses peuvent encore contenir une chaîne libre. Ne jamais la
 // découper : elle doit rester une valeur historique unique jusqu'à retrait explicite.
@@ -198,7 +199,7 @@ export default function ConventionDetail() {
 
   const canEdit = !!user && !!convention && canEditConvention(user, convention);
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(conventionSchema),
     defaultValues: {
       nomConvention: "",
@@ -371,7 +372,7 @@ export default function ConventionDetail() {
       } finally { setSaving(false); }
   };
 
-  const onInvalid = (erreurs: FieldErrors<FormValues>) => {
+  const onInvalid = (erreurs: FieldErrors<FormInput>) => {
     if (Object.keys(erreurs).every((cle) => cle === "situationVersements")) {
       document.getElementById("situation-versements")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else if (Object.keys(erreurs).every((cle) => cle === "suiviFinancier")) {
@@ -936,8 +937,8 @@ export default function ConventionDetail() {
                             form.setValue("documentsRetires", retires.includes(objectPath)
                               ? retires.filter(path => path !== objectPath) : [...retires, objectPath], { shouldDirty: true });
                           }}
-                          onAdd={document => form.setValue("documentsAjoutes", [...form.getValues("documentsAjoutes"), document], { shouldDirty: true })}
-                          onRemove={objectPath => form.setValue("documentsAjoutes", form.getValues("documentsAjoutes").filter(document => document.objectPath !== objectPath), { shouldDirty: true })}
+                          onAdd={document => form.setValue("documentsAjoutes", [...(form.getValues("documentsAjoutes") ?? []), document], { shouldDirty: true })}
+                          onRemove={objectPath => form.setValue("documentsAjoutes", (form.getValues("documentsAjoutes") ?? []).filter(document => document.objectPath !== objectPath), { shouldDirty: true })}
                           onUploadingChange={active => setUploadsEnCours(count => count + (active ? 1 : -1))} />
                       ))}
                       <FormMessage />
