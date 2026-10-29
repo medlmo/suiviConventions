@@ -132,21 +132,6 @@ export default function ConventionsList() {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-wrap items-center gap-3 [&_button[role=combobox]]:w-full lg:[&_button[role=combobox]]:w-auto">
-              <Select value={alerte || "all"} onValueChange={(v) => { setAlerte(v === "all" ? undefined : v as NiveauAlerte); setPage(1); }}>
-                <SelectTrigger className="w-[160px] h-10">
-                  <SelectValue placeholder="Niveau d'alerte" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les alertes</SelectItem>
-                  <SelectItem value="EN_RETARD">En retard</SelectItem>
-                  <SelectItem value="A_DECLENCHER">À déclencher</SelectItem>
-                  <SelectItem value="A_PREPARER">À préparer</SelectItem>
-                  <SelectItem value="A_JOUR">À jour</SelectItem>
-                  <SelectItem value="A_SURVEILLER">À surveiller</SelectItem>
-                  <SelectItem value="A_QUALIFIER">À qualifier</SelectItem>
-                </SelectContent>
-              </Select>
-
               {/* Les colonnes « statut » et « rattachement » sont vides dans le
                   fichier Excel importé : afficher un filtre sans option laisserait
                   croire à un bug. Il n'apparaît qu'une fois des valeurs saisies. */}
