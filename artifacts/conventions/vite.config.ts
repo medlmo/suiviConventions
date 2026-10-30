@@ -54,7 +54,11 @@ function frontendCspPlugin() {
         }
       }
 
-      const policy = createFrontendCsp(connectSources.join(' '));
+      const policy = createFrontendCsp(
+        connectSources.join(' '),
+        false,
+        isDevelopmentServer,
+      );
       const meta = `<meta http-equiv="Content-Security-Policy" content="${policy}" />`;
       const transformed = html.replace(/<head([^>]*)>/iu, (head) => `${head}\n    ${meta}`);
       if (transformed === html) throw new Error("CSP could not be added: the HTML head is missing.");
