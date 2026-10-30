@@ -2,7 +2,6 @@ import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
-import { createFrontendCsp } from './security-policy.mjs';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
@@ -28,49 +27,9 @@ if (!basePath) {
   );
 }
 
-function frontendCspPlugin() {
-  let isDevelopmentServer = false;
-
-  return {
-    name: 'frontend-content-security-policy',
-    configResolved(config: { command: string }) {
-      isDevelopmentServer = config.command === 'serve';
-    },
-    transformIndexHtml(html: string) {
-      const connectSources = ["'self'"];
-      if (isDevelopmentServer) {
-        const replitDevDomain = process.env.REPLIT_DEV_DOMAIN;
-        const validDevDomain = replitDevDomain &&
-          replitDevDomain.length <= 253 &&
-          replitDevDomain.split('.').every((label) =>
-            label.length > 0 &&
-            label.length <= 63 &&
-            /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/iu.test(label),
-          );
-        if (validDevDomain) {
-          connectSources.push(`wss://${replitDevDomain}`);
-        } else {
-          connectSources.push(`ws://localhost:${port}`);
-        }
-      }
-
-      const policy = createFrontendCsp(
-        connectSources.join(' '),
-        false,
-        isDevelopmentServer,
-      );
-      const meta = `<meta http-equiv="Content-Security-Policy" content="${policy}" />`;
-      const transformed = html.replace(/<head([^>]*)>/iu, (head) => `${head}\n    ${meta}`);
-      if (transformed === html) throw new Error("CSP could not be added: the HTML head is missing.");
-      return transformed;
-    },
-  };
-}
-
 export default defineConfig({
   base: basePath,
   plugins: [
-    frontendCspPlugin(),
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),

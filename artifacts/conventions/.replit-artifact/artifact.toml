@@ -16,9 +16,12 @@ run = "pnpm --filter @workspace/conventions run dev"
 
 [services.production]
 build = [ "pnpm", "--filter", "@workspace/conventions", "run", "build" ]
-[services.production.run]
-args = ["node", "artifacts/conventions/serve.mjs"]
+serve = "static"
+publicDir = "artifacts/conventions/dist/public"
 
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
 
 [services.env]
 PORT = "23192"
