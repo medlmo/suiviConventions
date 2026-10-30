@@ -7,13 +7,20 @@ import { httpLogging, recordRequestFailure } from "./lib/http-logging";
 const app: Express = express();
 app.set("trust proxy", 1);
 
-const API_CONTENT_SECURITY_POLICY = [
-  "default-src 'none'",
-  "base-uri 'none'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "form-action 'none'",
-].join("; ");
+const API_SECURITY_HEADERS: Record<string, string> = {
+  "Content-Security-Policy": [
+    "default-src 'none'",
+    "base-uri 'none'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'none'",
+  ].join("; "),
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Cross-Origin-Resource-Policy": "same-origin",
+};
 
 // Les réponses dépendent de la date du jour (le niveau d'alerte est recalculé
 // à chaque requête) : elles ne doivent jamais être servies depuis le cache du
@@ -21,15 +28,17 @@ const API_CONTENT_SECURITY_POLICY = [
 // client HTTP traite comme un échec puisque `response.ok` y est faux.
 app.set("etag", false);
 app.use("/api", (_req, res, next) => {
-  res.set("Content-Security-Policy", API_CONTENT_SECURITY_POLICY);
+  for (const [name, value] of Object.entries(API_SECURITY_HEADERS)) {
+    res.setHeader(name, value);
+  }
   res.set("Cache-Control", "no-store");
   next();
 });
 
 app.use(httpLogging);
 app.use("/api", csrfOriginGuard);
-app.use(express.json({ inflate: false }));
-app.use(express.urlencoded({ extended: true, inflate: false }));
+app.use(express.json({ limit: "100kb", inflate: false }));
+app.use(express.urlencoded({ extended: false, limit: "100kb", inflate: false }));
 
 app.use("/api", router);
 
