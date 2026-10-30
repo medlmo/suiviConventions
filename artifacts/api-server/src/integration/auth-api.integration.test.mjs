@@ -52,6 +52,19 @@ function insertUnattachedHistoricalConvention(name, responsableProjet) {
   return { id: Number(output.trim()), nomConvention: name };
 }
 
+function vieillirNotification(id) {
+  assert.ok(Number.isSafeInteger(id) && id > 0);
+  run("psql", [
+    "--no-psqlrc",
+    "-qAt",
+    databaseUrl,
+    "-v",
+    "ON_ERROR_STOP=1",
+    "-c",
+    `UPDATE convention_notifications SET created_at = NOW() - INTERVAL '11 minutes' WHERE id = ${id}`,
+  ]);
+}
+
 function insertConventionForFiche() {
   const literal = value => `'${value.replaceAll("'", "''")}'`;
   const nomConvention = "Fiche technique — suivi financier et physique";
@@ -180,6 +193,13 @@ async function apiRequest(baseUrl, path, { cookie, origin, method = "GET", body 
     headers,
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
+}
+
+async function notificationsFor(baseUrl, cookie, conventionId) {
+  const response = await apiRequest(baseUrl, "/notifications?limit=50", { cookie });
+  assert.equal(response.status, 200, "la liste des notifications est accessible");
+  const page = await response.json();
+  return page.items.filter(item => item.conventionId === conventionId);
 }
 
 async function loginAs(baseUrl, origin, username) {
@@ -322,6 +342,8 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
 
     const unauthenticated = await fetch(`${baseUrl}/auth/me`);
     assert.equal(unauthenticated.status, 401);
+    const notificationsUnauthenticated = await apiRequest(baseUrl, "/notifications");
+    assert.equal(notificationsUnauthenticated.status, 401);
 
     const forbiddenOrigin = await fetch(`${baseUrl}/auth/login`, {
       method: "POST",
@@ -541,6 +563,10 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       rattachement: "Direction Générale des Services",
       responsableProjet: dgsService,
     });
+    const notificationDgs = (await notificationsFor(baseUrl, cookies.directeur_general_services, dgsConvention.id))[0];
+    assert.equal(notificationDgs?.kind, "creation", "la DGS reçoit la création d'un service qui lui est rattaché");
+    assert.equal(notificationDgs?.actorUsername, "admin", "la notification identifie son auteur");
+    assert.equal(notificationDgs?.conventionName, dgsConvention.nomConvention);
     const unattachedConvention = await createConvention(baseUrl, cookie, origin, {
       nomConvention: "Test périmètre — sans rattachement historique",
       rattachement: null,
@@ -662,6 +688,155 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     });
     assert.equal(chefServiceCreate.rattachement, division);
     assert.equal(chefServiceCreate.responsableProjet, service);
+    assert.equal(
+      (await notificationsFor(baseUrl, cookies.chef_division, chefServiceCreate.id))[0]?.kind,
+      "creation",
+      "la création d'un chef de service avertit son chef de division",
+    );
+    assert.equal(
+      (await notificationsFor(baseUrl, cookies.chef_service, chefServiceCreate.id)).length,
+      0,
+      "l'auteur ne reçoit pas de notification sur sa propre création",
+    );
+
+    let revision = chefServiceCreate.version;
+    for (const commentaire of ["Première correction", "Deuxième correction"]) {
+      const update = await apiRequest(baseUrl, `/conventions/${chefServiceCreate.id}`, {
+        cookie: cookies.chef_service,
+        origin,
+        method: "PATCH",
+        body: { version: revision, commentaires: commentaire },
+      });
+      assert.equal(update.status, 200, "la correction doit être enregistrée");
+      revision = (await update.json()).version;
+    }
+    let corrections = await notificationsFor(baseUrl, cookies.chef_division, chefServiceCreate.id);
+    const correctionGroupee = corrections.find(item => item.kind === "minor");
+    assert.equal(correctionGroupee?.eventCount, 2, "les corrections rapprochées sont regroupées");
+    assert.match(correctionGroupee?.summary ?? "", /regroupés/);
+
+    const sameValueUpdate = await apiRequest(baseUrl, `/conventions/${chefServiceCreate.id}`, {
+      cookie: cookies.chef_service,
+      origin,
+      method: "PATCH",
+      body: { version: revision, commentaires: "Deuxième correction" },
+    });
+    assert.equal(sameValueUpdate.status, 200);
+    revision = (await sameValueUpdate.json()).version;
+    corrections = await notificationsFor(baseUrl, cookies.chef_division, chefServiceCreate.id);
+    assert.equal(corrections.find(item => item.kind === "minor")?.eventCount, 2, "une valeur inchangée ne crée pas de nouvel événement");
+
+    const versionConcurrente = revision;
+    const concurrentes = await Promise.all([
+      apiRequest(baseUrl, `/conventions/${chefServiceCreate.id}`, {
+        cookie: cookies.chef_service, origin, method: "PATCH",
+        body: { version: versionConcurrente, commentaires: "Correction concurrente A" },
+      }),
+      apiRequest(baseUrl, `/conventions/${chefServiceCreate.id}`, {
+        cookie: cookies.chef_service, origin, method: "PATCH",
+        body: { version: versionConcurrente, commentaires: "Correction concurrente B" },
+      }),
+    ]);
+    assert.deepEqual(
+      concurrentes.map(response => response.status).sort(),
+      [200, 409],
+      "une seule modification concurrente sur la même version est acceptée",
+    );
+    const modificationGagnee = concurrentes.find(response => response.status === 200);
+    assert.ok(modificationGagnee);
+    revision = (await modificationGagnee.json()).version;
+    corrections = await notificationsFor(baseUrl, cookies.chef_division, chefServiceCreate.id);
+    assert.equal(
+      corrections.find(item => item.kind === "minor")?.eventCount,
+      3,
+      "une seule des corrections concurrentes est regroupée",
+    );
+
+    vieillirNotification(corrections.find(item => item.kind === "minor").id);
+    const correctionAprèsFenêtre = await apiRequest(baseUrl, `/conventions/${chefServiceCreate.id}`, {
+      cookie: cookies.chef_service,
+      origin,
+      method: "PATCH",
+      body: { version: revision, commentaires: "Correction après expiration du regroupement" },
+    });
+    assert.equal(correctionAprèsFenêtre.status, 200);
+    revision = (await correctionAprèsFenêtre.json()).version;
+    corrections = await notificationsFor(baseUrl, cookies.chef_division, chefServiceCreate.id);
+    const notificationsMineures = corrections.filter(item => item.kind === "minor");
+    assert.equal(notificationsMineures.length, 2, "une correction après dix minutes ouvre un nouveau regroupement");
+    assert.deepEqual(
+      notificationsMineures.map(item => item.eventCount).sort(),
+      [1, 3],
+      "les événements antérieurs restent conservés dans leur groupe",
+    );
+
+    const notificationPersonnelle = corrections.find(item => item.kind === "minor");
+    assert.ok(notificationPersonnelle);
+    const lectureInterdite = await apiRequest(baseUrl, `/notifications/${notificationPersonnelle.id}/read`, {
+      cookie: cookies.chef_service,
+      origin,
+      method: "PATCH",
+      body: { observedAt: notificationPersonnelle.updatedAt },
+    });
+    assert.equal(lectureInterdite.status, 404, "un utilisateur ne peut pas lire la notification d'un autre");
+    const lectureInvalide = await apiRequest(baseUrl, `/notifications/${notificationPersonnelle.id}/read`, {
+      cookie: cookies.chef_division,
+      origin,
+      method: "PATCH",
+      body: { observedAt: null },
+    });
+    assert.equal(lectureInvalide.status, 400, "une date d'observation invalide est refusée");
+    const lecture = await apiRequest(baseUrl, `/notifications/${notificationPersonnelle.id}/read`, {
+      cookie: cookies.chef_division,
+      origin,
+      method: "PATCH",
+      body: { observedAt: notificationPersonnelle.updatedAt },
+    });
+    assert.equal(lecture.status, 204, "le destinataire peut marquer sa notification comme lue");
+    const correctionAprèsLecture = await apiRequest(baseUrl, `/conventions/${chefServiceCreate.id}`, {
+      cookie: cookies.chef_service,
+      origin,
+      method: "PATCH",
+      body: { version: revision, commentaires: "Correction après lecture" },
+    });
+    assert.equal(correctionAprèsLecture.status, 200);
+    revision = (await correctionAprèsLecture.json()).version;
+    corrections = await notificationsFor(baseUrl, cookies.chef_division, chefServiceCreate.id);
+    const nouvelleAprèsLecture = corrections.filter(item => item.kind === "minor")[0];
+    assert.ok(nouvelleAprèsLecture);
+    assert.notEqual(nouvelleAprèsLecture.id, notificationPersonnelle.id);
+    assert.equal(nouvelleAprèsLecture.eventCount, 1, "une correction postérieure à la lecture crée une nouvelle notification");
+
+    const avantChangementImportant = await apiRequest(baseUrl, "/notifications?limit=50", {
+      cookie: cookies.chef_division,
+    });
+    const instantObserve = (await avantChangementImportant.json()).asOf;
+    const changementImportant = await apiRequest(baseUrl, `/conventions/${chefServiceCreate.id}`, {
+      cookie: cookies.chef_service,
+      origin,
+      method: "PATCH",
+      body: { version: revision, contributionRegion: 100 },
+    });
+    assert.equal(changementImportant.status, 200);
+    revision = (await changementImportant.json()).version;
+    corrections = await notificationsFor(baseUrl, cookies.chef_division, chefServiceCreate.id);
+    const notificationImportante = corrections.find(item => item.kind === "important");
+    assert.ok(notificationImportante, "la modification budgétaire produit une notification importante");
+    assert.ok(notificationImportante.changedFields.includes("Contribution de la Région"));
+    const lectureTout = await apiRequest(baseUrl, "/notifications/read-all", {
+      cookie: cookies.chef_division,
+      origin,
+      method: "PATCH",
+      body: { observedAt: instantObserve },
+    });
+    assert.equal(lectureTout.status, 204);
+    assert.equal(
+      (await notificationsFor(baseUrl, cookies.chef_division, chefServiceCreate.id))
+        .find(item => item.id === notificationImportante.id)?.readAt,
+      null,
+      "le marquage global ne masque pas une notification créée après l'instant observé",
+    );
+
     const chefServiceCreateOther = await apiRequest(baseUrl, "/conventions", {
       cookie: cookies.chef_service,
       origin,
@@ -705,9 +880,12 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.equal(chefDivisionUpdate.status, 200, "le chef de division peut modifier une convention de sa division");
     const chefDivisionCreate = await createConvention(baseUrl, cookies.chef_division, origin, {
       nomConvention: "Test périmètre — création de division",
-      responsableProjet: peerService,
+      responsableProjet: service,
     });
     assert.equal(chefDivisionCreate.rattachement, division);
+    const notificationService = (await notificationsFor(baseUrl, cookies.chef_service, chefDivisionCreate.id))[0];
+    assert.equal(notificationService?.kind, "creation", "la création d'un chef de division avertit le chef de service concerné");
+    assert.equal(notificationService?.actorUsername, "chef-division-fixture");
     const chefDivisionCreateOther = await apiRequest(baseUrl, "/conventions", {
       cookie: cookies.chef_division,
       origin,
@@ -725,6 +903,36 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       { cookie: cookies.chef_division, origin, method: "DELETE" },
     );
     assert.equal(chefDivisionDeleteOther.status, 404);
+
+    const reaffectation = await apiRequest(baseUrl, `/conventions/${chefServiceCreate.id}`, {
+      cookie,
+      origin,
+      method: "PATCH",
+      body: { version: revision, rattachement: otherDivision, responsableProjet: otherDivisionService },
+    });
+    assert.equal(reaffectation.status, 200);
+    assert.equal(
+      (await notificationsFor(baseUrl, cookies.chef_division, chefServiceCreate.id)).length,
+      0,
+      "les anciennes notifications disparaissent quand la convention quitte le périmètre du destinataire",
+    );
+    assert.equal(
+      (await notificationsFor(baseUrl, cookies.chef_service, chefServiceCreate.id)).length,
+      0,
+      "la réaffectation retire aussi l'accès des autres anciens destinataires",
+    );
+    const reaffectee = await reaffectation.json();
+    const suppression = await apiRequest(
+      baseUrl,
+      `/conventions/${chefServiceCreate.id}?version=${reaffectee.version}`,
+      { cookie, origin, method: "DELETE" },
+    );
+    assert.equal(suppression.status, 204);
+    assert.equal(
+      (await notificationsFor(baseUrl, cookie, chefServiceCreate.id)).length,
+      0,
+      "une convention supprimée n'expose plus ses notifications, même à l'administration",
+    );
 
     for (const role of ["directeur", "directeur_general_services"]) {
       const deniedCreate = await apiRequest(baseUrl, "/conventions", {
