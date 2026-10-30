@@ -3,6 +3,8 @@ import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lte, or, sq
 import ExcelJS from "exceljs";
 import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
 import type { SessionUser } from "../lib/auth";
+import { filtrePerimetre } from "../lib/convention-access";
+import { notifierChangementConvention } from "../lib/notifications";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   ObjectStorageService,
@@ -259,41 +261,6 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
   }
 
   return conditions.length > 0 ? and(...conditions) : undefined;
-}
-
-function filtrePerimetre(user: SessionUser, reference: ReferenceData): SQL | undefined {
-  if (user.role === "admin" || user.role === "directeur" || user.role === "directeur_general_services") {
-    // Directors intentionally retain read access to every convention.
-    return undefined;
-  }
-  if (
-    user.role === "chef_division" &&
-    user.direction &&
-    user.division &&
-    divisionDeDirection(reference, user.direction, user.division)
-  ) {
-    const services = servicesDeDivision(reference, user.division);
-    const responsableDansPerimetre = services.length === 0
-      ? isNull(conventionsTable.responsableProjet)
-      : or(
-        isNull(conventionsTable.responsableProjet),
-        inArray(conventionsTable.responsableProjet, [...services]),
-      );
-    return and(
-      eq(conventionsTable.rattachement, user.division),
-      responsableDansPerimetre,
-    );
-  }
-  if (
-    user.role === "chef_service" &&
-    perimetreChefService(reference, user)
-  ) {
-    return and(
-      eq(conventionsTable.rattachement, perimetreChefService(reference, user)!),
-      eq(conventionsTable.responsableProjet, user.service!),
-    );
-  }
-  return sql`FALSE`;
 }
 
 function accessible(row: typeof conventionsTable.$inferSelect, user: SessionUser, reference: ReferenceData): boolean {
@@ -919,6 +886,7 @@ router.post("/conventions", async (req, res): Promise<void> => {
       before: null,
       after: snapshot(created),
     });
+    await notifierChangementConvention(tx, user, null, created, reference);
     const [line] = await tx.select(colonnesConvention)
       .from(conventionsTable)
       .where(eq(conventionsTable.id, created.id));
@@ -1221,6 +1189,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       before: snapshot(current),
       after: snapshot(updated),
     });
+    await notifierChangementConvention(tx, user, current, updated, reference);
     const [line] = await tx.select(colonnesConvention).from(conventionsTable)
       .where(eq(conventionsTable.id, updated.id));
     return line ? { status: 200 as const, line } : { status: 404 as const };

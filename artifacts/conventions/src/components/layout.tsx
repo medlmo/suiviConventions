@@ -18,6 +18,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { NotificationCenter } from "@/components/notification-center";
 
 const navigation = [
   { name: "Tableau de bord", href: "/", icon: LayoutDashboard },
@@ -194,6 +195,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
+            <NotificationCenter key={user?.id ?? "anonyme"} />
             <span className="text-xs text-muted-foreground hidden sm:inline">{user?.username} · {user ? roleLabels[user.role] : ""}</span>
           </div>
         </header>

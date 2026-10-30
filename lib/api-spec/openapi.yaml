@@ -26,6 +26,70 @@ tags:
   - name: storage
     description: Téléversement privé des documents de convention
 paths:
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: Notifications personnelles visibles dans le périmètre actuel
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: unreadOnly
+          in: query
+          schema: { type: integer, enum: [0, 1], default: 0 }
+      responses:
+        "200":
+          description: Notifications de l'utilisateur connecté
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPage" }
+        "401":
+          description: Authentification requise
+  /notifications/read-all:
+    patch:
+      operationId: readAllNotifications
+      tags: [notifications]
+      summary: Marquer comme lues les notifications observées
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationReadInput" }
+      responses:
+        "204":
+          description: Notifications marquées comme lues
+        "400":
+          description: Données invalides
+        "401":
+          description: Authentification requise
+  /notifications/{id}/read:
+    patch:
+      operationId: readNotification
+      tags: [notifications]
+      summary: Marquer une notification personnelle comme lue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationReadInput" }
+      responses:
+        "204":
+          description: Notification marquée comme lue
+        "400":
+          description: Données invalides
+        "404":
+          description: Notification introuvable
+        "401":
+          description: Authentification requise
   /healthz:
     get:
       operationId: healthCheck
@@ -1345,3 +1409,35 @@ components:
           type: array
           items: { $ref: "#/components/schemas/AuditEvent" }
         total: { type: integer }
+    ConventionNotification:
+      type: object
+      required: [id, conventionId, conventionName, actorUsername, kind, summary, changedFields, eventCount, createdAt, updatedAt, readAt]
+      properties:
+        id: { type: integer }
+        conventionId: { type: integer }
+        conventionName: { type: string }
+        actorUsername: { type: string }
+        kind: { type: string, enum: [creation, important, minor] }
+        summary: { type: string }
+        changedFields:
+          type: array
+          items: { type: string }
+        eventCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        readAt: { type: [string, "null"], format: date-time }
+    NotificationPage:
+      type: object
+      required: [items, total, unreadCount, asOf]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ConventionNotification" }
+        total: { type: integer }
+        unreadCount: { type: integer }
+        asOf: { type: string, format: date-time }
+    NotificationReadInput:
+      type: object
+      required: [observedAt]
+      properties:
+        observedAt: { type: string, format: date-time }

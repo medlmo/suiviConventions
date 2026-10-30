@@ -826,6 +826,62 @@ export interface AuditPage {
   total: number;
 }
 
+export type ConventionNotificationKind = typeof ConventionNotificationKind[keyof typeof ConventionNotificationKind];
+
+
+export const ConventionNotificationKind = {
+  creation: 'creation',
+  important: 'important',
+  minor: 'minor',
+} as const;
+
+export interface ConventionNotification {
+  id: number;
+  conventionId: number;
+  conventionName: string;
+  actorUsername: string;
+  kind: ConventionNotificationKind;
+  summary: string;
+  changedFields: string[];
+  eventCount: number;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  readAt: string | null;
+}
+
+export interface NotificationPage {
+  items: ConventionNotification[];
+  total: number;
+  unreadCount: number;
+  asOf: string;
+}
+
+export interface NotificationReadInput {
+  observedAt: string;
+}
+
+export type ListNotificationsParams = {
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+unreadOnly?: ListNotificationsUnreadOnly;
+};
+
+export type ListNotificationsUnreadOnly = typeof ListNotificationsUnreadOnly[keyof typeof ListNotificationsUnreadOnly];
+
+
+export const ListNotificationsUnreadOnly = {
+  NUMBER_0: 0,
+  NUMBER_1: 1,
+} as const;
+
 export type DownloadConventionDocumentParams = {
 /**
  * Chemin d'un fichier présent dans l'historique de cette convention

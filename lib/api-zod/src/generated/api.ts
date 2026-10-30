@@ -9,6 +9,70 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Notifications personnelles visibles dans le périmètre actuel
+ */
+export const listNotificationsQueryLimitDefault = 20;
+export const listNotificationsQueryLimitMax = 50;
+
+export const listNotificationsQueryOffsetDefault = 0;
+export const listNotificationsQueryOffsetMin = 0;
+
+export const listNotificationsQueryUnreadOnlyDefault = 0;
+
+export const ListNotificationsQueryParams = zod.object({
+  "limit": zod.coerce.number().int().min(1).max(listNotificationsQueryLimitMax).default(listNotificationsQueryLimitDefault),
+  "offset": zod.coerce.number().int().min(listNotificationsQueryOffsetMin).default(listNotificationsQueryOffsetDefault),
+  "unreadOnly": zod.union([zod.literal(0),zod.literal(1)]).default(listNotificationsQueryUnreadOnlyDefault)
+})
+
+export const ListNotificationsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.int(),
+  "conventionId": zod.int(),
+  "conventionName": zod.string(),
+  "actorUsername": zod.string(),
+  "kind": zod.enum(['creation', 'important', 'minor']),
+  "summary": zod.string(),
+  "changedFields": zod.array(zod.string()),
+  "eventCount": zod.int(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "readAt": zod.coerce.date().nullable()
+})),
+  "total": zod.int(),
+  "unreadCount": zod.int(),
+  "asOf": zod.coerce.date()
+})
+
+
+/**
+ * @summary Marquer comme lues les notifications observées
+ */
+export const ReadAllNotificationsBody = zod.object({
+  "observedAt": zod.coerce.date()
+})
+
+export const ReadAllNotificationsResponse = zod.void()
+
+
+/**
+ * @summary Marquer une notification personnelle comme lue
+ */
+
+
+
+export const ReadNotificationParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const ReadNotificationBody = zod.object({
+  "observedAt": zod.coerce.date()
+})
+
+export const ReadNotificationResponse = zod.void()
+
+
+/**
  * Returns server health status
  * @summary Health check
  */

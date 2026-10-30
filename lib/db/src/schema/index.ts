@@ -20,3 +20,4 @@
 export * from "./conventions";
 export * from "./auth";
 export * from "./reference-data";
+export * from "./notifications";
