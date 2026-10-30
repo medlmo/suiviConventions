@@ -7,12 +7,21 @@ import { httpLogging, recordRequestFailure } from "./lib/http-logging";
 const app: Express = express();
 app.set("trust proxy", 1);
 
+const API_CONTENT_SECURITY_POLICY = [
+  "default-src 'none'",
+  "base-uri 'none'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'none'",
+].join("; ");
+
 // Les réponses dépendent de la date du jour (le niveau d'alerte est recalculé
 // à chaque requête) : elles ne doivent jamais être servies depuis le cache du
 // navigateur. L'ETag d'Express permettait en plus des réponses 304, que le
 // client HTTP traite comme un échec puisque `response.ok` y est faux.
 app.set("etag", false);
 app.use("/api", (_req, res, next) => {
+  res.set("Content-Security-Policy", API_CONTENT_SECURITY_POLICY);
   res.set("Cache-Control", "no-store");
   next();
 });
