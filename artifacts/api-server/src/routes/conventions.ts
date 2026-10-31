@@ -872,6 +872,12 @@ router.post("/conventions", async (req, res): Promise<void> => {
     }
     const rattachement = valeurs.rattachement as string | null | undefined;
     const responsable = valeurs.responsableProjet as string | null | undefined;
+    if (
+      typeof rattachement !== "string" || !rattachement.trim() ||
+      typeof responsable !== "string" || !responsable.trim()
+    ) {
+      return { status: 400 as const, error: "Le rattachement et le responsable du projet sont obligatoires." };
+    }
     if (!affectationsValides(rattachement, responsable, user, reference)) {
       return { status: 400 as const, error: "Le rattachement et le service doivent correspondre à l'organigramme officiel." };
     }

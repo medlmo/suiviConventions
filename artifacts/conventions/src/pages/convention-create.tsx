@@ -50,8 +50,10 @@ const montantOptionnel = z.union([z.string(), z.number(), z.null()])
 const conventionSchema = z.object({
   nomConvention: z.string().min(1, "Le nom est requis"),
   objetConventionFr: z.string().nullable().optional(),
-  rattachement: z.string().nullable().optional(),
-  responsableProjet: z.string().nullable().optional(),
+  rattachement: z.string().nullable().optional()
+    .refine(value => typeof value === "string" && value.trim().length > 0, "Le rattachement est obligatoire"),
+  responsableProjet: z.string().nullable().optional()
+    .refine(value => typeof value === "string" && value.trim().length > 0, "Le responsable du projet est obligatoire"),
   typeSession: z.enum(["Ordinaire", "Extraordinaire"]).nullable().optional(),
   session: z.string().nullable().optional(),
   dateVisa: z.string().nullable().optional(),
@@ -255,7 +257,7 @@ export default function ConventionCreate() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="rattachement" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rattachement (Direction/Division)</FormLabel>
+                    <FormLabel>Rattachement (Direction/Division) *</FormLabel>
                     <RattachementSelect
                       value={field.value}
                       onValueChange={(valeur) => {
@@ -263,16 +265,18 @@ export default function ConventionCreate() {
                         form.setValue("responsableProjet", null, { shouldDirty: true });
                       }}
                     />
+                    <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="responsableProjet" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Responsable du projet</FormLabel>
+                    <FormLabel>Responsable du projet *</FormLabel>
                     <ServiceSelect
                       rattachement={rattachementChoisi}
                       value={field.value}
                       onValueChange={field.onChange}
                     />
+                    <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="statutConvention" render={({ field }) => (
