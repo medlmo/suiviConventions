@@ -1,5 +1,5 @@
 import { DIRECTION_GENERALE_SERVICES } from "@workspace/organisation";
-import type { ReferenceData } from "./reference-data";
+import type { ReferenceData } from "./reference-data-domain";
 
 export function divisionDeDirection(data: ReferenceData, direction: string, division: string): boolean {
   return data.organisation.some((entry) =>

@@ -9,20 +9,15 @@ import {
   servicesDgsTable,
 } from "@workspace/db";
 import { organisation as organisationHistorique } from "@workspace/organisation";
+import {
+  construireReferentiel, directionConnue, maitriseOuvrageConnue, type ReferenceData,
+} from "./reference-data-domain";
 
 export {
   divisionDeDirection, perimetreChefService, serviceDansDivision, serviceDansRattachement, servicesDeDivision,
 } from "./organisation-access";
-
-export interface ReferenceData {
-  organisation: {
-    id: number;
-    direction: string;
-    divisions: { id: number; nom: string; services: { id: number; nom: string }[] }[];
-  }[];
-  maitrisesOuvrage: { id: number; nom: string }[];
-  servicesDgs: { id: number; nom: string }[];
-}
+export { construireReferentiel, directionConnue, maitriseOuvrageConnue } from "./reference-data-domain";
+export type { ReferenceData } from "./reference-data-domain";
 
 type ReferenceExecutor = Pick<typeof db, "select">;
 
@@ -113,26 +108,5 @@ export async function chargerReferentielDepuis(executor: ReferenceExecutor): Pro
   const services = await executor.select().from(servicesTable).orderBy(asc(servicesTable.id));
   const servicesDgs = await executor.select().from(servicesDgsTable).orderBy(asc(servicesDgsTable.id));
   const maitrisesOuvrage = await executor.select().from(maitrisesOuvrageTable).orderBy(asc(maitrisesOuvrageTable.id));
-  return {
-    organisation: directions.map((direction) => ({
-      id: direction.id,
-      direction: direction.nom,
-      divisions: divisions.filter((division) => division.directionId === direction.id).map((division) => ({
-        id: division.id,
-        nom: division.nom,
-        services: services.filter((service) => service.divisionId === division.id)
-          .map(({ id, nom }) => ({ id, nom })),
-      })),
-    })),
-    maitrisesOuvrage: maitrisesOuvrage.map(({ id, nom }) => ({ id, nom })),
-    servicesDgs: servicesDgs.map(({ id, nom }) => ({ id, nom })),
-  };
-}
-
-export function directionConnue(data: ReferenceData, direction: string): boolean {
-  return data.organisation.some((entry) => entry.direction === direction);
-}
-
-export function maitriseOuvrageConnue(data: ReferenceData, nom: string): boolean {
-  return data.maitrisesOuvrage.some((entry) => entry.nom === nom);
+  return construireReferentiel({ directions, divisions, services, servicesDgs, maitrisesOuvrage });
 }
