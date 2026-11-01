@@ -22,11 +22,13 @@ const kindLabels: Record<ConventionNotification["kind"], string> = {
   creation: "Création",
   important: "Modification importante",
   minor: "Correction mineure",
+  deadline: "Rappel d’échéance",
 };
 const kindStyles: Record<ConventionNotification["kind"], string> = {
   creation: "bg-primary/10 text-primary border-primary/20",
   important: "bg-amber-500/10 text-amber-700 border-amber-500/30",
   minor: "bg-muted text-muted-foreground border-border",
+  deadline: "bg-orange-500/10 text-orange-700 border-orange-500/30",
 };
 
 function statusOf(error: unknown): number | undefined {
@@ -198,7 +200,7 @@ export function NotificationCenter() {
                 {unreadOnly ? "Aucune notification non lue" : "Aucune notification"}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Les créations et modifications des conventions de votre périmètre apparaîtront ici.
+                Les créations, modifications et rappels d’échéance des conventions de votre périmètre apparaîtront ici.
               </p>
             </div>
           ) : (
@@ -230,7 +232,9 @@ export function NotificationCenter() {
                       </Link>
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-3">{n.summary}</p>
                       <p className="text-[11px] text-muted-foreground/80 mt-1.5">
-                        Par <span className="font-medium text-foreground/70">{n.actorUsername}</span>
+                        {n.kind === "deadline" ? "Rappel automatique" : (
+                          <>Par <span className="font-medium text-foreground/70">{n.actorUsername}</span></>
+                        )}
                         {" · "}
                         <time dateTime={n.updatedAt} title={`Dernière mise à jour : ${formatDate(n.updatedAt)}`}>{relative(n.updatedAt)}</time>
                         {n.updatedAt !== n.createdAt && (

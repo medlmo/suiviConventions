@@ -1417,7 +1417,7 @@ components:
         conventionId: { type: integer }
         conventionName: { type: string }
         actorUsername: { type: string }
-        kind: { type: string, enum: [creation, important, minor] }
+        kind: { type: string, enum: [creation, important, minor, deadline] }
         summary: { type: string }
         changedFields:
           type: array

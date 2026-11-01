@@ -31,7 +31,7 @@ export const ListNotificationsResponse = zod.object({
   "conventionId": zod.int(),
   "conventionName": zod.string(),
   "actorUsername": zod.string(),
-  "kind": zod.enum(['creation', 'important', 'minor']),
+  "kind": zod.enum(['creation', 'important', 'minor', 'deadline']),
   "summary": zod.string(),
   "changedFields": zod.array(zod.string()),
   "eventCount": zod.int(),

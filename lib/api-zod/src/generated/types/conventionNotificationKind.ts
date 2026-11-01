@@ -13,4 +13,5 @@ export const ConventionNotificationKind = {
   creation: 'creation',
   important: 'important',
   minor: 'minor',
+  deadline: 'deadline',
 } as const;

@@ -1,4 +1,4 @@
-import { index, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { date, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { usersTable } from "./auth";
 import { conventionsTable } from "./conventions";
 
@@ -8,7 +8,9 @@ export const notificationsTable = pgTable("convention_notifications", {
   conventionId: integer("convention_id").notNull().references(() => conventionsTable.id, { onDelete: "cascade" }),
   actorId: integer("actor_id").references(() => usersTable.id, { onDelete: "set null" }),
   actorUsername: text("actor_username").notNull(),
-  kind: text("kind").$type<"creation" | "important" | "minor">().notNull(),
+  kind: text("kind").$type<"creation" | "important" | "minor" | "deadline">().notNull(),
+  deadlineDate: date("deadline_date", { mode: "string" }),
+  reminderDays: integer("reminder_days"),
   changedFields: jsonb("changed_fields").$type<string[]>().notNull().default([]),
   eventCount: integer("event_count").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -17,6 +19,9 @@ export const notificationsTable = pgTable("convention_notifications", {
 }, (table) => [
   index("convention_notifications_recipient_date_idx").on(table.recipientId, table.updatedAt, table.id),
   index("convention_notifications_group_idx").on(table.recipientId, table.conventionId, table.actorId),
+  uniqueIndex("convention_notifications_deadline_uq").on(
+    table.recipientId, table.conventionId, table.deadlineDate, table.reminderDays,
+  ),
 ]);
 
 export type ConventionNotification = typeof notificationsTable.$inferSelect;

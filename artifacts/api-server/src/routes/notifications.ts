@@ -5,6 +5,7 @@ import { ListNotificationsQueryParams, ReadAllNotificationsBody, ReadNotificatio
 import { filtrePerimetre } from "../lib/convention-access";
 import { chargerReferentiel } from "../lib/reference-data";
 import { resumeNotification } from "../lib/notifications";
+import { genererRappelsEcheance, rappelEcheanceVisible, resumeRappelEcheance } from "../lib/deadline-reminders";
 
 const router: IRouter = Router();
 
@@ -20,11 +21,13 @@ router.get("/notifications", async (req, res) => {
   }
   const reference = await chargerReferentiel();
   const user = req.user!;
+  await genererRappelsEcheance(user, reference);
   const asOf = new Date();
   const visible = and(
     eq(notificationsTable.recipientId, user.id),
     isNull(conventionsTable.deletedAt),
     filtrePerimetre(user, reference),
+    rappelEcheanceVisible(user),
   );
   const filter = and(visible, parsed.data.unreadOnly === 1 ? isNull(notificationsTable.readAt) : undefined);
   const [items, [total], [unread]] = await Promise.all([
@@ -43,7 +46,9 @@ router.get("/notifications", async (req, res) => {
       id: item.id, conventionId: item.conventionId, conventionName,
       actorUsername: item.actorUsername, kind: item.kind,
       changedFields: item.changedFields, eventCount: item.eventCount,
-      summary: resumeNotification(item.kind, item.changedFields, item.eventCount),
+      summary: item.kind === "deadline"
+        ? resumeRappelEcheance(item.deadlineDate, item.reminderDays)
+        : resumeNotification(item.kind, item.changedFields, item.eventCount),
       createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(),
       readAt: item.readAt?.toISOString() ?? null,
     })),
