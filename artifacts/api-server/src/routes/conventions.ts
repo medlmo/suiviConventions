@@ -3,7 +3,7 @@ import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lte, or, sq
 import ExcelJS from "exceljs";
 import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
 import type { SessionUser } from "../lib/auth";
-import { filtrePerimetre } from "../lib/convention-access";
+import { accessible, affectationsValides, filtrePerimetre } from "../lib/convention-access";
 import { notifierChangementConvention } from "../lib/notifications";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
@@ -263,46 +263,8 @@ function construireFiltres(filtres: FiltresListe): SQL | undefined {
   return conditions.length > 0 ? and(...conditions) : undefined;
 }
 
-function accessible(row: typeof conventionsTable.$inferSelect, user: SessionUser, reference: ReferenceData): boolean {
-  if (user.role === "admin" || user.role === "directeur" || user.role === "directeur_general_services") return true;
-  if (user.role === "chef_division") {
-    return !!user.direction && !!user.division &&
-      divisionDeDirection(reference, user.direction, user.division) &&
-      row.rattachement === user.division &&
-      (!row.responsableProjet || serviceDansDivision(reference, user.division, row.responsableProjet));
-  }
-  if (user.role === "chef_service") {
-    const scope = perimetreChefService(reference, user);
-    return !!scope && row.rattachement === scope && row.responsableProjet === user.service;
-  }
-  return false;
-}
-
 function peutEcrire(user: SessionUser): boolean {
   return user.role === "admin" || user.role === "chef_division" || user.role === "chef_service";
-}
-
-function affectationsValides(
-  rattachement: string | null | undefined,
-  responsableProjet: string | null | undefined,
-  user: SessionUser,
-  reference: ReferenceData,
-): boolean {
-  if (user.role === "chef_division") {
-    return !!user.direction && !!user.division &&
-      divisionDeDirection(reference, user.direction, user.division) &&
-      rattachement === user.division &&
-      (!responsableProjet || serviceDansDivision(reference, user.division, responsableProjet));
-  }
-  if (user.role === "chef_service") {
-    const scope = perimetreChefService(reference, user);
-    return !!scope && rattachement === scope && responsableProjet === user.service;
-  }
-  if (user.role === "admin") {
-    return (!rattachement || !responsableProjet || serviceDansRattachement(reference, rattachement, responsableProjet)) &&
-      (!responsableProjet || (!!rattachement && serviceDansRattachement(reference, rattachement, responsableProjet)));
-  }
-  return false;
 }
 
 function conditionsVisibles(user: SessionUser, reference: ReferenceData, filtre?: SQL): SQL {
