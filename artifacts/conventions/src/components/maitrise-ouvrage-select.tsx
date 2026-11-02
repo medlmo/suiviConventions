@@ -34,7 +34,11 @@ function normaliserNomTerritoire(valeur: string): string {
 }
 
 export function estProvincePrefecture(nom: string): boolean {
-  return /^(?:province\s+de\s+|prefecture\s+(?:de\s+|d'))/.test(normaliserNomTerritoire(nom));
+  const nomNormalise = normaliserNomTerritoire(nom);
+  return (
+    nomNormalise !== "prefecture de police d'agadir" &&
+    /^(?:province\s+de\s+|prefecture\s+(?:de\s+|d'))/.test(nomNormalise)
+  );
 }
 
 export function estCommune(nom: string): boolean {
