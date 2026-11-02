@@ -39,7 +39,7 @@ export function DashboardTotals({
     {
       titre: "Nombre total de conventions visées",
       valeur: resume.total.toLocaleString("fr-FR"),
-      precision: "Conventions de votre périmètre de consultation",
+      unite: "Conventions",
       Icon: Files,
       lien: true,
     },
@@ -61,18 +61,19 @@ export function DashboardTotals({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {indicateurs.map(({ titre, valeur, sousTitre, Icon, lien }) => (
+      {indicateurs.map(({ titre, valeur, unite, sousTitre, Icon, lien }) => (
         <Card key={titre} className="shadow-sm min-w-0">
           <CardContent className="p-5">
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-sm font-semibold text-muted-foreground">{titre}</h2>
               <Icon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             </div>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-foreground break-words tabular-nums">
+            <p className="mt-3 flex flex-wrap items-baseline gap-x-2 text-2xl font-bold tracking-tight text-foreground break-words tabular-nums">
               {valeur}
+              {unite && <span className="text-sm font-medium text-muted-foreground">{unite}</span>}
             </p>
             {sousTitre && (
-              <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+              <p className="mt-1 text-sm text-muted-foreground tabular-nums">
                 {sousTitre}
               </p>
             )}
