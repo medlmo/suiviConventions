@@ -143,7 +143,9 @@ export default function ConventionsList() {
                 <SelectContent>
                   <SelectItem value="all">Tous les statuts</SelectItem>
                   {options?.statuts.map(s => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {s === "En cours" ? "En cours d’exécution" : s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -331,7 +333,9 @@ export default function ConventionsList() {
                     </td>
                     <td className="px-4 py-4 align-top">
                       <div className="font-medium text-foreground text-sm">
-                        {conv.statutConvention || "Non défini"}
+                        {conv.statutConvention === "En cours"
+                          ? "En cours d’exécution"
+                          : conv.statutConvention || "Non défini"}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1 line-clamp-2" title={conv.rattachement || ""}>
                         {conv.rattachement || "-"}

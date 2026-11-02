@@ -293,7 +293,7 @@ export default function ConventionCreate() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="non-renseigne">Non renseigné</SelectItem>
-                        <SelectItem value="En cours">En cours</SelectItem>
+                        <SelectItem value="En cours">En cours d’exécution</SelectItem>
                         <SelectItem value="Arrivée à terme">Arrivée à terme</SelectItem>
                         <SelectItem value="Résiliée">Résiliée</SelectItem>
                       </SelectContent>
