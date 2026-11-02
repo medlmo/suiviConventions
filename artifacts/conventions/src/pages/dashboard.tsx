@@ -344,7 +344,7 @@ export default function Dashboard() {
               <div className="p-2 bg-secondary/10 rounded-lg">
                 <Calendar className="w-5 h-5 text-secondary" />
               </div>
-              <CardTitle className="text-xl">Agenda à venir</CardTitle>
+              <CardTitle className="text-xl">Save the date</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
