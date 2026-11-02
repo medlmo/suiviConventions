@@ -70,7 +70,7 @@ export function DashboardTotals({
             </div>
             <p className="mt-3 flex flex-wrap items-baseline gap-x-2 text-2xl font-bold tracking-tight text-foreground break-words tabular-nums">
               {valeur}
-              {unite && <span className="text-sm font-medium text-muted-foreground">{unite}</span>}
+              {unite && <span>{unite}</span>}
             </p>
             {sousTitre && (
               <p className="mt-1 text-sm text-muted-foreground tabular-nums">
