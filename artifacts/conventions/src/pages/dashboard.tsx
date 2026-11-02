@@ -17,6 +17,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
+const contientDeLarabe = (texte: string) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(texte);
+
 const FORMAT_POURCENTAGE = new Intl.NumberFormat("fr-FR", {
   style: "percent",
   maximumFractionDigits: 1,
@@ -309,7 +311,10 @@ export default function Dashboard() {
                         <div className="flex-1 min-w-0">
                           <h4 
                             dir="auto" 
-                            className="font-bold text-foreground truncate group-hover:text-primary transition-colors text-base"
+                            className={cn(
+                              "font-bold text-foreground truncate group-hover:text-primary transition-colors text-base",
+                              contientDeLarabe(convention.nomConvention) && "dashboard-arabic-title",
+                            )}
                             title={convention.nomConvention}
                           >
                             {convention.nomConvention}
@@ -406,7 +411,13 @@ export default function Dashboard() {
                                 </span>
                                 <AlerteBadge alerte={conv.alerte} className="text-[10px] px-1.5 py-0.5 h-auto" />
                               </div>
-                              <p dir="auto" className="text-sm font-medium line-clamp-2 mt-1 group-hover:text-primary transition-colors leading-relaxed">
+                              <p
+                                dir="auto"
+                                className={cn(
+                                  "text-sm font-medium line-clamp-2 mt-1 group-hover:text-primary transition-colors leading-relaxed",
+                                  contientDeLarabe(conv.nomConvention) && "dashboard-arabic-title",
+                                )}
+                              >
                                 {conv.nomConvention}
                               </p>
                             </div>

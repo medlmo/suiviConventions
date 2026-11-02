@@ -176,3 +176,7 @@
     text-align: start;
   }
 }
+
+.dashboard-arabic-title {
+  font-family: "Sakkal Majalla", "IBM Plex Sans Arabic", sans-serif;
+}
