@@ -10,6 +10,8 @@ import type { CompteurAlerte } from './compteurAlerte';
 export interface ResumeAlertes {
   /** Nombre total de conventions visibles par l'utilisateur connecté */
   total: number;
+  /** Nombre de conventions visibles ayant une date de visa renseignée */
+  totalVisees: number;
   /** Somme des enveloppes budgétaires renseignées des conventions visibles par l'utilisateur, en MAD (0 si aucune) */
   montantGlobal: number;
   /** Somme des contributions de la Région renseignées des conventions visibles par l'utilisateur, en MAD (0 si aucune) */

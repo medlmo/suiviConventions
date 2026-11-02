@@ -33,8 +33,8 @@ export function DashboardTotals({
 
   const indicateurs = [
     {
-      titre: "Nombre total de conventions",
-      valeur: resume.total.toLocaleString("fr-FR"),
+      titre: "Nombre total de conventions visées",
+      valeur: resume.totalVisees.toLocaleString("fr-FR"),
       precision: "Conventions de votre périmètre de consultation",
       Icon: Files,
       lien: true,
