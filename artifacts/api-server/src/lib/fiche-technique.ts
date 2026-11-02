@@ -293,7 +293,7 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
   // an irrelevant empty section to conventions that never used this tracking.
   if (!applicable && historique.length === 0) return [];
 
-  const largeurs = [1450, 1300, 7050];
+  const largeurs = [1700, 1300, 6800];
   const borders = {
     top: RULE, bottom: RULE, left: RULE, right: RULE,
     insideHorizontal: RULE, insideVertical: RULE,
