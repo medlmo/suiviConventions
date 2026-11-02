@@ -282,17 +282,6 @@ function tableauSituationVersements(convention: ConventionApi): Table {
   });
 }
 
-function dateHeureFr(value?: string | null): string {
-  if (!value) return EMPTY;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return EMPTY;
-  return new Intl.DateTimeFormat("fr-MA", {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone: "Africa/Casablanca",
-  }).format(date);
-}
-
 function tableauAvancementPhysique(convention: ConventionApi): Table[] {
   const historique = [...(convention.avancementPhysiqueHistorique ?? [])].sort((a, b) =>
     a.dateConstat !== b.dateConstat
@@ -304,7 +293,7 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
   // an irrelevant empty section to conventions that never used this tracking.
   if (!applicable && historique.length === 0) return [];
 
-  const largeurs = [1450, 1300, 3650, 1500, 1900];
+  const largeurs = [1450, 1300, 7050];
   const borders = {
     top: RULE, bottom: RULE, left: RULE, right: RULE,
     insideHorizontal: RULE, insideVertical: RULE,
@@ -362,8 +351,6 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
         celluleMontage("Date du constat", largeurs[0]!, { fill: LIGHT, bold: true, center: true }),
         celluleMontage("Taux estimé", largeurs[1]!, { fill: LIGHT, bold: true, center: true }),
         celluleMontage("Commentaire", largeurs[2]!, { fill: LIGHT, bold: true }),
-        celluleMontage("Saisi par", largeurs[3]!, { fill: LIGHT, bold: true }),
-        celluleMontage("Enregistré le", largeurs[4]!, { fill: LIGHT, bold: true, center: true }),
       ],
     }));
 
@@ -374,8 +361,6 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
           celluleMontage(dateFr(constat.dateConstat), largeurs[0]!, { center: true }),
           celluleMontage(`${constat.taux.toLocaleString("fr-MA", { maximumFractionDigits: 2 })} %`, largeurs[1]!, { center: true, bold: true }),
           celluleMontage(constat.commentaire?.trim() || "—", largeurs[2]!),
-          celluleMontage(constat.auteur?.trim() || EMPTY, largeurs[3]!),
-          celluleMontage(dateHeureFr(constat.enregistreLe), largeurs[4]!, { center: true }),
         ],
       }));
     }
