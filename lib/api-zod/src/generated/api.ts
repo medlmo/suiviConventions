@@ -797,7 +797,6 @@ export const CreateConventionResponse = zod.object({
  */
 export const GetResumeAlertesResponse = zod.object({
   "total": zod.int().describe('Nombre total de conventions visibles par l\'utilisateur connecté'),
-  "totalVisees": zod.int().describe('Nombre de conventions visibles ayant une date de visa renseignée'),
   "montantGlobal": zod.number().describe('Somme des enveloppes budgétaires renseignées des conventions visibles par l\'utilisateur, en MAD (0 si aucune)'),
   "contributionRegionTotale": zod.number().describe('Somme des contributions de la Région renseignées des conventions visibles par l\'utilisateur, en MAD (0 si aucune)'),
   "compteurs": zod.array(zod.object({

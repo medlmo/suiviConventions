@@ -403,7 +403,7 @@ router.get("/conventions", async (req, res): Promise<void> => {
 router.get("/conventions/resume", async (req, res): Promise<void> => {
   const reference = await chargerReferentiel();
   const visible = conditionsVisibles(req.user!, reference);
-  const [repartition, [prochaine], jourCourant, [montants], [conventionsVisees]] = await Promise.all([
+  const [repartition, [prochaine], jourCourant, [montants]] = await Promise.all([
     db
       .select({ niveau: niveauAlerteSql, nombre: count() })
       .from(conventionsTable)
@@ -423,10 +423,6 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
       })
       .from(conventionsTable)
       .where(visible),
-    db
-      .select({ total: count() })
-      .from(conventionsTable)
-      .where(and(visible, isNotNull(conventionsTable.dateVisa))),
   ]);
 
   const parNiveau = new Map<NiveauAlerte, number>(
@@ -451,7 +447,6 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
   res.json(
     valide(GetResumeAlertesResponse, {
       total,
-      totalVisees: conventionsVisees?.total ?? 0,
       montantGlobal: Number(montants.montantGlobal),
       contributionRegionTotale: Number(montants.contributionRegionTotale),
       compteurs,
