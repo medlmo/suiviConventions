@@ -318,7 +318,7 @@ export default function Dashboard() {
                               "text-xs font-semibold px-2 py-1 rounded-full",
                               convention.alerte.joursRestants < 0 ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
                             )}>
-                              {Math.abs(convention.alerte.joursRestants)} j {convention.alerte.joursRestants < 0 ? "de retard" : "restants"}
+                              {Math.abs(convention.alerte.joursRestants)} j{convention.alerte.joursRestants < 0 ? "" : " restants"}
                             </span>
                           )}
                         </div>
