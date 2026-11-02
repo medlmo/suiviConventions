@@ -17,6 +17,11 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
+const FORMAT_POURCENTAGE = new Intl.NumberFormat("fr-FR", {
+  style: "percent",
+  maximumFractionDigits: 1,
+});
+
 const ICONS: Record<AlerteCouleur, any> = {
   rouge: FileWarning,
   orange: Clock,
@@ -142,6 +147,8 @@ export default function Dashboard() {
     refetch: rechargerAgenda,
   } = useGetAgenda({ mois: 3 });
 
+  const totalConventions = resume?.total ?? 0;
+
   return (
     <Dialog>
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -183,12 +190,15 @@ export default function Dashboard() {
           resume?.compteurs.map((compteur) => {
             const Icon = ICONS[compteur.couleur] || Activity;
             const bgClass = BG_COLORS[compteur.couleur];
+            const pourcentage = totalConventions > 0
+              ? FORMAT_POURCENTAGE.format(compteur.nombre / totalConventions)
+              : "—";
             
             return (
               <Link
                 key={compteur.niveau}
                 href={`/conventions?alerte=${encodeURIComponent(compteur.niveau)}`}
-                aria-label={`Voir les conventions : ${compteur.libelle} (${compteur.nombre})`}
+                aria-label={`Voir les conventions : ${compteur.libelle} (${compteur.nombre}, ${pourcentage} du total)`}
                 className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
               <Card className={cn("h-full border shadow-sm overflow-hidden transition-shadow group-hover:shadow-md", bgClass)}>
@@ -200,6 +210,9 @@ export default function Dashboard() {
                   <div className="text-3xl font-black mb-1">{compteur.nombre}</div>
                   <div className="text-xs font-semibold uppercase tracking-wider opacity-90">
                     {compteur.libelle}
+                  </div>
+                  <div className="mt-1 text-xs font-medium opacity-75">
+                    {pourcentage} du total
                   </div>
                   <span className="mt-3 flex items-center gap-1 text-xs font-medium group-hover:underline">
                     Voir les conventions <ArrowRight className="h-3 w-3" aria-hidden="true" />
