@@ -44,7 +44,7 @@ export function DashboardTotals({
       lien: true,
     },
     {
-      titre: "Montant global des conventions",
+      titre: "Montant global des projets",
       valeur: `${formaterMontant(resume.montantGlobal)} MAD`,
       Icon: Wallet,
     },
