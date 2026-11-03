@@ -25,22 +25,22 @@ export default function ConventionsList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const alerteParam = searchParams.get("alerte");
   const alerte = Object.values(NiveauAlerte).find((niveau) => niveau === alerteParam);
+  const statutConvention = searchParams.get("statutConvention") || undefined;
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
-  const setAlerte = (niveau: NiveauAlerte | undefined) => {
+  useEffect(() => { setPage(1); }, [alerte, statutConvention]);
+  const setStatutConvention = (statut: string | undefined) => {
     setSearchParams((previous) => {
       const next = new URLSearchParams(previous);
-      if (niveau) next.set("alerte", niveau);
-      else next.delete("alerte");
+      if (statut && statut !== "all") next.set("statutConvention", statut);
+      else next.delete("statutConvention");
       return next;
     });
     setPage(1);
   };
-  useEffect(() => { setPage(1); }, [alerte]);
   const [rattachement, setRattachement] = useState<string | undefined>();
   const [service, setService] = useState<string | undefined>();
   const [partenaires, setPartenaires] = useState<string[]>([]);
-  const [statutConvention, setStatutConvention] = useState<string | undefined>();
   const [natureProjet, setNatureProjet] = useState<string | undefined>();
   const [tri, setTri] = useState<ListConventionsTri>("urgence");
   // Urgence ascendante = les retards en tête (rang 0), « À qualifier » en fin.
@@ -205,7 +205,20 @@ export default function ConventionsList() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => { setQ(""); setAlerte(undefined); setRattachement(undefined); setService(undefined); setPartenaires([]); setStatutConvention(undefined); setNatureProjet(undefined); setPage(1); }}
+                  onClick={() => {
+                    setSearchParams((previous) => {
+                      const next = new URLSearchParams(previous);
+                      next.delete("alerte");
+                      next.delete("statutConvention");
+                      return next;
+                    });
+                    setQ("");
+                    setRattachement(undefined);
+                    setService(undefined);
+                    setPartenaires([]);
+                    setNatureProjet(undefined);
+                    setPage(1);
+                  }}
                   className="h-10 w-10 text-muted-foreground hover:text-destructive"
                   title="Effacer les filtres"
                 >

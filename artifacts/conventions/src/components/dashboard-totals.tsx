@@ -67,7 +67,10 @@ export function DashboardTotals({
       valeur: donnees.total.toLocaleString("fr-FR"),
       unite: "Conventions",
       Icon: Files,
-      lien: portee === "visees",
+      lien: true,
+      href: portee === "visees"
+        ? "/conventions"
+        : `/conventions?statutConvention=${encodeURIComponent(portee === "enCours" ? "En cours" : "Arrivée à terme")}`,
     },
     {
       cle: "montant",
@@ -148,7 +151,7 @@ export function DashboardTotals({
         aria-live="polite"
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
-        {indicateurs.map(({ cle, titre, valeur, unite, sousTitre, Icon, lien }) => (
+        {indicateurs.map(({ cle, titre, valeur, unite, sousTitre, Icon, lien, href }) => (
           <Card key={cle} className="shadow-sm min-w-0" data-testid={`card-indicateur-${cle}`}>
             <CardContent className="p-5">
               <div className="flex items-start justify-between gap-3">
@@ -167,7 +170,7 @@ export function DashboardTotals({
               )}
               {lien && (
                 <Link
-                  href="/conventions"
+                  href={href ?? "/conventions"}
                   data-testid="link-voir-conventions"
                   className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
                 >
