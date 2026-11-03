@@ -1195,12 +1195,24 @@ components:
           enum: [rouge, orange, jaune, vert, gris]
         nombre: { type: integer }
 
+    SyntheseConventions:
+      type: object
+      required: [total, montantGlobal, contributionRegionTotale]
+      properties:
+        total:
+          type: integer
+        montantGlobal:
+          type: number
+        contributionRegionTotale:
+          type: number
+
     ResumeAlertes:
       type: object
       required:
         - total
         - montantGlobal
         - contributionRegionTotale
+        - parStatut
         - compteurs
         - aTraiter
         - dateCalcul
@@ -1215,6 +1227,15 @@ components:
         contributionRegionTotale:
           type: number
           description: Somme des contributions de la Région renseignées des conventions visibles par l'utilisateur, en MAD (0 si aucune)
+        parStatut:
+          type: object
+          description: Synthèses par statut dans le même périmètre de consultation. Toutes les conventions saisies sont considérées visées ; les statuts non renseignés ou résiliés restent inclus dans le total général uniquement.
+          required: [enCours, arriveesATerme]
+          properties:
+            enCours:
+              $ref: "#/components/schemas/SyntheseConventions"
+            arriveesATerme:
+              $ref: "#/components/schemas/SyntheseConventions"
         compteurs:
           type: array
           description: Un compteur par niveau d'alerte, dans l'ordre d'urgence

@@ -403,7 +403,7 @@ router.get("/conventions", async (req, res): Promise<void> => {
 router.get("/conventions/resume", async (req, res): Promise<void> => {
   const reference = await chargerReferentiel();
   const visible = conditionsVisibles(req.user!, reference);
-  const [repartition, [prochaine], jourCourant, [montants]] = await Promise.all([
+  const [repartition, [prochaine], jourCourant, synthesesParStatut] = await Promise.all([
     db
       .select({ niveau: niveauAlerteSql, nombre: count() })
       .from(conventionsTable)
@@ -418,12 +418,45 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
     db.execute<{ valeur: string }>(sql`SELECT CURRENT_DATE::text AS valeur`),
     db
       .select({
+        statut: conventionsTable.statutConvention,
+        nombre: count(),
         montantGlobal: sql<string>`coalesce(sum(${conventionsTable.enveloppeBudgetaire}), 0)`,
         contributionRegionTotale: sql<string>`coalesce(sum(${conventionsTable.contributionRegion}), 0)`,
       })
       .from(conventionsTable)
-      .where(visible),
+      .where(visible)
+      .groupBy(conventionsTable.statutConvention),
   ]);
+
+  const syntheseVide = () => ({
+    total: 0,
+    montantGlobal: 0,
+    contributionRegionTotale: 0,
+  });
+  const montants = syntheseVide();
+  const parStatut = {
+    enCours: syntheseVide(),
+    arriveesATerme: syntheseVide(),
+  };
+  for (const ligne of synthesesParStatut) {
+    const statut = (ligne.statut ?? "").trim().toLocaleLowerCase("fr")
+      .normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/’/g, "'");
+    const groupe = statut === "en cours" || statut === "en cours d'execution"
+      ? parStatut.enCours
+      : statut === "arrivee a terme" || statut === "arrivees a terme"
+        ? parStatut.arriveesATerme
+        : undefined;
+    const valeurs = {
+      total: ligne.nombre,
+      montantGlobal: Number(ligne.montantGlobal),
+      contributionRegionTotale: Number(ligne.contributionRegionTotale),
+    };
+    for (const destination of groupe ? [montants, groupe] : [montants]) {
+      destination.total += valeurs.total;
+      destination.montantGlobal += valeurs.montantGlobal;
+      destination.contributionRegionTotale += valeurs.contributionRegionTotale;
+    }
+  }
 
   const parNiveau = new Map<NiveauAlerte, number>(
     repartition.map((ligne) => [ligne.niveau, ligne.nombre]),
@@ -449,6 +482,7 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
       total,
       montantGlobal: Number(montants.montantGlobal),
       contributionRegionTotale: Number(montants.contributionRegionTotale),
+      parStatut,
       compteurs,
       aTraiter,
       sansEcheance,

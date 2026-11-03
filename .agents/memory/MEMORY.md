@@ -27,3 +27,4 @@
 - [Réécriture d’une fonctionnalité retirée](reecriture-fonctionnalite-retiree.md) — repérer l’implémentation initiale intégrée à un commit plus large pour éviter de la ressusciter en supprimant seulement son ajout et son retrait.
 - [Notifications ciblées](notifications-ciblees.md) — informer les responsables selon l’organigramme et regrouper les petites corrections pour limiter les alertes.
 - [Tests des périmètres d’accès](tests-perimetres-acces.md) — garder les décisions d’accès sans dépendance à la base pour les tester avec le lanceur Node natif.
+- [Conventions visées](conventions-visees-metier.md) — toutes les conventions saisies sont déjà visées ; ne pas filtrer le total selon la présence d’une date de visa.
