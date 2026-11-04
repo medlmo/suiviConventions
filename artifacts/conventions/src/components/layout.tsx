@@ -66,23 +66,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <div className="hidden md:flex w-72 flex-col bg-sidebar border-r border-sidebar-border shadow-xl z-10">
         <div className="h-16 flex items-center px-6 border-b border-sidebar-border bg-sidebar/50">
-          <div className="w-10 h-10 rounded-md bg-white flex items-center justify-center mr-3 shadow-sm overflow-hidden">
-            <img
-              src="/logo-crsm.png"
-              alt="Logo de la Région Souss Massa"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <h1 className="text-sidebar-foreground font-bold tracking-tight text-lg">
-            Région Souss Massa
+          <h1 className="text-sidebar-foreground font-bold tracking-tight text-base">
+            Suivi des conventions
           </h1>
         </div>
 
         <div className="px-6 py-4">
-          <div className="text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold mb-4">
-            Suivi des conventions
-          </div>
-
           <nav className="space-y-1">
             {allItems.map((item) => {
               const isActive = estNavigationActive(location, item.href);
@@ -136,23 +125,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               >
                 <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
                 <div className="h-16 flex items-center px-6 border-b border-sidebar-border bg-sidebar/50">
-                  <div className="w-10 h-10 rounded-md bg-white flex items-center justify-center mr-3 shadow-sm overflow-hidden">
-                    <img
-                      src="/logo-crsm.png"
-                      alt="Logo de la Région Souss Massa"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <h1 className="text-sidebar-foreground font-bold tracking-tight text-lg">
-                    Souss Massa
+                  <h1 className="text-sidebar-foreground font-bold tracking-tight text-base">
+                    Suivi des conventions
                   </h1>
                 </div>
 
                 <div className="px-6 py-4 flex-1 flex flex-col">
-                  <div className="text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold mb-4">
-                    Suivi des conventions
-                  </div>
-
                   <nav className="space-y-1">
                     {allItems.map((item) => {
                       const isActive = estNavigationActive(location, item.href);
