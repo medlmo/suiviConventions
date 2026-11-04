@@ -109,6 +109,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
         </div>
+        <div className="flex-1 min-h-48 flex items-center justify-center px-6 py-8">
+          <img
+            src="/logo-crsm-blanc.png"
+            alt="Région Souss Massa"
+            className="w-44 max-h-72 object-contain opacity-95"
+          />
+        </div>
         {account}
       </div>
 
@@ -125,7 +132,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </SheetTrigger>
               <SheetContent
                 side="left"
-                className="w-72 bg-sidebar border-sidebar-border p-0"
+                className="w-72 h-full bg-sidebar border-sidebar-border p-0 flex flex-col"
               >
                 <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
                 <div className="h-16 flex items-center px-6 border-b border-sidebar-border bg-sidebar/50">
@@ -141,7 +148,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </h1>
                 </div>
 
-                <div className="px-6 py-4">
+                <div className="px-6 py-4 flex-1 flex flex-col">
                   <div className="text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold mb-4">
                     Suivi des conventions
                   </div>
@@ -171,7 +178,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       );
                     })}
                   </nav>
-                  <div className="mt-8 border-t border-sidebar-border pt-4 text-sidebar-foreground">
+                  <div className="flex-1 min-h-40 flex items-center justify-center py-6">
+                    <img
+                      src="/logo-crsm-blanc.png"
+                      alt="Région Souss Massa"
+                      className="w-40 max-h-64 object-contain opacity-95"
+                    />
+                  </div>
+                  <div className="mt-auto border-t border-sidebar-border pt-4 text-sidebar-foreground">
                     <p className="px-3 text-sm font-semibold">{user?.username}</p><p className="px-3 text-xs opacity-60">{user ? roleLabels[user.role] : ""}</p>
                     <button type="button" onClick={() => void handleLogout()} className="mt-3 px-3 py-2 flex items-center gap-2 text-sm"><LogOut className="w-4 h-4" /> Se déconnecter</button>
                   </div>
