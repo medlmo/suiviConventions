@@ -27,8 +27,14 @@ export default function SignIn() {
   }
   return <main className="min-h-[100dvh] grid lg:grid-cols-[minmax(0,1.04fr)_minmax(440px,.96fr)] bg-background">
     <section className="auth-panel auth-grid text-sidebar-foreground min-h-[36dvh] lg:min-h-[100dvh] p-8 md:p-14 lg:p-20 flex flex-col justify-between overflow-hidden">
-      <div className="flex items-center gap-4"><div className="bg-card rounded-lg p-1.5 w-14 h-14"><img src="/logo-crsm.png" alt="Emblème de la Région Souss-Massa" className="w-full h-full object-contain" /></div><div className="leading-tight"><strong className="block text-lg">Région Souss Massa</strong><span className="text-sm text-sidebar-foreground/65">Suivi des conventions</span></div></div>
-      <div className="max-w-xl py-12 lg:py-0"><div className="w-14 h-1 bg-secondary mb-8" /><p className="uppercase tracking-[.22em] text-xs text-sidebar-foreground/65 mb-5">Suivi des conventions</p><p className="mt-6 text-base md:text-lg text-sidebar-foreground/75 leading-relaxed max-w-md">Un espace réservé aux équipes de la Région pour suivre les conventions, leurs échéances et les décisions qui comptent.</p></div>
+      <div className="flex items-start">
+        <img
+          src="/logo-crsm-blanc.png"
+          alt="Région Souss-Massa"
+          className="w-28 max-h-40 object-contain object-left"
+        />
+      </div>
+      <div className="max-w-xl py-12 lg:py-0"><div className="w-14 h-1 bg-secondary mb-8" /><p className="text-base md:text-lg text-sidebar-foreground/75 leading-relaxed max-w-md">Un espace réservé aux équipes de la Région pour suivre les conventions, leurs échéances et les décisions qui comptent.</p></div>
       <div className="hidden lg:flex items-center gap-2 text-xs text-sidebar-foreground/55"><ShieldCheck className="w-4 h-4" /> Accès réservé aux comptes autorisés</div>
     </section>
     <section className="flex items-center justify-center p-6 md:p-14 lg:p-20"><div className="w-full max-w-[420px] py-8">
