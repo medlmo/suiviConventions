@@ -6,6 +6,15 @@ import { filtrePerimetre as determinerFiltrePerimetre } from "./convention-acces
 
 export { accessible, affectationsValides } from "./convention-access-domain";
 
+export function peutEcrire(user: SessionUser): boolean {
+  return user.role === "admin" || user.role === "chef_division" || user.role === "chef_service";
+}
+
+/** Toutes les consultations excluent les suppressions et respectent le périmètre. */
+export function conditionsVisibles(user: SessionUser, reference: ReferenceData, filtre?: SQL): SQL {
+  return and(isNull(conventionsTable.deletedAt), filtrePerimetre(user, reference), filtre)!;
+}
+
 /** Shared with lists and notifications, including after account/organisation changes. */
 export function filtrePerimetre(user: SessionUser, reference: ReferenceData): SQL | undefined {
   const filtre = determinerFiltrePerimetre(user, reference);
