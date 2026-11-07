@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { DocumentSecurityError } from "./document-security-errors";
+import { DocumentSecurityError } from "./document-security-errors.ts";
 
 /** Aucun shell, sortie bornée, délai et arrêt forcé ; ne jamais journaliser la sortie des fichiers. */
 export function runDocumentTool(command: string, args: string[], timeout = 20_000, maxBuffer = 512 * 1024):

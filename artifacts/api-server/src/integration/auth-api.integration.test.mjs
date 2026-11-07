@@ -52,6 +52,24 @@ function insertUnattachedHistoricalConvention(name, responsableProjet) {
   return { id: Number(output.trim()), nomConvention: name };
 }
 
+function insertDivisionConventionWithoutResponsable(name, rattachement) {
+  const literal = value => `'${value.replaceAll("'", "''")}'`;
+  const query = `INSERT INTO conventions (nom_convention, rattachement, responsable_projet) VALUES (${literal(name)}, ${literal(rattachement)}, NULL) RETURNING id`;
+  const output = run("psql", [
+    "--no-psqlrc", "-qAt", databaseUrl, "-v", "ON_ERROR_STOP=1", "-c", query,
+  ]);
+  return { id: Number(output.trim()), nomConvention: name };
+}
+
+function insertUnattachedConvention(name) {
+  const literal = value => `'${value.replaceAll("'", "''")}'`;
+  const query = `INSERT INTO conventions (nom_convention, rattachement, responsable_projet) VALUES (${literal(name)}, NULL, NULL) RETURNING id`;
+  const output = run("psql", [
+    "--no-psqlrc", "-qAt", databaseUrl, "-v", "ON_ERROR_STOP=1", "-c", query,
+  ]);
+  return { id: Number(output.trim()), nomConvention: name };
+}
+
 function vieillirNotification(id) {
   assert.ok(Number.isSafeInteger(id) && id > 0);
   run("psql", [
@@ -396,7 +414,11 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.ok(contenuFiche.includes("AVANCEMENT PHYSIQUE DU PROJET"));
     assert.ok(contenuFiche.includes("28,75"), "le taux le plus récent doit figurer dans la fiche");
     assert.ok(contenuFiche.includes("Réestimation après contrôle"));
-    assert.ok(contenuFiche.includes("Direction technique"));
+    assert.equal(
+      contenuFiche.includes("Direction technique"),
+      false,
+      "les auteurs des constats ne sont pas exposés dans la fiche technique",
+    );
     assert.ok(contenuFiche.includes("SITUATION DES VERSEMENTS DE LA RÉGION SOUSS MASSA"));
     assert.ok(contenuFiche.includes("Total programmé"));
     assert.ok(contenuFiche.includes("Date de versement"));
@@ -466,6 +488,74 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       assert.equal(creation.status, 201, `le compte ${account.username} doit être créé`);
       cookies[account.key] = await loginAs(baseUrl, origin, account.username);
     }
+
+    const uploadSansSession = await apiRequest(baseUrl, "/storage/uploads/request-url", {
+      origin,
+      method: "POST",
+      body: { name: "preuve.pdf", size: 9, contentType: "application/pdf" },
+    });
+    assert.equal(uploadSansSession.status, 401, "un téléversement nécessite une session");
+
+    const uploadLectureSeule = await apiRequest(baseUrl, "/storage/uploads/request-url", {
+      cookie: cookies.directeur_general_services,
+      origin,
+      method: "POST",
+      body: { name: "preuve.pdf", size: 9, contentType: "application/pdf" },
+    });
+    assert.equal(uploadLectureSeule.status, 403, "un profil en lecture seule ne peut pas réserver un dépôt");
+
+    const uploadTypeIncoherent = await apiRequest(baseUrl, "/storage/uploads/request-url", {
+      cookie,
+      origin,
+      method: "POST",
+      body: { name: "preuve.pdf", size: 9, contentType: "application/msword" },
+    });
+    assert.equal(uploadTypeIncoherent.status, 400, "l’extension et le type MIME doivent correspondre");
+
+    const reservationUpload = await apiRequest(baseUrl, "/storage/uploads/request-url", {
+      cookie,
+      origin,
+      method: "POST",
+      body: { name: "preuve.pdf", size: 9, contentType: "application/pdf" },
+    });
+    assert.equal(reservationUpload.status, 200, "un utilisateur autorisé peut réserver un dépôt");
+    const ticketUpload = await reservationUpload.json();
+    assert.match(ticketUpload.objectPath, /^\/objects\/uploads\/[0-9a-f-]{36}$/i);
+
+    const uploadAutreProprietaire = await fetch(new URL(ticketUpload.uploadURL, baseUrl), {
+      method: "PUT",
+      headers: {
+        cookie: cookies.chef_service,
+        origin,
+        "content-type": "application/pdf",
+      },
+    });
+    assert.equal(uploadAutreProprietaire.status, 404, "le jeton de dépôt ne peut pas être utilisé par un autre compte");
+
+    const octetsPdf = Buffer.from("%PDF-1.7\n");
+    const televersement = await fetch(new URL(ticketUpload.uploadURL, baseUrl), {
+      method: "PUT",
+      headers: {
+        cookie,
+        origin,
+        "content-type": "application/pdf",
+        "content-length": String(octetsPdf.length),
+      },
+      body: octetsPdf,
+    });
+    assert.equal(televersement.status, 204, "les octets conformes à la taille et au type sont reçus");
+
+    const televersementRejoue = await fetch(new URL(ticketUpload.uploadURL, baseUrl), {
+      method: "PUT",
+      headers: {
+        cookie,
+        origin,
+        "content-type": "application/pdf",
+        "content-length": String(octetsPdf.length),
+      },
+      body: octetsPdf,
+    });
+    assert.equal(televersementRejoue.status, 409, "un dépôt reçu est à usage unique");
 
     await assertAccountAdminRequired(baseUrl, origin, cookies.chef_service, 403);
 
@@ -544,10 +634,10 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       rattachement: division,
       responsableProjet: peerService,
     });
-    const divisionWithoutService = await createConvention(baseUrl, cookie, origin, {
-      nomConvention: "Test périmètre — service non renseigné",
-      rattachement: division,
-    });
+    const divisionWithoutService = insertDivisionConventionWithoutResponsable(
+      "Test périmètre — service non renseigné",
+      division,
+    );
     const otherDivisionConvention = await createConvention(baseUrl, cookie, origin, {
       nomConvention: "Test périmètre — autre division",
       rattachement: otherDivision,
@@ -567,11 +657,9 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.equal(notificationDgs?.kind, "creation", "la DGS reçoit la création d'un service qui lui est rattaché");
     assert.equal(notificationDgs?.actorUsername, "admin", "la notification identifie son auteur");
     assert.equal(notificationDgs?.conventionName, dgsConvention.nomConvention);
-    const unattachedConvention = await createConvention(baseUrl, cookie, origin, {
-      nomConvention: "Test périmètre — sans rattachement historique",
-      rattachement: null,
-      responsableProjet: null,
-    });
+    const unattachedConvention = insertUnattachedConvention(
+      "Test périmètre — sans rattachement historique",
+    );
     const unattachedHistoricalConvention = insertUnattachedHistoricalConvention(
       "Test périmètre — service connu sans rattachement",
       service,

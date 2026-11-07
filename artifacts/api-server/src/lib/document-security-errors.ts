@@ -1,10 +1,15 @@
 export class DocumentSecurityError extends Error {
+  readonly code: "DOCUMENT_REJECTED" | "ANALYSIS_UNAVAILABLE" | "ANALYSIS_BUSY";
+  readonly status: number;
+
   constructor(
     message: string,
-    readonly code: "DOCUMENT_REJECTED" | "ANALYSIS_UNAVAILABLE" | "ANALYSIS_BUSY",
-    readonly status = code === "DOCUMENT_REJECTED" ? 423 : 503,
+    code: "DOCUMENT_REJECTED" | "ANALYSIS_UNAVAILABLE" | "ANALYSIS_BUSY",
+    status = code === "DOCUMENT_REJECTED" ? 423 : 503,
   ) {
     super(message);
+    this.code = code;
+    this.status = status;
     this.name = "DocumentSecurityError";
   }
   get securityStatus(): "rejected" | "quarantined" {

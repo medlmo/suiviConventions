@@ -1,8 +1,8 @@
 import { crc32 } from "node:zlib";
 import { fromBuffer, type Entry } from "yauzl";
 import { XMLParser, XMLValidator } from "fast-xml-parser";
-import { documentRejected } from "./document-security-errors";
-import { runDocumentTool } from "./document-tools";
+import { documentRejected } from "./document-security-errors.ts";
+import { runDocumentTool } from "./document-tools.ts";
 
 const MAX_EXPANDED = 64 * 1024 * 1024;
 const MAX_ENTRY = 20 * 1024 * 1024;
