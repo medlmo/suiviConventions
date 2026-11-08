@@ -1,0 +1,40 @@
+name: Security checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  confidential-paths:
+    name: Check confidential paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reject confidential tracked paths
+        run: bash scripts/check-confidential-paths.sh tracked
+      - name: Reject confidential paths in incoming commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            bash scripts/check-confidential-paths.sh history "$HEAD_SHA" "$BASE_SHA"
+          else
+            bash scripts/check-confidential-paths.sh history "$HEAD_SHA"
+          fi
+
+  secret-scan:
+    name: Scan Git history for secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -49,8 +49,21 @@ Thumbs.db
 .local/
 /.agents/skills/security-audit/
 
+# Local environment files and private keys
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+.ssh/
+
 # Données métier réelles, sources privées et captures : ne jamais publier.
 /data/conventions_seed.json
 /attached_assets/
 /screenshots/
 /.conversation/
+/.agents/memory/

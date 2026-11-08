@@ -1,6 +1,7 @@
 #!/bin/sh
 # Refuse aussi les anciens commits : .gitignore ne protège pas l'historique.
 set -eu
+repo_root=$(git rev-parse --show-toplevel)
 # Les sauvegardes internes de Replit ne sont pas des publications GitHub.
 case "${2-}" in
   https://github.com/*|https://*@github.com/*|git@github.com:*|ssh://git@github.com/*) ;;
@@ -10,10 +11,9 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   case "$local_sha" in
     0000000000000000000000000000000000000000) continue ;;
   esac
-  objects=$(git rev-list --objects "$local_sha") || exit 1
-  if printf '%s\n' "$objects" | grep -Eq '^[[:xdigit:]]+ (data/conventions_seed\.json$|attached_assets/|screenshots/|\.conversation/)'; then
-    echo "Push refusé : cette branche contient encore des fichiers confidentiels dans son historique." >&2
-    echo "Repartez de l'historique nettoyé ; ne fusionnez pas une ancienne branche ou un ancien clone." >&2
+  if ! "$repo_root/scripts/check-confidential-paths.sh" history "$local_sha" "$remote_sha"; then
+    echo "Push refusé : les nouveaux commits contiennent des chemins confidentiels." >&2
+    echo "Retirez ces fichiers des commits à envoyer avant de pousser." >&2
     exit 1
   fi
 done

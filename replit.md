@@ -36,9 +36,11 @@ Application interne de suivi des conventions de partenariat de la Région Souss-
 ## Confidentialité des fichiers
 
 - Ne jamais versionner ni publier de données métier réelles, de sources Excel internes, de briefs internes ou de captures contenant des données métier.
-- Les dossiers `attached_assets/`, `screenshots/`, `.conversation/` et le fichier `data/conventions_seed.json` sont exclus de Git et des images publiées.
+- Les dossiers `attached_assets/`, `screenshots/`, `.conversation/`, `.agents/memory/` et le fichier `data/conventions_seed.json` sont exclus de Git et des images publiées.
+- Les fichiers `.env*` (sauf `.env.example`) et les clés privées ne doivent jamais être versionnés.
 - Les données réelles restent dans les bases protégées. Tout exemple public doit être créé de toutes pièces, clairement fictif, et non simplement pseudonymisé à partir de données réelles.
-- Activer la protection locale avec `git config core.hooksPath .githooks` : elle refuse les pushes dont l'historique contient les chemins privés. Après une purge, ne jamais fusionner un ancien clone ou pousser les branches internes historiques de Replit vers GitHub.
+- Installer les contrôles locaux avec `pnpm run security:install-hooks`. Le hook de pré-commit bloque l'ajout de chemins confidentiels et le hook de pré-push contrôle l'historique envoyé vers GitHub. GitHub Actions contrôle aussi les chemins suivis et lance Gitleaks.
+- Après une purge, ne jamais fusionner un ancien clone ou pousser les branches internes historiques de Replit vers GitHub ; les règles locales et CI ne suppriment pas les données déjà présentes dans l'historique distant.
 
 ## Architecture decisions
 

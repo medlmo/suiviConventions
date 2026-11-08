@@ -3,6 +3,7 @@
 
 # No need to store the pnpm store twice.
 .local
+/.agents/memory/
 /data/conventions_seed.json
 /attached_assets/
 /screenshots/
