@@ -5,6 +5,7 @@ import authRouter from "./auth";
 import adminRouter from "./admin";
 import storageRouter from "./storage";
 import notificationsRouter from "./notifications";
+import operationsRouter from "./operations";
 import { sessionMiddleware } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -14,6 +15,7 @@ router.use(authRouter);
 router.use(sessionMiddleware);
 router.use(storageRouter);
 router.use(notificationsRouter);
+router.use(operationsRouter);
 router.use(conventionsRouter);
 router.use(adminRouter);
 

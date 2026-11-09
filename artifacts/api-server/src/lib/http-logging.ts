@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import pinoHttp, { startTime } from "pino-http";
 import { logger } from "./logger";
 import { safeErrorFields } from "./error-logging";
+import { recordHttpRequest } from "./operations-monitor";
 
 type RequestEvent =
   | "api.request.failed" | "api.request.rejected" | "document.security.blocked"
@@ -41,7 +42,7 @@ export function recordRequestFailure(
 }
 
 function isHealthCheck(req: Request): boolean {
-  return req.method === "GET" && ["/api/healthz", "/api/healthz/antivirus"].includes(
+  return req.method === "GET" && ["/api/healthz", "/api/readyz", "/api/healthz/antivirus"].includes(
     (req.originalUrl ?? "").split("?")[0],
   );
 }
@@ -60,6 +61,8 @@ function completionFields(req: Request, res: Response, durationMs: number, error
   const { status: failureStatus, ...diagnostics } = context ?? {};
   const status = statusFor(res);
   const interrupted = !res.writableFinished;
+  const route = routeFor(req);
+  recordHttpRequest({ route, status: res.statusCode, durationMs });
   return {
     event: context?.event ?? (interrupted ? "http.request.interrupted"
       : status >= 500 ? "http.request.failed"
@@ -68,7 +71,7 @@ function completionFields(req: Request, res: Response, durationMs: number, error
     requestId: req.id,
     method: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"].includes(req.method)
       ? req.method : "OTHER",
-    route: routeFor(req),
+    route,
     status: res.statusCode,
     ...(failureStatus !== undefined && failureStatus !== res.statusCode ? { failureStatus } : {}),
     durationMs,

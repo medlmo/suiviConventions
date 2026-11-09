@@ -13,6 +13,7 @@ import SignIn from '@/pages/sign-in';
 import AdminUsers from '@/pages/admin-users';
 import AdminJournal from '@/pages/admin-journal';
 import AdminReferentiel from '@/pages/admin-referentiel';
+import AdminOperations from '@/pages/admin-operations';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 
@@ -52,6 +53,7 @@ function Router() {
           <Route path="/admin/utilisateurs" component={AdminUsers} />
           <Route path="/admin/referentiel" component={AdminReferentiel} />
           <Route path="/admin/journal" component={AdminJournal} />
+          <Route path="/admin/operations" component={AdminOperations} />
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>

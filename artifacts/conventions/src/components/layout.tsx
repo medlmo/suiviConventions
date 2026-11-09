@@ -8,8 +8,11 @@ import {
   Users,
   History,
   FolderTree,
+  Activity,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth, roleLabels } from "@/hooks/use-auth";
+import { useOperationsSnapshot, useServiceReadiness } from "@/hooks/use-operational-health";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -45,6 +48,8 @@ function estNavigationActive(location: string, href: string): boolean {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
+  const readiness = useServiceReadiness();
+  const operations = useOperationsSnapshot(user?.role === "admin");
   const handleLogout = async () => {
     await logout();
     setLocation("/sign-in");
@@ -54,6 +59,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { name: "Référentiel", href: "/admin/referentiel", icon: FolderTree },
     { name: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
     { name: "Journal des modifications", href: "/admin/journal", icon: History },
+    { name: "État du service", href: "/admin/operations", icon: Activity },
   ] : [];
   const allItems = [...items, ...adminItems];
   const account = <div className="border-t border-sidebar-border p-4 mt-auto">
@@ -194,7 +200,41 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Scrollable Content */}
         <main className="flex-1 min-h-0 overflow-auto bg-background p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">{children}</div>
+          <div className="max-w-7xl mx-auto">
+            {(readiness.data?.status === "unavailable" || readiness.isError ||
+              (user?.role === "admin" && operations.data?.alerts.length)) && <div
+                className={`mb-6 flex items-start gap-3 rounded-lg border p-4 ${
+                  readiness.data?.status === "unavailable" || readiness.isError
+                    ? "border-destructive/40 bg-destructive/5"
+                    : "border-amber-500/40 bg-amber-500/5"
+                }`}
+                role="alert"
+                aria-live="polite"
+                data-testid="alert-service-status"
+              >
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">
+                    {readiness.data?.status === "unavailable"
+                      ? "La base de données est temporairement indisponible."
+                      : readiness.isError
+                        ? "L’état du service ne peut pas être vérifié."
+                        : operations.data?.alerts[0]?.title}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {readiness.data?.status === "unavailable"
+                      ? "Certaines fonctions peuvent échouer. L’équipe d’administration est informée dans l’application."
+                      : readiness.isError
+                        ? "Réessayez dans quelques instants."
+                        : operations.data?.alerts[0]?.description}
+                  </p>
+                </div>
+                {user?.role === "admin" && <Link href="/admin/operations" className="shrink-0 text-sm font-medium text-primary underline">
+                  Voir l’état du service
+                </Link>}
+              </div>}
+            {children}
+          </div>
         </main>
       </div>
     </div>
