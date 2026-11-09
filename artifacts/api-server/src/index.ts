@@ -6,7 +6,7 @@ import { safeErrorFields } from "./lib/error-logging";
 import { purgerConventionsSupprimees } from "./lib/convention-purge";
 
 const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
-const CONVENTION_PURGE_INTERVAL_MS = 15 * 60 * 1000;
+const CONVENTION_PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 function fatalStartup(error: unknown, event: string, operation: string): void {
   logger.fatal({ event, operation, errorCode: "STARTUP_FAILED", ...safeErrorFields(error) }, "Server cannot start");
