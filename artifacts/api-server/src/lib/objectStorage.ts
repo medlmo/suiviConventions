@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { File, Storage } from "@google-cloud/storage";
+import type { File } from "@google-cloud/storage";
 import { inspectDocument, DOCUMENT_SECURITY_POLICY } from "./document-security";
 import { documentRejected } from "./document-security-errors";
+import { objectStorageClient } from "./object-storage-client";
 
-const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+export { objectStorageClient } from "./object-storage-client";
 
 export const DOCUMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -15,24 +16,6 @@ const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
 
 const OBJECT_PATH_PATTERN = /^\/objects\/(?:uploads|documents)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DOCUMENT_PATH_PATTERN = /^\/objects\/documents\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export const objectStorageClient = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-      format: {
-        type: "json",
-        subject_token_field_name: "access_token",
-      },
-    },
-    universe_domain: "googleapis.com",
-  },
-  projectId: "",
-});
 
 export class ObjectNotFoundError extends Error {
   constructor() {
