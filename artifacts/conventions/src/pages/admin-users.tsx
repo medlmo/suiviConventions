@@ -21,6 +21,16 @@ import {
 
 type FormData = { username: string; password: string; role: Role; direction: string; division: string; service: string };
 type Confirmation = { kind: "toggle" | "delete"; user: User };
+const PASSWORD_PATTERN = String.raw`(?=.*[A-Z])(?=.*[a-z])(?=.*(?:[0-9]|[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])).{8,1024}`;
+const PASSWORD_POLICY_MESSAGE = "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial, et être différent de l'identifiant.";
+
+function validatePasswordForUsername(password: string, username: string): string | null {
+  if (!new RegExp(`^${PASSWORD_PATTERN}$`).test(password) || password.toLowerCase() === username.trim().toLowerCase()) {
+    return PASSWORD_POLICY_MESSAGE;
+  }
+  return null;
+}
+
 const blank: FormData = { username: "", password: "", role: "chef_service", direction: "", division: "", service: "" };
 const roles: Role[] = ["admin", "directeur", "directeur_general_services", "chef_division", "chef_service"];
 const field = "w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -63,6 +73,10 @@ export default function AdminUsers() {
   }
   async function save(event: FormEvent) {
     event.preventDefault();
+    if (!editing) {
+      const passwordError = validatePasswordForUsername(form.password, form.username);
+      if (passwordError) { setError(passwordError); return; }
+    }
     if (reference.isPending || reference.isError) { setError("L’organigramme est indisponible. Réessayez avant d’enregistrer."); return; }
     setBusy(true); setError("");
     const scope = form.role === "admin" || form.role === "directeur_general_services" ? { direction: null, division: null, service: null }
@@ -108,6 +122,8 @@ export default function AdminUsers() {
   }
   async function changePassword(event: FormEvent) {
     event.preventDefault(); if (!passwordFor) return;
+    const passwordError = validatePasswordForUsername(password, passwordFor.username);
+    if (passwordError) { setError(passwordError); return; }
     setBusy(true); setError("");
     try { await api<void>(`/admin/users/${passwordFor.id}/password`, { method: "POST", body: JSON.stringify({ password }) }); setPasswordFor(null); setPassword(""); }
     catch (cause) { setError(errorMessage(cause)); }
@@ -126,7 +142,7 @@ export default function AdminUsers() {
       </div>)}</div>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl"><DialogHeader><DialogTitle>{editing ? "Modifier le compte" : "Nouveau compte"}</DialogTitle><DialogDescription>Définissez le rôle et le périmètre de l'utilisateur.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4">
       <div className="space-y-1.5"><label htmlFor="account-name" className="text-sm font-medium">Nom d'utilisateur</label><Input id="account-name" autoComplete="off" required value={form.username} onChange={event => setForm({ ...form, username: event.target.value })} /></div>
-      {!editing && <div className="space-y-1.5"><label htmlFor="account-password" className="text-sm font-medium">Mot de passe initial (8 caractères minimum)</label><Input id="account-password" type="password" autoComplete="new-password" minLength={8} required value={form.password} onChange={event => setForm({ ...form, password: event.target.value })} /></div>}
+       {!editing && <div className="space-y-1.5"><label htmlFor="account-password" className="text-sm font-medium">Mot de passe initial</label><Input id="account-password" type="password" autoComplete="new-password" minLength={8} maxLength={1024} pattern={PASSWORD_PATTERN} title={PASSWORD_POLICY_MESSAGE} required value={form.password} onChange={event => setForm({ ...form, password: event.target.value })} /><p className="text-xs text-muted-foreground">8 caractères minimum, avec une majuscule, une minuscule et un chiffre ou caractère spécial. Différent de l'identifiant.</p></div>}
       <div className="space-y-1.5"><label htmlFor="account-role" className="text-sm font-medium">Rôle</label><select id="account-role" className={field} value={form.role} onChange={event => setForm({ ...form, role: event.target.value as Role, direction: "", division: "", service: "" })}>{roles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}</select></div>
        {reference.isPending && <p className="text-sm text-muted-foreground">Chargement de l’organigramme…</p>}
        {reference.isError && <p role="alert" className="text-sm text-destructive">Organigramme indisponible : {errorMessage(reference.error)} <button type="button" className="underline" onClick={() => void reference.refetch()}>Réessayer</button></p>}
@@ -138,7 +154,7 @@ export default function AdminUsers() {
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
        <div className="flex justify-end gap-2 pt-3"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Annuler</Button><Button disabled={busy || !reference.data} type="submit">{busy ? "Enregistrement…" : "Enregistrer"}</Button></div>
     </form></DialogContent></Dialog>
-    <Dialog open={!!passwordFor} onOpenChange={open => { if (!open) setPasswordFor(null); }}><DialogContent><DialogHeader><DialogTitle>Changer le mot de passe</DialogTitle><DialogDescription>Nouveau mot de passe pour {passwordFor?.username}.</DialogDescription></DialogHeader><form onSubmit={changePassword} className="space-y-4"><label htmlFor="new-password" className="text-sm font-medium">Nouveau mot de passe (8 caractères minimum)</label><Input id="new-password" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={event => setPassword(event.target.value)} />{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setPasswordFor(null)}>Annuler</Button><Button disabled={busy} type="submit">Mettre à jour</Button></div></form></DialogContent></Dialog>
+    <Dialog open={!!passwordFor} onOpenChange={open => { if (!open) setPasswordFor(null); }}><DialogContent><DialogHeader><DialogTitle>Changer le mot de passe</DialogTitle><DialogDescription>Nouveau mot de passe pour {passwordFor?.username}.</DialogDescription></DialogHeader><form onSubmit={changePassword} className="space-y-4"><label htmlFor="new-password" className="text-sm font-medium">Nouveau mot de passe</label><Input id="new-password" type="password" autoComplete="new-password" minLength={8} maxLength={1024} pattern={PASSWORD_PATTERN} title={PASSWORD_POLICY_MESSAGE} required value={password} onChange={event => setPassword(event.target.value)} /><p className="text-xs text-muted-foreground">8 caractères minimum, avec une majuscule, une minuscule et un chiffre ou caractère spécial. Différent de l'identifiant.</p>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setPasswordFor(null)}>Annuler</Button><Button disabled={busy} type="submit">Mettre à jour</Button></div></form></DialogContent></Dialog>
     <AlertDialog
       open={confirmation !== null}
       onOpenChange={(isOpen) => {

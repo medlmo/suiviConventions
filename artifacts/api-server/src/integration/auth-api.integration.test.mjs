@@ -10,7 +10,7 @@ import yauzl from "yauzl";
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workspaceRoot = resolve(packageDir, "../..");
-const fixturePassword = "integration-password-not-for-use";
+const fixturePassword = "Integration-password-42!";
 const startupTimeoutMs = 20_000;
 
 let temporaryDirectory;

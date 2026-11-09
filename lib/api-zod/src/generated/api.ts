@@ -239,11 +239,13 @@ export const createUserBodyUsernameMax = 100;
 export const createUserBodyPasswordMin = 8;
 export const createUserBodyPasswordMax = 1024;
 
+
+export const createUserBodyPasswordRegExp = new RegExp('^(?=.*[A-Z])(?=.*[a-z])(?=.*(?:[0-9]|[\\x21-\\x2F\\x3A-\\x40\\x5B-\\x60\\x7B-\\x7E])).{8,1024}$');
 export const createUserBodyActiveDefault = true;
 
 export const CreateUserBody = zod.object({
   "username": zod.string().min(1).max(createUserBodyUsernameMax),
-  "password": zod.string().min(createUserBodyPasswordMin).max(createUserBodyPasswordMax),
+  "password": zod.string().min(createUserBodyPasswordMin).max(createUserBodyPasswordMax).regex(createUserBodyPasswordRegExp).describe('Au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial.'),
   "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']),
   "direction": zod.string().nullish(),
   "division": zod.string().nullish(),
@@ -432,9 +434,11 @@ export const resetUserPasswordBodyPasswordMin = 8;
 export const resetUserPasswordBodyPasswordMax = 1024;
 
 
+export const resetUserPasswordBodyPasswordRegExp = new RegExp('^(?=.*[A-Z])(?=.*[a-z])(?=.*(?:[0-9]|[\\x21-\\x2F\\x3A-\\x40\\x5B-\\x60\\x7B-\\x7E])).{8,1024}$');
+
 
 export const ResetUserPasswordBody = zod.object({
-  "password": zod.string().min(resetUserPasswordBodyPasswordMin).max(resetUserPasswordBodyPasswordMax)
+  "password": zod.string().min(resetUserPasswordBodyPasswordMin).max(resetUserPasswordBodyPasswordMax).regex(resetUserPasswordBodyPasswordRegExp).describe('Au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial ; différent de l\'identifiant.')
 })
 
 export const ResetUserPasswordResponse = zod.void()

@@ -11,6 +11,9 @@ const SESSION_HOURS = 24;
 // but still do the same fixed-size scrypt work as an existing account.
 const DUMMY_PASSWORD_SALT = Buffer.alloc(16);
 const DUMMY_PASSWORD_KEY = Buffer.alloc(64);
+const NEW_PASSWORD_PATTERN = /^(?=.*[A-Z])(?=.*[a-z])(?=.*(?:[0-9]|[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])).{8,1024}$/;
+export const NEW_PASSWORD_POLICY_MESSAGE =
+  "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial, et être différent de l'identifiant.";
 
 export type Role = "admin" | "directeur" | "directeur_general_services" | "chef_division" | "chef_service";
 export type SessionUser = Pick<AppUser, "id" | "username" | "role" | "direction" | "division" | "service" | "active">;
@@ -49,6 +52,12 @@ export async function hashPassword(password: string): Promise<string> {
   return derivePassword(password);
 }
 
+export function validateNewPassword(password: string, username: string): string | null {
+  if (!NEW_PASSWORD_PATTERN.test(password)) return NEW_PASSWORD_POLICY_MESSAGE;
+  if (password.toLowerCase() === username.trim().toLowerCase()) return NEW_PASSWORD_POLICY_MESSAGE;
+  return null;
+}
+
 export async function verifyPassword(password: string, encoded?: string): Promise<boolean> {
   const verifier = /^scrypt\$([0-9a-fA-F]{32})\$([0-9a-fA-F]{128})$/.exec(encoded ?? "");
   const salt = verifier ? Buffer.from(verifier[1]!, "hex") : DUMMY_PASSWORD_SALT;
@@ -71,8 +80,9 @@ export async function bootstrapAdmin(): Promise<void> {
       "Aucun compte administrateur n'existe. Configurez le secret ADMIN_BOOTSTRAP_PASSWORD pour créer le compte initial, puis redémarrez le serveur.",
     );
   }
-  if (password.length < 8) {
-    throw new Error("Le mot de passe initial de l'administrateur doit contenir au moins 8 caractères.");
+  const passwordError = validateNewPassword(password, "admin");
+  if (passwordError) {
+    throw new Error(`Le mot de passe initial de l'administrateur est invalide. ${passwordError}`);
   }
   await db.insert(usersTable).values({
     username: "admin",

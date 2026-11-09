@@ -14,8 +14,10 @@ export interface UserInput {
      */
   username: string;
   /**
+     * Au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial.
      * @minLength 8
      * @maxLength 1024
+     * @pattern ^(?=.*[A-Z])(?=.*[a-z])(?=.*(?:[0-9]|[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])).{8,1024}$
      */
   password: string;
   role: Role;

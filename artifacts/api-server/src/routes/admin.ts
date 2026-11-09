@@ -15,6 +15,7 @@ import {
 import {
   adminRequired,
   hashPassword,
+  validateNewPassword,
   type Role,
   versUtilisateur,
 } from "../lib/auth";
@@ -91,8 +92,13 @@ router.post("/admin/users", adminRequired, async (req, res): Promise<void> => {
   }
   const username = body.username.trim();
   const role = body.role as Role;
-  if (!username || username.length > 100 || body.password.length < 8 || body.password.length > 1024) {
-    res.status(400).json({ error: "Identifiant ou mot de passe invalide (8 caractères minimum)." });
+  if (!username || username.length > 100) {
+    res.status(400).json({ error: "Identifiant invalide." });
+    return;
+  }
+  const passwordError = validateNewPassword(body.password, username);
+  if (passwordError) {
+    res.status(400).json({ error: passwordError });
     return;
   }
   if (
@@ -282,8 +288,18 @@ router.delete("/admin/users/:id", adminRequired, async (req, res): Promise<void>
 router.post("/admin/users/:id/password", adminRequired, async (req, res): Promise<void> => {
   const id = idFrom(req.params.id);
   const password = (req.body as { password?: unknown } | null)?.password;
-  if (!id || typeof password !== "string" || password.length < 8 || password.length > 1024) {
-    res.status(400).json({ error: "Mot de passe invalide (8 caractères minimum)." });
+  if (!id || typeof password !== "string") {
+    res.status(400).json({ error: "Identifiant ou mot de passe invalide." });
+    return;
+  }
+  const [target] = await db.select({ username: usersTable.username }).from(usersTable).where(eq(usersTable.id, id)).limit(1);
+  if (!target) {
+    res.status(404).json({ error: "Compte introuvable." });
+    return;
+  }
+  const passwordError = validateNewPassword(password, target.username);
+  if (passwordError) {
+    res.status(400).json({ error: passwordError });
     return;
   }
   const [user] = await db.update(usersTable).set({

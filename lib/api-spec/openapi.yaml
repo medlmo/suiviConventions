@@ -1391,7 +1391,12 @@ components:
       required: [username, password, role]
       properties:
         username: { type: string, minLength: 1, maxLength: 100 }
-        password: { type: string, minLength: 8, maxLength: 1024 }
+        password:
+          type: string
+          minLength: 8
+          maxLength: 1024
+          pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*(?:[0-9]|[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])).{8,1024}$'
+          description: Au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial.
         role: { $ref: "#/components/schemas/Role" }
         direction: { type: ["string", "null"] }
         division: { type: ["string", "null"] }
@@ -1410,7 +1415,12 @@ components:
       type: object
       required: [password]
       properties:
-        password: { type: string, minLength: 8, maxLength: 1024 }
+        password:
+          type: string
+          minLength: 8
+          maxLength: 1024
+          pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*(?:[0-9]|[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])).{8,1024}$'
+          description: Au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial ; différent de l'identifiant.
     AuditEvent:
       type: object
       required: [id, conventionId, action, actorUsername, before, after, createdAt]
