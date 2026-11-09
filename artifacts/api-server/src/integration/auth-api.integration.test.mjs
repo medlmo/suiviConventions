@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test, { after, before } from "node:test";
+import ExcelJS from "exceljs";
 import yauzl from "yauzl";
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -315,7 +316,7 @@ after(() => {
 
 test("les sessions et les périmètres de conventions sont vérifiés en base", {
   timeout: 45_000,
-}, async () => {
+}, async t => {
   const port = await findAvailablePort();
   const serverProcess = spawn(process.execPath, ["dist/index.mjs"], {
     cwd: packageDir,
@@ -521,6 +522,14 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.equal(reservationUpload.status, 200, "un utilisateur autorisé peut réserver un dépôt");
     const ticketUpload = await reservationUpload.json();
     assert.match(ticketUpload.objectPath, /^\/objects\/uploads\/[0-9a-f-]{36}$/i);
+
+    const finalisationTropTot = await apiRequest(baseUrl, "/storage/uploads/complete", {
+      cookie,
+      origin,
+      method: "POST",
+      body: { objectPath: ticketUpload.objectPath, name: "preuve.pdf" },
+    });
+    assert.equal(finalisationTropTot.status, 409, "un dépôt sans octets reçus ne peut pas être finalisé");
 
     const uploadAutreProprietaire = await fetch(new URL(ticketUpload.uploadURL, baseUrl), {
       method: "PUT",
@@ -1044,6 +1053,54 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       );
       assert.equal(deniedDelete.status, 403, `${role} ne peut pas supprimer de convention`);
     }
+
+    await t.test("le rate limiting bloque la treizième tentative de connexion", async () => {
+      const username = "rate-limit-integration-fixture";
+      for (let attempt = 1; attempt <= 12; attempt++) {
+        const response = await apiRequest(baseUrl, "/auth/login", {
+          origin,
+          method: "POST",
+          body: { username, password: "incorrect-password" },
+        });
+        assert.equal(response.status, 401, `la tentative ${attempt} doit rester une erreur d'identifiants`);
+      }
+      const blocked = await apiRequest(baseUrl, "/auth/login", {
+        origin,
+        method: "POST",
+        body: { username, password: "incorrect-password" },
+      });
+      assert.equal(blocked.status, 429);
+      assert.ok(Number(blocked.headers.get("retry-after")) > 0);
+    });
+
+    await t.test("l’export Excel respecte le périmètre et produit un classeur lisible", async () => {
+      const response = await apiRequest(baseUrl, "/conventions/export", {
+        cookie: cookies.chef_service,
+      });
+      assert.equal(response.status, 200);
+      assert.match(
+        response.headers.get("content-type") ?? "",
+        /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/,
+      );
+      assert.match(response.headers.get("content-disposition") ?? "", /attachment; filename="conventions-/);
+      assert.equal(response.headers.get("cache-control"), "private, no-store");
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(Buffer.from(await response.arrayBuffer()));
+      const sheet = workbook.getWorksheet("Conventions");
+      assert.ok(sheet, "le classeur contient la feuille Conventions");
+      assert.equal(sheet.getCell(1, 1).value, "Convention visée");
+      const names = [];
+      sheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1 && typeof row.getCell(1).value === "string") names.push(row.getCell(1).value);
+      });
+      assert.deepEqual(
+        names.sort(),
+        ["Test périmètre — création de division", "Test périmètre — service modifié"].sort(),
+        "l'export inclut toutes les conventions du service, quel que soit leur créateur",
+      );
+    });
+
     const logout = await fetch(`${baseUrl}/auth/logout`, {
       method: "POST",
       headers: { origin, cookie },

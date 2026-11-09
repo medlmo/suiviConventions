@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   discardUpload,
+  finalizeStagedUpload,
   getStagedUpload,
   reserveUpload,
   UPLOAD_TTL_MS,
@@ -70,4 +71,60 @@ test("une réservation expirée est inaccessible et libère la capacité au proc
   assert.ok(replacementState.expiresAt - Date.now() <= UPLOAD_TTL_MS);
   assert.ok(replacementState.expiresAt > Date.now());
   discardUpload(replacement.objectPath);
+});
+
+test("la finalisation conserve le document validé et libère les octets provisoires", async () => {
+  const ticket = reserve(530);
+  assert.ok(ticket);
+  const upload = getStagedUpload(ticket.objectPath, 530);
+  assert.ok(upload);
+  upload.state = "ready";
+  upload.bytes = Buffer.from("test");
+  const document = {
+    objectPath: "/objects/documents/00000000-0000-4000-8000-000000000001",
+    name: upload.name,
+    contentType: upload.contentType,
+    size: 4,
+    generation: "7",
+  };
+
+  try {
+    const result = await finalizeStagedUpload(upload, async (bytes, name) => {
+      assert.deepEqual(bytes, Buffer.from("test"));
+      assert.equal(name, upload.name);
+      return document;
+    });
+
+    assert.deepEqual(result, document);
+    assert.equal(upload.state, "completed");
+    assert.deepEqual(upload.document, document);
+    assert.equal(upload.bytes, undefined);
+    assert.ok(upload.expiresAt > Date.now());
+  } finally {
+    discardUpload(ticket.objectPath);
+  }
+});
+
+test("un échec de finalisation remet le dépôt en attente sans perdre ses octets", async () => {
+  const ticket = reserve(531);
+  assert.ok(ticket);
+  const upload = getStagedUpload(ticket.objectPath, 531);
+  assert.ok(upload);
+  upload.state = "ready";
+  upload.bytes = Buffer.from("test");
+  const bytes = upload.bytes;
+
+  try {
+    await assert.rejects(
+      finalizeStagedUpload(upload, async () => {
+        assert.equal(upload.state, "finalizing");
+        throw new Error("échec simulé du stockage");
+      }),
+      /échec simulé du stockage/,
+    );
+    assert.equal(upload.state, "ready");
+    assert.equal(upload.bytes, bytes);
+  } finally {
+    discardUpload(ticket.objectPath);
+  }
 });

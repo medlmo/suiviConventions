@@ -50,3 +50,25 @@ export function getStagedUpload(objectPath: string, ownerId: number): StagedUplo
 export function discardUpload(objectPath: string): void {
   uploads.delete(objectPath);
 }
+
+export async function finalizeStagedUpload(
+  upload: StagedUpload,
+  finalize: (bytes: Buffer, name: string) => Promise<VerifiedDocument>,
+): Promise<VerifiedDocument> {
+  if (upload.state !== "ready" || !upload.bytes) {
+    throw new Error("Le dépôt n'est pas prêt à être finalisé.");
+  }
+
+  upload.state = "finalizing";
+  try {
+    const document = await finalize(upload.bytes, upload.name);
+    upload.document = document;
+    upload.bytes = undefined;
+    upload.state = "completed";
+    upload.expiresAt = Date.now() + UPLOAD_TTL_MS;
+    return document;
+  } catch (error) {
+    upload.state = "ready";
+    throw error;
+  }
+}

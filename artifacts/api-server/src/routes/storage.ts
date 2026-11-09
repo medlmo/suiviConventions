@@ -14,7 +14,12 @@ import {
   typeDocumentPourNom,
   validateUploadBytes,
 } from "../lib/objectStorage";
-import { discardUpload, getStagedUpload, reserveUpload, UPLOAD_TTL_MS } from "../lib/upload-staging";
+import {
+  discardUpload,
+  finalizeStagedUpload,
+  getStagedUpload,
+  reserveUpload,
+} from "../lib/upload-staging";
 import { DocumentSecurityError } from "../lib/document-security-errors";
 import { recordRequestFailure } from "../lib/http-logging";
 
@@ -150,19 +155,13 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Le fichier n'est pas prêt ou son analyse est déjà en cours." });
     return;
   }
-  upload.state = "finalizing";
   try {
-    const document = await objectStorageService.finalizeUploadedDocument(
-      upload.bytes,
-      upload.name,
+    const document = await finalizeStagedUpload(
+      upload,
+      (bytes, name) => objectStorageService.finalizeUploadedDocument(bytes, name),
     );
-    upload.document = document;
-    upload.bytes = undefined;
-    upload.state = "completed";
-    upload.expiresAt = Date.now() + UPLOAD_TTL_MS;
     res.json(CompleteUploadResponse.parse(document));
   } catch (error) {
-    upload.state = "ready";
     if (error instanceof DocumentSecurityError) {
       if (error.code === "DOCUMENT_REJECTED") discardUpload(parsed.data.objectPath);
       recordRequestFailure(res, error, {
