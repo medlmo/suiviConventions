@@ -443,6 +443,25 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.equal(currentSession.status, 200);
     assert.equal((await currentSession.json()).username, "admin");
 
+    const listedUsers = await apiRequest(baseUrl, "/admin/users", { cookie });
+    assert.equal(listedUsers.status, 200);
+    const initialAdmin = (await listedUsers.json()).find(user => user.username === "admin");
+    assert.ok(initialAdmin, "l'administrateur initial doit être présent");
+    const downgradeLastAdmin = await apiRequest(baseUrl, `/admin/users/${initialAdmin.id}`, {
+      cookie,
+      origin,
+      method: "PATCH",
+      body: { role: "directeur_general_services" },
+    });
+    assert.equal(downgradeLastAdmin.status, 409, "le dernier administrateur actif ne peut pas être rétrogradé");
+    const deleteLastAdmin = await apiRequest(baseUrl, `/admin/users/${initialAdmin.id}`, {
+      cookie,
+      origin,
+      method: "DELETE",
+    });
+    assert.equal(deleteLastAdmin.status, 403, "un compte administrateur ne peut pas être supprimé");
+    assert.equal((await apiRequest(baseUrl, "/auth/me", { cookie })).status, 200);
+
     const direction = "Direction des Affaires Financières, Territoriales et des Ressources";
     const division = "Division des Ressources Humaines et des Moyens Généraux";
     const otherDivision = "Division des Affaires Financières, du Budget et de la Programmation";
@@ -568,6 +587,41 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
 
     await assertAccountAdminRequired(baseUrl, origin, cookies.chef_service, 403);
 
+    const scopeAccountResponse = await apiRequest(baseUrl, "/admin/users", {
+      cookie,
+      origin,
+      method: "POST",
+      body: {
+        username: "scope-change-fixture",
+        password: fixturePassword,
+        role: "chef_service",
+        direction,
+        division,
+        service,
+      },
+    });
+    assert.equal(scopeAccountResponse.status, 201);
+    const scopeAccount = await scopeAccountResponse.json();
+    const scopeAccountSession = await loginAs(baseUrl, origin, scopeAccount.username);
+    const serviceScopeChange = await apiRequest(baseUrl, `/admin/users/${scopeAccount.id}`, {
+      cookie,
+      origin,
+      method: "PATCH",
+      body: { service: peerService },
+    });
+    assert.equal(serviceScopeChange.status, 200, "le périmètre de service peut être modifié");
+    assert.equal(
+      (await apiRequest(baseUrl, "/auth/me", { cookie: scopeAccountSession })).status,
+      401,
+      "la session est invalidée après un changement de périmètre",
+    );
+    const deleteScopeAccount = await apiRequest(baseUrl, `/admin/users/${scopeAccount.id}`, {
+      cookie,
+      origin,
+      method: "DELETE",
+    });
+    assert.equal(deleteScopeAccount.status, 204);
+
     const managedAccount = await apiRequest(baseUrl, "/admin/users", {
       cookie,
       origin,
@@ -602,6 +656,33 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.equal(updateAccount.status, 200, "l'administrateur peut modifier un compte");
     assert.equal((await updateAccount.json()).username, "admin-managed-account-renamed");
 
+    const promoteAccount = await apiRequest(baseUrl, `/admin/users/${createdAccount.id}`, {
+      cookie,
+      origin,
+      method: "PATCH",
+      body: { role: "admin" },
+    });
+    assert.equal(promoteAccount.status, 200, "un rôle peut être modifié");
+    assert.equal(
+      (await apiRequest(baseUrl, "/auth/me", { cookie: accountSession })).status,
+      401,
+      "la session est invalidée après un changement de rôle",
+    );
+    const promotedAccountSession = await loginAs(baseUrl, origin, "admin-managed-account-renamed");
+    const restoreAccountRole = await apiRequest(baseUrl, `/admin/users/${createdAccount.id}`, {
+      cookie,
+      origin,
+      method: "PATCH",
+      body: { role: "directeur_general_services" },
+    });
+    assert.equal(restoreAccountRole.status, 200);
+    assert.equal(
+      (await apiRequest(baseUrl, "/auth/me", { cookie: promotedAccountSession })).status,
+      401,
+      "la session est aussi invalidée lors d'un changement de rôle vers un profil de lecture seule",
+    );
+    const accountSessionAfterRoleChange = await loginAs(baseUrl, origin, "admin-managed-account-renamed");
+
     const deactivateAccount = await apiRequest(baseUrl, `/admin/users/${createdAccount.id}`, {
       cookie,
       origin,
@@ -616,7 +697,7 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
     assert.equal(deactivatedUser?.username, "admin-managed-account-renamed");
     assert.equal(deactivatedUser?.active, false, "la désactivation est persistée");
 
-    const disabledSession = await apiRequest(baseUrl, "/auth/me", { cookie: accountSession });
+    const disabledSession = await apiRequest(baseUrl, "/auth/me", { cookie: accountSessionAfterRoleChange });
     assert.equal(disabledSession.status, 401, "la session d'un compte désactivé ne donne plus accès");
 
     const deleteAccount = await apiRequest(baseUrl, `/admin/users/${createdAccount.id}`, {
