@@ -103,6 +103,17 @@ export class ObjectStorageService {
     return file;
   }
 
+  async deleteDocumentObject(objectPath: string): Promise<void> {
+    if (!DOCUMENT_PATH_PATTERN.test(objectPath)) {
+      throw new ObjectNotFoundError();
+    }
+    const relativePath = objectPath.slice("/objects/".length);
+    let privateDir = this.getPrivateObjectDir();
+    if (!privateDir.endsWith("/")) privateDir = `${privateDir}/`;
+    const { bucketName, objectName } = parseObjectPath(`${privateDir}${relativePath}`);
+    await objectStorageClient.bucket(bucketName).file(objectName).delete({ ignoreNotFound: true });
+  }
+
   async finalizeUploadedDocument(bytes: Buffer, rawName: string): Promise<VerifiedDocument> {
     const name = normaliserNomDocument(rawName);
     if (!name || name !== rawName) throw new InvalidDocumentError();

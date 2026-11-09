@@ -3,8 +3,10 @@ import { logger } from "./lib/logger";
 import { bootstrapAdmin, nettoyerSessionsExpirees } from "./lib/auth";
 import { prepareDocumentAntivirus } from "./lib/document-antivirus";
 import { safeErrorFields } from "./lib/error-logging";
+import { purgerConventionsSupprimees } from "./lib/convention-purge";
 
 const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+const CONVENTION_PURGE_INTERVAL_MS = 15 * 60 * 1000;
 
 function fatalStartup(error: unknown, event: string, operation: string): void {
   logger.fatal({ event, operation, errorCode: "STARTUP_FAILED", ...safeErrorFields(error) }, "Server cannot start");
@@ -45,6 +47,35 @@ async function start(): Promise<void> {
     void nettoyer();
     const cleanupTimer = setInterval(() => void nettoyer(), SESSION_CLEANUP_INTERVAL_MS);
     cleanupTimer.unref();
+
+    const purger = async (): Promise<void> => {
+      try {
+        const result = await purgerConventionsSupprimees();
+        if (
+          result.conventionsDeleted > 0 ||
+          result.sharedObjectsRetained > 0 ||
+          result.unmanagedDocumentPaths > 0 ||
+          result.failures > 0
+        ) {
+          logger.info({
+            event: "conventions.purge.completed",
+            operation: "conventions.purge",
+            ...result,
+          }, "Soft-deleted convention purge completed");
+        }
+      } catch (purgeError) {
+        logger.error({
+          event: "conventions.purge.failed",
+          operation: "conventions.purge",
+          errorCode: "CONVENTION_PURGE_FAILED",
+          ...safeErrorFields(purgeError),
+        }, "Failed to run soft-deleted convention purge");
+      }
+    };
+
+    void purger();
+    const purgeTimer = setInterval(() => void purger(), CONVENTION_PURGE_INTERVAL_MS);
+    purgeTimer.unref();
   });
 }
 
