@@ -136,7 +136,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </h1>
                 </div>
 
-                <div className="px-6 py-4 flex-1 flex flex-col">
+                <div className="px-6 py-4 flex-1 min-h-0 flex flex-col">
                   <nav className="space-y-1">
                     {allItems.map((item) => {
                       const isActive = estNavigationActive(location, item.href);
@@ -162,14 +162,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       );
                     })}
                   </nav>
-                  <div className="flex-1 min-h-40 flex items-center justify-center py-6">
+                  <div className="flex-1 min-h-0 flex items-center justify-center py-2">
                     <img
                       src="/logo-crsm-blanc.png"
                       alt="Région Souss Massa"
-                      className="w-36 max-h-56 object-contain opacity-95"
+                      className="w-20 max-h-24 object-contain opacity-95"
                     />
                   </div>
-                  <div className="mt-auto border-t border-sidebar-border pt-4 text-sidebar-foreground">
+                  <div className="mt-auto shrink-0 border-t border-sidebar-border pt-4 text-sidebar-foreground">
                     <p className="px-3 text-sm font-semibold">{user?.username}</p><p className="px-3 text-xs opacity-60">{user ? roleLabels[user.role] : ""}</p>
                     <button type="button" onClick={() => void handleLogout()} className="mt-3 px-3 py-2 flex items-center gap-2 text-sm"><LogOut className="w-4 h-4" /> Se déconnecter</button>
                   </div>
