@@ -8,15 +8,19 @@ export async function documentVerifie(path: string): Promise<VerifiedDocument | 
 }
 
 /**
- * Valide une réponse contre le contrat puis renvoie l'objet d'origine.
+ * En développement et en test, vérifie une réponse contre le contrat puis
+ * renvoie toujours l'objet d'origine. Le contrôle est désactivé en production
+ * pour éviter son coût de parsing sur chaque réponse.
  *
  * Les schémas générés coercent les `format: date` en objets Date ; renvoyer le
  * résultat de `.parse()` transformerait « 2026-07-27 » en horodatage UTC
- * complet, avec un risque de décalage d'un jour côté client. On valide donc
- * la forme sans laisser la validation réécrire la charge utile.
+ * complet, avec un risque de décalage d'un jour côté client. La validation ne
+ * doit donc jamais réécrire la charge utile.
  */
 export function valide<T>(schema: { parse: (valeur: unknown) => unknown }, donnees: T): T {
-  schema.parse(donnees);
+  if (process.env.NODE_ENV !== "production") {
+    schema.parse(donnees);
+  }
   return donnees;
 }
 
