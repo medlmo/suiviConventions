@@ -7,6 +7,7 @@ import { logger } from "./logger";
 import { safeErrorFields } from "./error-logging";
 import {
   acquireAntivirusUpdateLease,
+  ANTIVIRUS_INSTANCE_ID,
   publishAntivirusSignatureSnapshot,
   restoreAntivirusSignatureSnapshot,
   type AntivirusUpdateLease,
@@ -47,9 +48,23 @@ async function restoreSharedSignatureSnapshot(): Promise<number | null> {
     logger.warn({
       event: "antivirus.cache.restore.failed",
       operation: "antivirus.cache",
+      instanceId: ANTIVIRUS_INSTANCE_ID,
       ...safeErrorFields(error),
     }, "Impossible de restaurer la base antivirus partagée");
     return null;
+  }
+}
+
+async function publishSharedSignatureSnapshot(updatedAt: number): Promise<void> {
+  try {
+    await publishAntivirusSignatureSnapshot(DATABASE_DIR, updatedAt);
+  } catch (error) {
+    logger.warn({
+      event: "antivirus.cache.publish.failed",
+      operation: "antivirus.cache",
+      instanceId: ANTIVIRUS_INSTANCE_ID,
+      ...safeErrorFields(error),
+    }, "La base locale est prête mais n'a pas pu être publiée dans le cache partagé");
   }
 }
 
@@ -114,6 +129,8 @@ export function prepareDocumentAntivirus(): Promise<void> {
       readyAt = priorDate;
       if (priorDate > Date.now() - SIGNATURE_REFRESH_INTERVAL) {
         lastUpdateFailed = false;
+        failureStage = "shared_cache_publish";
+        await publishSharedSignatureSnapshot(priorDate);
         return;
       }
 
@@ -125,6 +142,7 @@ export function prepareDocumentAntivirus(): Promise<void> {
         logger.warn({
           event: "antivirus.cache.lock.failed",
           operation: "antivirus.cache",
+          instanceId: ANTIVIRUS_INSTANCE_ID,
           ...safeErrorFields(error),
         }, "Verrou du cache antivirus indisponible ; mise à jour locale tentée");
         lease = { status: "disabled" };
@@ -138,6 +156,7 @@ export function prepareDocumentAntivirus(): Promise<void> {
         logger.info({
           event: "antivirus.update.deferred",
           operation: "antivirus.update",
+          instanceId: ANTIVIRUS_INSTANCE_ID,
           localDatabaseReady: priorDate > Date.now() - MAX_DB_AGE,
         }, "Une autre instance met à jour le cache antivirus");
         scheduleUpdateRetry(SHARED_UPDATE_RETRY_INTERVAL);
@@ -171,18 +190,14 @@ export function prepareDocumentAntivirus(): Promise<void> {
       readyAt = Date.now();
       await writeFile(join(DATABASE_DIR, "last-success"), String(readyAt), { mode: 0o600 });
       lastUpdateFailed = false;
-      logger.info({ event: "antivirus.ready", operation: "antivirus.update" }, "Base antimalware locale disponible");
+      logger.info({
+        event: "antivirus.ready",
+        operation: "antivirus.update",
+        instanceId: ANTIVIRUS_INSTANCE_ID,
+      }, "Base antimalware locale disponible");
 
       failureStage = "shared_cache_publish";
-      try {
-        await publishAntivirusSignatureSnapshot(DATABASE_DIR, readyAt);
-      } catch (error) {
-        logger.warn({
-          event: "antivirus.cache.publish.failed",
-          operation: "antivirus.cache",
-          ...safeErrorFields(error),
-        }, "La base locale est prête mais n'a pas pu être publiée dans le cache partagé");
-      }
+      await publishSharedSignatureSnapshot(readyAt);
     } catch (error) {
       lastUpdateFailed = true;
       // Ne jamais journaliser la sortie brute des outils ni le contenu d'un document.
@@ -190,6 +205,7 @@ export function prepareDocumentAntivirus(): Promise<void> {
         event: "antivirus.update.failed",
         operation: "antivirus.update",
         errorCode: "ANTIVIRUS_UPDATE_FAILED",
+        instanceId: ANTIVIRUS_INSTANCE_ID,
         failureStage,
         ...(toolExitCode === undefined ? {} : { toolExitCode }),
         ...safeErrorFields(error),

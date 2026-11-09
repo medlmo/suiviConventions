@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
+import { setMaxListeners } from "node:events";
 import { mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,11 +11,12 @@ import { safeErrorFields } from "./error-logging";
 import { objectStorageClient } from "./object-storage-client";
 
 const DATABASE_NAMES = ["main", "daily", "bytecode"] as const;
-const SIGNATURE_FILE = /^(main|daily|bytecode)\.(?:cvd|cld)$/u;
+const SIGNATURE_FILE = /^(?:(?:main|daily|bytecode)\.(?:cvd|cld)|freshclam\.dat)$/u;
 const SNAPSHOT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 const MAX_SIGNATURE_FILE_BYTES = 512 * 1024 * 1024;
 const MAX_SNAPSHOT_BYTES = 1024 * 1024 * 1024;
 const UPDATE_LOCK_TTL_MS = 15 * 60 * 1000;
+export const ANTIVIRUS_INSTANCE_ID = randomUUID();
 
 interface SignatureFile {
   name: string;
@@ -54,7 +56,7 @@ function cacheLocation(): CacheLocation | undefined {
 
   const normalizedPrivateDir = normalizeDirectory(privateObjectDir);
   const [bucketName, ...privateSegments] = normalizedPrivateDir.split("/");
-  if (!bucketName || privateSegments.length === 0) return undefined;
+  if (!bucketName) return undefined;
 
   const privatePath = `/${normalizedPrivateDir}`;
   const publicPaths = (process.env.PUBLIC_OBJECT_SEARCH_PATHS ?? "")
@@ -72,7 +74,7 @@ function cacheLocation(): CacheLocation | undefined {
 
   return {
     bucketName,
-    prefix: `${privateSegments.join("/")}/.system/antivirus-signatures`,
+    prefix: [...privateSegments, ".system", "antivirus-signatures"].filter(Boolean).join("/"),
   };
 }
 
@@ -111,7 +113,7 @@ function parseManifest(value: unknown, expectedId: string): SnapshotManifest | n
     !Number.isSafeInteger(value.updatedAt) ||
     !Array.isArray(value.files) ||
     value.files.length < DATABASE_NAMES.length ||
-    value.files.length > DATABASE_NAMES.length * 2
+    value.files.length > DATABASE_NAMES.length * 2 + 1
   ) return null;
 
   const files: SignatureFile[] = [];
@@ -153,7 +155,11 @@ async function readCurrentPointer(bucketName: string, prefix: string): Promise<{
   if (!exists) return { pointer: null, generation: undefined, exists: false };
   const [metadata] = await file.getMetadata();
   const pointer = parsePointer(await downloadJson(file));
-  return { pointer, generation: metadata.generation, exists: true };
+  return {
+    pointer,
+    generation: metadata.generation === undefined ? undefined : String(metadata.generation),
+    exists: true,
+  };
 }
 
 function reportCacheFailure(event: string, stage: string, error: unknown): void {
@@ -183,9 +189,13 @@ async function restoreManifest(
       const object = bucket.file(`${prefix}/snapshots/${manifest.snapshotId}/${entry.name}`);
       const [metadata] = await object.getMetadata();
       if (Number(metadata.size) !== entry.size) throw new Error("Taille de signature antivirus incohérente.");
+      const source = object.createReadStream();
+      const destination = createWriteStream(join(stagingDir, entry.name), { mode: 0o600 });
+      // GCS PassThrough streams add internal listeners; these one-shot streams are discarded after the pipeline.
+      setMaxListeners(20, source, destination);
       await pipeline(
-        object.createReadStream(),
-        createWriteStream(join(stagingDir, entry.name), { mode: 0o600 }),
+        source,
+        destination,
       );
     }
 
@@ -201,6 +211,7 @@ async function restoreManifest(
     logger.info({
       event: "antivirus.cache.restored",
       operation: "antivirus.cache",
+    instanceId: ANTIVIRUS_INSTANCE_ID,
       signatureAgeSeconds: Math.max(0, Math.floor((now - manifest.updatedAt) / 1000)),
       fileCount: manifest.files.length,
     }, "Base antivirus restaurée depuis le cache privé");
@@ -272,18 +283,33 @@ export async function publishAntivirusSignatureSnapshot(sourceDir: string, updat
   const bucket = objectStorageClient.bucket(location.bucketName);
   const previous = await readCurrentPointer(location.bucketName, location.prefix);
   if (previous.exists && !previous.pointer) throw new Error("Pointeur du cache antivirus invalide.");
+  if (previous.pointer) {
+    const currentManifestFile = bucket.file(
+      `${location.prefix}/snapshots/${previous.pointer.snapshotId}/manifest.json`,
+    );
+    const currentManifest = parseManifest(
+      await downloadJson(currentManifestFile),
+      previous.pointer.snapshotId,
+    );
+    if (currentManifest && currentManifest.updatedAt >= updatedAt - 60_000) return;
+  }
+
   const snapshotId = randomUUID();
   const files = await signatureFiles(sourceDir);
   const snapshotPrefix = `${location.prefix}/snapshots/${snapshotId}`;
 
   for (const entry of files) {
+    const source = createReadStream(join(sourceDir, entry.name));
+    const destination = bucket.file(`${snapshotPrefix}/${entry.name}`).createWriteStream({
+      resumable: true,
+      validation: "crc32c",
+      metadata: { contentType: "application/octet-stream", cacheControl: "private, no-store" },
+    });
+    // Keep the listener adjustment local to this GCS transfer; never raise process-wide limits.
+    setMaxListeners(20, source, destination);
     await pipeline(
-      createReadStream(join(sourceDir, entry.name)),
-      bucket.file(`${snapshotPrefix}/${entry.name}`).createWriteStream({
-        resumable: true,
-        validation: "crc32c",
-        metadata: { contentType: "application/octet-stream", cacheControl: "private, no-store" },
-      }),
+      source,
+      destination,
     );
   }
 
@@ -311,6 +337,12 @@ export async function publishAntivirusSignatureSnapshot(sourceDir: string, updat
   } catch (error) {
     reportCacheFailure("antivirus.cache.cleanup.failed", "cleanup", error);
   }
+  logger.info({
+    event: "antivirus.cache.published",
+    operation: "antivirus.cache",
+    instanceId: ANTIVIRUS_INSTANCE_ID,
+    fileCount: files.length,
+  }, "Base antivirus publiée dans le cache privé partagé");
 }
 
 export async function acquireAntivirusUpdateLease(): Promise<AntivirusUpdateLease> {
