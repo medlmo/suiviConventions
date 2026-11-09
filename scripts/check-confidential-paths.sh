@@ -55,7 +55,10 @@ check_history() {
     # rev-list emits object IDs without a path for commits and trees.
     [[ "$line" == *" "* ]] || continue
     path="${line#* }"
-    [[ -z "${reported[$path]+x}" ]] || continue
+    # A tree object can be emitted with an empty path. Associative-array keys
+    # must be nonempty; quote path keys to prevent Bash subscript parsing.
+    [[ -n "$path" ]] || continue
+    [[ -z "${reported["$path"]+x}" ]] || continue
     reported["$path"]=1
     if ! check_one_path "$path"; then
       failed=1
