@@ -11,7 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Download, Plus, FilterX, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Plus, FilterX, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { ExportConventionsButton } from "@/components/export-conventions-button";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { FicheTechniqueButton } from "@/components/fiche-technique-button";
 import { format } from "date-fns";
@@ -88,7 +89,7 @@ export default function ConventionsList() {
     if (tri) params.append("tri", tri);
     if (ordre) params.append("ordre", ordre);
     
-    return `/api/conventions/export?${params.toString()}`;
+    return `${import.meta.env.BASE_URL}api/conventions/export?${params.toString()}`;
   };
 
   const SortIcon = ({ field }: { field: ListConventionsTri }) => {
@@ -104,11 +105,7 @@ export default function ConventionsList() {
           <p className="text-muted-foreground text-sm">Gérez et suivez le portefeuille de conventions.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" asChild>
-            <a href={buildExportUrl()} download className="flex items-center gap-2">
-              <Download className="w-4 h-4" /> Export Excel (.xlsx)
-            </a>
-          </Button>
+          <ExportConventionsButton url={buildExportUrl()} />
           {user?.role !== "directeur" && user?.role !== "directeur_general_services" && <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
             <Link href="/conventions/nouvelle" className="flex items-center gap-2">
               <Plus className="w-4 h-4" /> Nouvelle Convention
