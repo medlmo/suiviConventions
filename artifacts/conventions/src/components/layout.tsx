@@ -160,7 +160,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <img
                       src="/logo-crsm-blanc.png"
                       alt="Région Souss Massa"
-                      className="w-40 max-h-64 object-contain opacity-95"
+                      className="w-36 max-h-56 object-contain opacity-95"
                     />
                   </div>
                   <div className="mt-auto border-t border-sidebar-border pt-4 text-sidebar-foreground">
