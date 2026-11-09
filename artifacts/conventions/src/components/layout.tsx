@@ -202,7 +202,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 min-h-0 overflow-auto bg-background p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {(readiness.data?.status === "unavailable" || readiness.isError ||
-              (user?.role === "admin" && operations.data?.alerts.length)) && <div
+              (user?.role === "admin" && (operations.data?.alerts.length ?? 0) > 0)) && <div
                 className={`mb-6 flex items-start gap-3 rounded-lg border p-4 ${
                   readiness.data?.status === "unavailable" || readiness.isError
                     ? "border-destructive/40 bg-destructive/5"
