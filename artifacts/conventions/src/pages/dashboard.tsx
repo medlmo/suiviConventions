@@ -22,6 +22,20 @@ const FORMAT_POURCENTAGE = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 1,
 });
 
+function rattachementMobile(rattachement: string | null | undefined): string {
+  const nom = rattachement || "Non rattaché";
+  if (!/^division\b/i.test(nom)) return nom;
+
+  const motsGeneriques = new Set(["de", "des", "du", "d", "et", "la", "le", "les", "l"]);
+  const mots: string[] =
+    nom.normalize("NFD").replace(/\p{Diacritic}/gu, "").match(/\p{L}+/gu) ?? [];
+  return mots
+    .filter((mot, index) => index === 0 || !motsGeneriques.has(mot.toLowerCase()))
+    .map((mot) => mot[0])
+    .join("")
+    .toLocaleUpperCase("fr-FR");
+}
+
 const ICONS: Record<AlerteCouleur, any> = {
   rouge: FileWarning,
   orange: Clock,
@@ -320,7 +334,18 @@ export default function Dashboard() {
                                 {format(new Date(convention.prochaineEcheance), "dd/MM/yyyy")}
                               </span>
                             )}
-                            <span className="truncate">{convention.rattachement || 'Non rattaché'}</span>
+                            <span
+                              className="truncate"
+                              title={convention.rattachement || "Non rattaché"}
+                              aria-label={`Rattachement : ${convention.rattachement || "Non rattaché"}`}
+                            >
+                              <span className="sm:hidden" aria-hidden="true">
+                                {rattachementMobile(convention.rattachement)}
+                              </span>
+                              <span className="hidden sm:inline" aria-hidden="true">
+                                {convention.rattachement || "Non rattaché"}
+                              </span>
+                            </span>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2 shrink-0">
