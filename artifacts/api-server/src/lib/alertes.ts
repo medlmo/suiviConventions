@@ -53,12 +53,12 @@ export const META_ALERTES: Record<NiveauAlerte, MetaAlerte> = {
     couleur: "vert",
   },
   A_SURVEILLER: {
-    libelle: "À surveiller",
+    libelle: "Fréquence conditionnelle",
     action: "Vérifier le déclencheur / la clause",
     couleur: "gris",
   },
   A_QUALIFIER: {
-    libelle: "À qualifier",
+    libelle: "Échéance non renseignée",
     action: "Donnée manquante, à compléter",
     couleur: "gris",
   },
@@ -69,8 +69,8 @@ export const META_ALERTES: Record<NiveauAlerte, MetaAlerte> = {
  * Majoritairement en arabe dans les données réelles :
  *   « كلما دعت الضرورة إلى ذلك » — chaque fois que la nécessité l'exige
  *   « عند الحاجة » / « عند الاقتضاء » — en cas de besoin
- * Une convention sans échéance mais avec ce type de clause est « À surveiller »
- * (il faut vérifier le déclencheur), pas « À qualifier » (donnée manquante).
+ * Une convention sans échéance mais avec ce type de clause est « Fréquence conditionnelle »
+ * (il faut vérifier le déclencheur), pas « Échéance non renseignée » (donnée manquante).
  */
 const MOTIFS_CONDITIONNELS = [
   "الضرورة",

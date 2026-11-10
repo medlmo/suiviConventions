@@ -838,8 +838,8 @@ components:
         A_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).
         A_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).
         A_JOUR : échéance au-delà de 60 jours.
-        A_SURVEILLER : pas d'échéance, fréquence conditionnelle.
-        A_QUALIFIER : pas d'échéance, donnée manquante.
+        A_SURVEILLER : pas d'échéance, fréquence conditionnelle (libellé affiché : « Fréquence conditionnelle »).
+        A_QUALIFIER : pas d'échéance, donnée manquante (libellé affiché : « Échéance non renseignée »).
       enum:
         - EN_RETARD
         - A_DECLENCHER
