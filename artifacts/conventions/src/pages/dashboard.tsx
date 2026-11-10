@@ -204,7 +204,7 @@ export default function Dashboard() {
               <Card className={cn("h-full border shadow-sm overflow-hidden transition-shadow group-hover:shadow-md", bgClass)}>
                 <CardContent className="p-5 flex flex-col items-center justify-center text-center h-full">
                   <div className="mb-1 text-[9px] font-semibold uppercase tracking-wider opacity-70">
-                    Comité de suivi
+                    Comités de suivi
                   </div>
                   <Icon className="w-6 h-6 mb-2 opacity-80" />
                   <div className="text-3xl font-black mb-1">{compteur.nombre}</div>
