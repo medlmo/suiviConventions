@@ -63,7 +63,7 @@ const EXPLICATIONS_ALERTES = [
   },
   {
     niveau: "A_DECLENCHER",
-    libelle: "À déclencher",
+    libelle: "À tenir entre 0 et 30 jours",
     couleur: "orange" as AlerteCouleur,
     periode: "Échéance dans 0 à 30 jours",
     explication: "Le comité est imminent. La convocation et les pièces nécessaires doivent être préparées.",
@@ -71,7 +71,7 @@ const EXPLICATIONS_ALERTES = [
   },
   {
     niveau: "A_PREPARER",
-    libelle: "À préparer",
+    libelle: "À tenir entre 31 et 60 jours",
     couleur: "jaune" as AlerteCouleur,
     periode: "Échéance dans 31 à 60 jours",
     explication: "Le comité approche, mais il reste encore du temps pour coordonner sa préparation.",

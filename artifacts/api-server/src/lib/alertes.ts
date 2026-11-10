@@ -38,12 +38,12 @@ export const META_ALERTES: Record<NiveauAlerte, MetaAlerte> = {
     couleur: "rouge",
   },
   A_DECLENCHER: {
-    libelle: "À déclencher",
+    libelle: "À tenir entre 0 et 30 jours",
     action: "Préparer convocation et pièces",
     couleur: "orange",
   },
   A_PREPARER: {
-    libelle: "À préparer",
+    libelle: "À tenir entre 31 et 60 jours",
     action: "Anticiper avec le responsable",
     couleur: "jaune",
   },

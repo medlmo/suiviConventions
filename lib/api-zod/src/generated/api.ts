@@ -612,7 +612,7 @@ export const ListConventionsResponse = zod.object({
   "commentaires": zod.string().nullish(),
   "sourceImport": zod.string().nullish(),
   "alerte": zod.object({
-  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours.\nA_PREPARER : échéance dans 31 à 60 jours.\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
+  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).\nA_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
   "libelle": zod.string().describe('Libellé français affichable, ex. "Hors échéance"'),
   "action": zod.string().describe('Action type associée au niveau'),
   "couleur": zod.enum(['rouge', 'orange', 'jaune', 'vert', 'gris']).describe('Clé de couleur de la légende'),
@@ -785,7 +785,7 @@ export const CreateConventionResponse = zod.object({
   "commentaires": zod.string().nullish(),
   "sourceImport": zod.string().nullish(),
   "alerte": zod.object({
-  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours.\nA_PREPARER : échéance dans 31 à 60 jours.\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
+  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).\nA_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
   "libelle": zod.string().describe('Libellé français affichable, ex. "Hors échéance"'),
   "action": zod.string().describe('Action type associée au niveau'),
   "couleur": zod.enum(['rouge', 'orange', 'jaune', 'vert', 'gris']).describe('Clé de couleur de la légende'),
@@ -838,7 +838,7 @@ export const GetResumeAlertesResponse = zod.object({
 })
 }),
   "compteurs": zod.array(zod.object({
-  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours.\nA_PREPARER : échéance dans 31 à 60 jours.\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
+  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).\nA_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
   "libelle": zod.string(),
   "couleur": zod.enum(['rouge', 'orange', 'jaune', 'vert', 'gris']),
   "nombre": zod.int()
@@ -975,7 +975,7 @@ export const ListAlertesResponseItem = zod.object({
   "commentaires": zod.string().nullish(),
   "sourceImport": zod.string().nullish(),
   "alerte": zod.object({
-  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours.\nA_PREPARER : échéance dans 31 à 60 jours.\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
+  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).\nA_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
   "libelle": zod.string().describe('Libellé français affichable, ex. "Hors échéance"'),
   "action": zod.string().describe('Action type associée au niveau'),
   "couleur": zod.enum(['rouge', 'orange', 'jaune', 'vert', 'gris']).describe('Clé de couleur de la légende'),
@@ -1111,7 +1111,7 @@ export const GetAgendaResponseItem = zod.object({
   "commentaires": zod.string().nullish(),
   "sourceImport": zod.string().nullish(),
   "alerte": zod.object({
-  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours.\nA_PREPARER : échéance dans 31 à 60 jours.\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
+  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).\nA_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
   "libelle": zod.string().describe('Libellé français affichable, ex. "Hors échéance"'),
   "action": zod.string().describe('Action type associée au niveau'),
   "couleur": zod.enum(['rouge', 'orange', 'jaune', 'vert', 'gris']).describe('Clé de couleur de la légende'),
@@ -1266,7 +1266,7 @@ export const GetConventionResponse = zod.object({
   "commentaires": zod.string().nullish(),
   "sourceImport": zod.string().nullish(),
   "alerte": zod.object({
-  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours.\nA_PREPARER : échéance dans 31 à 60 jours.\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
+  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).\nA_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
   "libelle": zod.string().describe('Libellé français affichable, ex. "Hors échéance"'),
   "action": zod.string().describe('Action type associée au niveau'),
   "couleur": zod.enum(['rouge', 'orange', 'jaune', 'vert', 'gris']).describe('Clé de couleur de la légende'),
@@ -1506,7 +1506,7 @@ export const UpdateConventionResponse = zod.object({
   "commentaires": zod.string().nullish(),
   "sourceImport": zod.string().nullish(),
   "alerte": zod.object({
-  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours.\nA_PREPARER : échéance dans 31 à 60 jours.\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
+  "niveau": zod.enum(['EN_RETARD', 'A_DECLENCHER', 'A_PREPARER', 'A_JOUR', 'A_SURVEILLER', 'A_QUALIFIER']).describe('Niveau d\'alerte recalculé par rapport à la date du jour.\nEN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).\nA_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).\nA_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).\nA_JOUR : échéance au-delà de 60 jours.\nA_SURVEILLER : pas d\'échéance, fréquence conditionnelle.\nA_QUALIFIER : pas d\'échéance, donnée manquante.\n'),
   "libelle": zod.string().describe('Libellé français affichable, ex. "Hors échéance"'),
   "action": zod.string().describe('Action type associée au niveau'),
   "couleur": zod.enum(['rouge', 'orange', 'jaune', 'vert', 'gris']).describe('Clé de couleur de la légende'),
