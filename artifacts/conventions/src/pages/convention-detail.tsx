@@ -71,7 +71,7 @@ const conventionSchema = z.object({
   rattachement: z.string().nullable().optional(),
   responsableProjet: z.string().nullable().optional(),
   typeSession: z.enum(["Ordinaire", "Extraordinaire"]).nullable().optional(),
-  session: z.string().nullable().optional(),
+  session: z.string().min(1, "La date de session est obligatoire"),
   dateVisa: z.string().nullable().optional(),
   statutConvention: z.string().nullable().optional(),
   decision: z.string().nullable().optional(),
@@ -244,7 +244,7 @@ export default function ConventionDetail() {
         rattachement: convention.rattachement,
         responsableProjet: convention.responsableProjet,
         typeSession: convention.typeSession,
-        session: convention.session?.split("T")[0] || null,
+        session: convention.session?.split("T")[0] || "",
         dateVisa: convention.dateVisa?.split('T')[0] || null, // Handle dates from API if needed
         statutConvention: convention.statutConvention,
         decision: convention.decision,
@@ -623,8 +623,9 @@ export default function ConventionDetail() {
                   <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="session" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Session</FormLabel>
+                        <FormLabel>Session *</FormLabel>
                         <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="competence" render={({ field }) => (

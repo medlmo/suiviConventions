@@ -7,6 +7,7 @@
  */
 import type { CompteurAlerte } from './compteurAlerte';
 import type { ResumeAlertesParStatut } from './resumeAlertesParStatut';
+import type { VentilationSessions } from './ventilationSessions';
 
 export interface ResumeAlertes {
   /** Nombre total de conventions visibles par l'utilisateur connecté */
@@ -17,6 +18,7 @@ export interface ResumeAlertes {
   contributionRegionTotale: number;
   /** Synthèses par statut dans le même périmètre de consultation. Toutes les conventions saisies sont considérées visées ; les statuts non renseignés ou résiliés restent inclus dans le total général uniquement. */
   parStatut: ResumeAlertesParStatut;
+  parSession: VentilationSessions;
   /** Un compteur par niveau d'alerte, dans l'ordre d'urgence */
   compteurs: CompteurAlerte[];
   /** Conventions en retard ou à échéance dans 60 jours */

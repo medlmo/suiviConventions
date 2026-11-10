@@ -68,6 +68,10 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       .for("update");
     if (!current || !accessible(current, user, reference)) return { status: 404 as const };
     if (current.version !== parsed.data.version) return { status: 409 as const };
+    const sessionFinale = Object.hasOwn(valeurs, "session") ? valeurs.session : current.session;
+    if (typeof sessionFinale !== "string" || !sessionFinale) {
+      return { status: 400 as const, error: "La date de session est obligatoire." };
+    }
     if (parsed.data.avancementPhysiqueAjoute) {
       const natureFinale = Object.hasOwn(valeurs, "nature") ? valeurs.nature : current.nature;
       if (!natureAvecAvancement(natureFinale)) {

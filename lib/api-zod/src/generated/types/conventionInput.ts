@@ -21,8 +21,7 @@ export interface ConventionInput {
   responsableProjet?: string | null;
   /** @nullable */
   typeSession?: ConventionInputTypeSession;
-  /** @nullable */
-  session?: Date | null;
+  session: Date;
   /** @nullable */
   dateVisa?: Date | null;
   /** @nullable */

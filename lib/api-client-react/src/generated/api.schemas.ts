@@ -431,8 +431,7 @@ export interface ConventionInput {
   responsableProjet?: string | null;
   /** @nullable */
   typeSession?: ConventionInputTypeSession;
-  /** @nullable */
-  session?: string | null;
+  session: string;
   /** @nullable */
   dateVisa?: string | null;
   /** @nullable */
@@ -525,8 +524,7 @@ export interface ConventionUpdate {
   responsableProjet?: string | null;
   /** @nullable */
   typeSession?: ConventionUpdateTypeSession;
-  /** @nullable */
-  session?: string | null;
+  session?: string;
   /** @nullable */
   dateVisa?: string | null;
   /** @nullable */
@@ -613,6 +611,19 @@ export interface SyntheseConventions {
   contributionRegionTotale: number;
 }
 
+export interface SyntheseParSession {
+  total: number;
+  montantGlobal: number;
+  contributionRegionTotale: number;
+}
+
+export interface VentilationSessions {
+  avant2021: SyntheseParSession;
+  de2021A2026: SyntheseParSession;
+  sansDate: SyntheseParSession;
+  apres2026: SyntheseParSession;
+}
+
 /**
  * Synthèses par statut dans le même périmètre de consultation. Toutes les conventions saisies sont considérées visées ; les statuts non renseignés ou résiliés restent inclus dans le total général uniquement.
  */
@@ -630,6 +641,7 @@ export interface ResumeAlertes {
   contributionRegionTotale: number;
   /** Synthèses par statut dans le même périmètre de consultation. Toutes les conventions saisies sont considérées visées ; les statuts non renseignés ou résiliés restent inclus dans le total général uniquement. */
   parStatut: ResumeAlertesParStatut;
+  parSession: VentilationSessions;
   /** Un compteur par niveau d'alerte, dans l'ordre d'urgence */
   compteurs: CompteurAlerte[];
   /** Conventions en retard ou à échéance dans 60 jours */

@@ -1050,7 +1050,7 @@ components:
 
     ConventionInput:
       type: object
-      required: [nomConvention]
+      required: [nomConvention, session]
       properties:
         nomConvention: { type: string, minLength: 1 }
         documentsAjoutes:
@@ -1064,7 +1064,7 @@ components:
           type: ["string", "null"]
           enum: [Ordinaire, Extraordinaire, null]
         session:
-          type: ["string", "null"]
+          type: string
           format: date
         dateVisa: { type: ["string", "null"], format: date }
         presidenceComite: { type: ["string", "null"] }
@@ -1133,7 +1133,7 @@ components:
           type: ["string", "null"]
           enum: [Ordinaire, Extraordinaire, null]
         session:
-          type: ["string", "null"]
+          type: string
           format: date
         dateVisa: { type: ["string", "null"], format: date }
         presidenceComite: { type: ["string", "null"] }
@@ -1206,6 +1206,23 @@ components:
         contributionRegionTotale:
           type: number
 
+    SyntheseParSession:
+      type: object
+      required: [total, montantGlobal, contributionRegionTotale]
+      properties:
+        total: { type: integer }
+        montantGlobal: { type: number }
+        contributionRegionTotale: { type: number }
+
+    VentilationSessions:
+      type: object
+      required: [avant2021, de2021A2026, sansDate, apres2026]
+      properties:
+        avant2021: { $ref: "#/components/schemas/SyntheseParSession" }
+        de2021A2026: { $ref: "#/components/schemas/SyntheseParSession" }
+        sansDate: { $ref: "#/components/schemas/SyntheseParSession" }
+        apres2026: { $ref: "#/components/schemas/SyntheseParSession" }
+
     ResumeAlertes:
       type: object
       required:
@@ -1213,6 +1230,7 @@ components:
         - montantGlobal
         - contributionRegionTotale
         - parStatut
+        - parSession
         - compteurs
         - aTraiter
         - dateCalcul
@@ -1236,6 +1254,8 @@ components:
               $ref: "#/components/schemas/SyntheseConventions"
             arriveesATerme:
               $ref: "#/components/schemas/SyntheseConventions"
+        parSession:
+          $ref: "#/components/schemas/VentilationSessions"
         compteurs:
           type: array
           description: Un compteur par niveau d'alerte, dans l'ordre d'urgence

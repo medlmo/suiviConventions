@@ -40,8 +40,7 @@ export interface ConventionUpdate {
   responsableProjet?: string | null;
   /** @nullable */
   typeSession?: ConventionUpdateTypeSession;
-  /** @nullable */
-  session?: Date | null;
+  session?: Date;
   /** @nullable */
   dateVisa?: Date | null;
   /** @nullable */

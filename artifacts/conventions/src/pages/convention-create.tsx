@@ -55,7 +55,7 @@ const conventionSchema = z.object({
   responsableProjet: z.string().nullable().optional()
     .refine(value => typeof value === "string" && value.trim().length > 0, "Le responsable du projet est obligatoire"),
   typeSession: z.enum(["Ordinaire", "Extraordinaire"]).nullable().optional(),
-  session: z.string().nullable().optional(),
+  session: z.string().min(1, "La date de session est obligatoire"),
   dateVisa: z.string().nullable().optional(),
   statutConvention: z.string().nullable().optional(),
   competence: z.string().nullable().optional(),
@@ -113,6 +113,7 @@ export default function ConventionCreate() {
     resolver: zodResolver(conventionSchema),
     defaultValues: {
       nomConvention: "",
+      session: "",
       documentsAjoutes: [],
       statutConvention: "En cours",
       natureFonds: "Propres",
@@ -338,8 +339,9 @@ export default function ConventionCreate() {
                 )} />
                 <FormField control={form.control} name="session" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Session</FormLabel>
+                    <FormLabel>Session *</FormLabel>
                     <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                    <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="nature" render={({ field }) => (
