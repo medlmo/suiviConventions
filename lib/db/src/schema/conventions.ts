@@ -9,7 +9,7 @@ import { z } from "zod/v4";
  * recalculé à chaque lecture à partir de `prochaineEcheance` et de la date du
  * jour (voir `artifacts/api-server/src/lib/alertes.ts`). Le fichier Excel
  * d'origine stockait ce statut en dur, ce qui le figeait au dernier recalcul
- * manuel et masquait la moitié des retards réels.
+ * manuel et masquait la moitié des échéances dépassées.
  *
  * Les champs `*Note` conservent les mentions du fichier source qui ne sont pas
  * convertibles en date (« غير محدد », « لم يعقد اي اجتماع », « سيتم برمجة

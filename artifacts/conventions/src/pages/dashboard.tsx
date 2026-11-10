@@ -55,7 +55,7 @@ const BG_COLORS: Record<AlerteCouleur, string> = {
 const EXPLICATIONS_ALERTES = [
   {
     niveau: "EN_RETARD",
-    libelle: "En retard",
+    libelle: "Hors échéance",
     couleur: "rouge" as AlerteCouleur,
     periode: "Échéance dépassée",
     explication: "La date prévue du comité est passée et aucune nouvelle échéance n’est renseignée.",

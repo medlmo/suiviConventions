@@ -8,7 +8,7 @@
 
 export type ListAlertesParams = {
 /**
- * Inclure les échéances jusqu'à N jours (les retards sont toujours inclus)
+ * Inclure les échéances jusqu'à N jours (les échéances dépassées sont toujours incluses)
  * @minimum 0
  * @maximum 365
  */

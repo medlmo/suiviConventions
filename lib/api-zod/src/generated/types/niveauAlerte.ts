@@ -8,7 +8,7 @@
 
 /**
  * Niveau d'alerte recalculé par rapport à la date du jour.
- * EN_RETARD : échéance dépassée.
+ * EN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).
  * A_DECLENCHER : échéance dans 0 à 30 jours.
  * A_PREPARER : échéance dans 31 à 60 jours.
  * A_JOUR : échéance au-delà de 60 jours.

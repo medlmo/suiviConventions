@@ -33,7 +33,7 @@ interface MetaAlerte {
 
 export const META_ALERTES: Record<NiveauAlerte, MetaAlerte> = {
   EN_RETARD: {
-    libelle: "En retard",
+    libelle: "Hors échéance",
     action: "Organiser / régulariser immédiatement",
     couleur: "rouge",
   },
@@ -116,7 +116,7 @@ export const joursRestantsSql: SQL<number | null> = sql<number | null>`
 `;
 
 /**
- * Rang d'urgence pour le tri par défaut : les retards d'abord, les dossiers
+ * Rang d'urgence pour le tri par défaut : les échéances dépassées d'abord, les dossiers
  * sans échéance en dernier.
  */
 export const rangUrgenceSql: SQL<number> = sql<number>`

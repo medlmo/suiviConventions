@@ -44,7 +44,7 @@ export default function ConventionsList() {
   const [partenaires, setPartenaires] = useState<string[]>([]);
   const [natureProjet, setNatureProjet] = useState<string | undefined>();
   const [tri, setTri] = useState<ListConventionsTri>("urgence");
-  // Urgence ascendante = les retards en tête (rang 0), « À qualifier » en fin.
+  // Urgence ascendante = les échéances dépassées en tête (rang 0), « À qualifier » en fin.
   const [ordre, setOrdre] = useState<ListConventionsOrdre>("asc");
   const rattachementFiltre =
     user?.role === "chef_service" || user?.role === "chef_division"

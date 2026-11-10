@@ -10,7 +10,7 @@ import type { NiveauAlerte } from './niveauAlerte';
 
 export interface Alerte {
   niveau: NiveauAlerte;
-  /** Libellé français affichable, ex. "En retard" */
+  /** Libellé français affichable, ex. "Hors échéance" */
   libelle: string;
   /** Action type associée au niveau */
   action: string;

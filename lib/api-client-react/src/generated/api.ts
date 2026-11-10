@@ -2121,7 +2121,7 @@ export const getListAlertesUrl = (params?: ListAlertesParams,) => {
 }
 
 /**
- * @summary Conventions en retard ou à échéance proche, triées par urgence
+ * @summary Conventions hors échéance ou arrivant à échéance, triées par urgence
  */
 export const listAlertes = async (params?: ListAlertesParams, options?: Parameters<typeof customFetch>[1]): Promise<Convention[]> => {
 
@@ -2168,7 +2168,7 @@ export type ListAlertesQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Conventions en retard ou à échéance proche, triées par urgence
+ * @summary Conventions hors échéance ou arrivant à échéance, triées par urgence
  */
 
 export function useListAlertes<TData = Awaited<ReturnType<typeof listAlertes>>, TError = ErrorType<unknown>>(

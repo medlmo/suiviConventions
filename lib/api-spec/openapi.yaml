@@ -597,11 +597,11 @@ paths:
     get:
       operationId: listAlertes
       tags: [conventions]
-      summary: Conventions en retard ou à échéance proche, triées par urgence
+      summary: Conventions hors échéance ou arrivant à échéance, triées par urgence
       parameters:
         - name: horizonJours
           in: query
-          description: Inclure les échéances jusqu'à N jours (les retards sont toujours inclus)
+          description: Inclure les échéances jusqu'à N jours (les échéances dépassées sont toujours incluses)
           schema: { type: integer, minimum: 0, maximum: 365, default: 60 }
         - name: limit
           in: query
@@ -834,7 +834,7 @@ components:
       type: string
       description: |
         Niveau d'alerte recalculé par rapport à la date du jour.
-        EN_RETARD : échéance dépassée.
+        EN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).
         A_DECLENCHER : échéance dans 0 à 30 jours.
         A_PREPARER : échéance dans 31 à 60 jours.
         A_JOUR : échéance au-delà de 60 jours.
@@ -855,7 +855,7 @@ components:
         niveau: { $ref: "#/components/schemas/NiveauAlerte" }
         libelle:
           type: string
-          description: Libellé français affichable, ex. "En retard"
+          description: Libellé français affichable, ex. "Hors échéance"
         action:
           type: string
           description: Action type associée au niveau
@@ -1262,7 +1262,7 @@ components:
           items: { $ref: "#/components/schemas/CompteurAlerte" }
         aTraiter:
           type: integer
-          description: Conventions en retard ou à échéance dans 60 jours
+          description: Conventions hors échéance ou arrivant à échéance dans 60 jours
         sansEcheance:
           type: integer
           description: Conventions sans prochaine échéance renseignée

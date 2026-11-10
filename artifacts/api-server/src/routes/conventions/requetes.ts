@@ -101,7 +101,7 @@ export function construireTri(tri: string, ordre: string): SQL[] {
       ];
     case "urgence":
     default:
-      // Les retards les plus anciens en tête, puis les échéances les plus proches.
+      // Les échéances dépassées les plus anciennes en tête, puis les plus proches.
       return ordre === "desc"
         ? [desc(rangUrgenceSql), desc(conventionsTable.prochaineEcheance)]
         : [asc(rangUrgenceSql), asc(conventionsTable.prochaineEcheance)];

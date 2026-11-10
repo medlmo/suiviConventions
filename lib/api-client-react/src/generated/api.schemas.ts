@@ -90,7 +90,7 @@ export interface StoredDocument {
 
 /**
  * Niveau d'alerte recalculé par rapport à la date du jour.
- * EN_RETARD : échéance dépassée.
+ * EN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).
  * A_DECLENCHER : échéance dans 0 à 30 jours.
  * A_PREPARER : échéance dans 31 à 60 jours.
  * A_JOUR : échéance au-delà de 60 jours.
@@ -125,7 +125,7 @@ export const AlerteCouleur = {
 
 export interface Alerte {
   niveau: NiveauAlerte;
-  /** Libellé français affichable, ex. "En retard" */
+  /** Libellé français affichable, ex. "Hors échéance" */
   libelle: string;
   /** Action type associée au niveau */
   action: string;
@@ -644,7 +644,7 @@ export interface ResumeAlertes {
   parSession: VentilationSessions;
   /** Un compteur par niveau d'alerte, dans l'ordre d'urgence */
   compteurs: CompteurAlerte[];
-  /** Conventions en retard ou à échéance dans 60 jours */
+  /** Conventions hors échéance ou arrivant à échéance dans 60 jours */
   aTraiter: number;
   /** Conventions sans prochaine échéance renseignée */
   sansEcheance: number;
@@ -998,7 +998,7 @@ export const ListConventionsOrdre = {
 
 export type ListAlertesParams = {
 /**
- * Inclure les échéances jusqu'à N jours (les retards sont toujours inclus)
+ * Inclure les échéances jusqu'à N jours (les échéances dépassées sont toujours incluses)
  * @minimum 0
  * @maximum 365
  */

@@ -21,7 +21,7 @@ export interface ResumeAlertes {
   parSession: VentilationSessions;
   /** Un compteur par niveau d'alerte, dans l'ordre d'urgence */
   compteurs: CompteurAlerte[];
-  /** Conventions en retard ou à échéance dans 60 jours */
+  /** Conventions hors échéance ou arrivant à échéance dans 60 jours */
   aTraiter: number;
   /** Conventions sans prochaine échéance renseignée */
   sansEcheance: number;
