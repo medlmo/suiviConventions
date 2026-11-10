@@ -198,7 +198,7 @@ export default function Dashboard() {
               <Link
                 key={compteur.niveau}
                 href={`/conventions?alerte=${encodeURIComponent(compteur.niveau)}`}
-                aria-label={`Voir les conventions : ${compteur.libelle} (${compteur.nombre}, ${pourcentage} du total)`}
+                aria-label={`Voir les conventions : ${compteur.libelle} (${compteur.nombre}, ${pourcentage})`}
                 className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
               <Card className={cn("h-full border shadow-sm overflow-hidden transition-shadow group-hover:shadow-md", bgClass)}>
@@ -212,7 +212,7 @@ export default function Dashboard() {
                     {compteur.libelle}
                   </div>
                   <div className="mt-1 text-xs font-medium opacity-75">
-                    {pourcentage} du total
+                    {pourcentage}
                   </div>
                   <span className="mt-3 flex items-center gap-1 text-xs font-medium group-hover:underline">
                     Voir les conventions <ArrowRight className="h-3 w-3" aria-hidden="true" />
