@@ -87,6 +87,12 @@ export function DashboardTotals({
               donnees: resume.parSession[periode.key],
             }))
             .filter((periode) => periode.donnees.total > 0);
+          const totalPourcentage =
+            cle === "nombre"
+              ? resume.total
+              : cle === "contribution"
+                ? resume.contributionRegionTotale
+                : null;
 
           return (
             <Card key={cle} className="h-full min-w-0 shadow-sm" data-testid={`card-indicateur-${cle}`}>
@@ -117,6 +123,7 @@ export function DashboardTotals({
                 <dl className="mt-4 grid grid-cols-2 divide-x border-t border-border pt-3">
                   {PERIODES.map((periode, index) => {
                     const donnees = resume.parSession[periode.key];
+                    const valeurPeriode = mesure(donnees);
                     return (
                       <div
                         key={periode.key}
@@ -124,7 +131,14 @@ export function DashboardTotals({
                       >
                         <dt className="text-xs text-muted-foreground">{periode.libelle}</dt>
                         <dd className="mt-1 break-words text-sm font-semibold tabular-nums">
-                          {formaterMesure(mesure(donnees))}
+                          {formaterMesure(valeurPeriode)}
+                          <span className="block min-h-4 text-xs font-medium text-muted-foreground">
+                            {totalPourcentage === null
+                              ? "\u00a0"
+                              : totalPourcentage > 0
+                                ? pourcentage.format(valeurPeriode / totalPourcentage)
+                                : "—"}
+                          </span>
                         </dd>
                       </div>
                     );
