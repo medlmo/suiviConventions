@@ -281,7 +281,6 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <CardTitle className="text-xl">Priorités d'action</CardTitle>
-                  <CardDescription>Les conventions nécessitant une attention immédiate</CardDescription>
                 </div>
               </div>
               <Link href="/conventions" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
