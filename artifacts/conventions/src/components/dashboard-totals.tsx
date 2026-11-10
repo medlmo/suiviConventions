@@ -90,6 +90,8 @@ export function DashboardTotals({
           const totalPourcentage =
             cle === "nombre"
               ? resume.total
+              : cle === "budget"
+                ? resume.montantGlobal
               : cle === "contribution"
                 ? resume.contributionRegionTotale
                 : null;
