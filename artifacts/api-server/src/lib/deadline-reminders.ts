@@ -19,7 +19,7 @@ const joursRestants = sql<number>`(${conventionsTable.prochaineEcheance} - CURRE
 /**
  * Materialize reminders when the signed-in chief's notification feed is refreshed.
  * No in-memory timer: this also works after an Autoscale sleep or on multiple instances.
- * Catch up only the current window (J-14 to J-8, then J-7 to J-1), not both at once.
+ * Catch up only the current window (J-30 to J-15, then J-14 to J-1), not both at once.
  */
 export async function genererRappelsEcheance(user: SessionUser, reference: ReferenceData): Promise<void> {
   if (user.role !== "chef_service") return;
@@ -36,7 +36,7 @@ export async function genererRappelsEcheance(user: SessionUser, reference: Refer
       filtrePerimetre(user, reference),
       conventionOuverte(),
       gte(joursRestants, 1),
-      lte(joursRestants, 14),
+      lte(joursRestants, 30),
     ));
     if (upcoming.length === 0) return;
 
@@ -48,7 +48,7 @@ export async function genererRappelsEcheance(user: SessionUser, reference: Refer
       actorUsername: "Système",
       kind: "deadline" as const,
       deadlineDate: convention.deadlineDate,
-      reminderDays: convention.daysLeft <= 7 ? 7 : 14,
+      reminderDays: convention.daysLeft <= 14 ? 14 : 30,
       changedFields: [],
       createdAt: now,
       updatedAt: now,
@@ -73,10 +73,11 @@ export function rappelEcheanceVisible(user: SessionUser) {
 
 export function resumeRappelEcheance(deadlineDate: string | null, reminderDays: number | null): string {
   if (!deadlineDate || !/^\d{4}-\d{2}-\d{2}$/.test(deadlineDate) ||
-      (reminderDays !== 7 && reminderDays !== 14)) {
+      (reminderDays !== 7 && reminderDays !== 14 && reminderDays !== 30)) {
     throw new Error("Invalid deadline reminder metadata");
   }
   const [year, month, day] = deadlineDate.split("-");
-  const interval = reminderDays === 14 ? "deux semaines" : "une semaine";
+  const interval =
+    reminderDays === 30 ? "un mois" : reminderDays === 14 ? "deux semaines" : "une semaine";
   return `Prochaine échéance le ${day}/${month}/${year} : rappel ${interval} avant (J−${reminderDays}).`;
 }
