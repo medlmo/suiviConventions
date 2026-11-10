@@ -73,90 +73,88 @@ export function DashboardTotals({
       formater: formaterMontant,
       mesure: (periode: ResumeAlertes["parSession"]["avant2021"]) => periode.contributionRegionTotale,
       formaterMesure: formaterMontant,
-      sousTitre:
-        resume.montantGlobal > 0
-          ? `${pourcentage.format(resume.contributionRegionTotale / resume.montantGlobal)} du montant global`
-          : "— du montant global",
       Icon: Banknote,
     },
   ];
 
   return (
-    <section
-      aria-label="Indicateurs des conventions visées"
-      className="grid grid-cols-1 gap-4 md:grid-cols-3"
-    >
-      {indicateurs.map(({ cle, titre, valeur, formater, mesure, formaterMesure, unite, sousTitre, Icon }) => {
-        const complementaires = PERIODES_COMPLEMENTAIRES
-          .map((periode) => ({
-            ...periode,
-            donnees: resume.parSession[periode.key],
-          }))
-          .filter((periode) => periode.donnees.total > 0);
+    <section aria-label="Indicateurs des conventions visées">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {indicateurs.map(({ cle, titre, valeur, formater, mesure, formaterMesure, unite, Icon }) => {
+          const complementaires = PERIODES_COMPLEMENTAIRES
+            .map((periode) => ({
+              ...periode,
+              donnees: resume.parSession[periode.key],
+            }))
+            .filter((periode) => periode.donnees.total > 0);
 
-        return (
-          <Card key={cle} className="h-full min-w-0 shadow-sm" data-testid={`card-indicateur-${cle}`}>
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="text-sm font-semibold text-muted-foreground">{titre}</h2>
-                <Icon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-              </div>
+          return (
+            <Card key={cle} className="h-full min-w-0 shadow-sm" data-testid={`card-indicateur-${cle}`}>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-sm font-semibold text-muted-foreground">{titre}</h2>
+                  <Icon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                </div>
 
-              <p
-                className="mt-3 flex flex-wrap items-baseline gap-x-2 break-words text-2xl font-bold tracking-tight text-foreground tabular-nums"
-                data-testid={`text-indicateur-${cle}`}
-              >
-                {formater(valeur)}
-                {unite && <span>{unite}</span>}
-              </p>
-
-              {sousTitre && (
-                <p className="mt-1 text-sm text-muted-foreground tabular-nums">{sousTitre}</p>
-              )}
-
-              <dl className="mt-4 grid grid-cols-2 divide-x border-t border-border pt-3">
-                {PERIODES.map((periode, index) => {
-                  const donnees = resume.parSession[periode.key];
-                  return (
-                    <div
-                      key={periode.key}
-                      className={`min-w-0 text-center ${index === 0 ? "pr-2" : "pl-2"}`}
-                    >
-                      <dt className="text-xs text-muted-foreground">{periode.libelle}</dt>
-                      <dd className="mt-1 break-words text-sm font-semibold tabular-nums">
-                        {formaterMesure(mesure(donnees))}
-                      </dd>
-                    </div>
-                  );
-                })}
-              </dl>
-
-              {complementaires.length > 0 && (
-                <dl className="mt-3 space-y-1 border-t border-border pt-2">
-                  {complementaires.map((periode) => (
-                    <div key={periode.key} className="flex items-baseline justify-between gap-3 text-xs">
-                      <dt className="text-muted-foreground">{periode.libelle}</dt>
-                      <dd className="shrink-0 font-medium tabular-nums">
-                        {formaterMesure(mesure(periode.donnees))}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-
-              {cle === "nombre" && (
-                <Link
-                  href="/conventions"
-                  data-testid="link-voir-conventions"
-                  className="mt-3 inline-flex items-center gap-1 rounded-sm text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                <p
+                  className="mt-3 flex flex-wrap items-baseline gap-x-2 break-words text-2xl font-bold tracking-tight text-foreground tabular-nums"
+                  data-testid={`text-indicateur-${cle}`}
                 >
-                  Voir les conventions <ArrowRight className="h-3 w-3" aria-hidden="true" />
-                </Link>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+                  {formater(valeur)}
+                  {unite && <span>{unite}</span>}
+                </p>
+
+                <dl className="mt-4 grid grid-cols-2 divide-x border-t border-border pt-3">
+                  {PERIODES.map((periode, index) => {
+                    const donnees = resume.parSession[periode.key];
+                    return (
+                      <div
+                        key={periode.key}
+                        className={`min-w-0 text-center ${index === 0 ? "pr-2" : "pl-2"}`}
+                      >
+                        <dt className="text-xs text-muted-foreground">{periode.libelle}</dt>
+                        <dd className="mt-1 break-words text-sm font-semibold tabular-nums">
+                          {formaterMesure(mesure(donnees))}
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+
+                {complementaires.length > 0 && (
+                  <dl className="mt-3 space-y-1 border-t border-border pt-2">
+                    {complementaires.map((periode) => (
+                      <div key={periode.key} className="flex items-baseline justify-between gap-3 text-xs">
+                        <dt className="text-muted-foreground">{periode.libelle}</dt>
+                        <dd className="shrink-0 font-medium tabular-nums">
+                          {formaterMesure(mesure(periode.donnees))}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+
+                {cle === "nombre" && (
+                  <Link
+                    href="/conventions"
+                    data-testid="link-voir-conventions"
+                    className="mt-3 inline-flex items-center gap-1 rounded-sm text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    Voir les conventions <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+      <div className="mt-2 grid grid-cols-1 md:grid-cols-3">
+        <p className="text-xs font-medium text-primary tabular-nums md:col-start-3">
+          {resume.montantGlobal > 0
+            ? `${pourcentage.format(resume.contributionRegionTotale / resume.montantGlobal)} du montant global`
+            : "— du montant global"}
+        </p>
+      </div>
     </section>
   );
 }
