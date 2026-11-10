@@ -104,6 +104,16 @@ export function DashboardTotals({
                   {unite && <span>{unite}</span>}
                 </p>
 
+                <div className="mt-1 h-4">
+                  {cle === "contribution" && (
+                    <p className="text-xs font-medium leading-4 text-primary tabular-nums">
+                      {resume.montantGlobal > 0
+                        ? `${pourcentage.format(resume.contributionRegionTotale / resume.montantGlobal)} du montant global`
+                        : "— du montant global"}
+                    </p>
+                  )}
+                </div>
+
                 <dl className="mt-4 grid grid-cols-2 divide-x border-t border-border pt-3">
                   {PERIODES.map((periode, index) => {
                     const donnees = resume.parSession[periode.key];
@@ -147,13 +157,6 @@ export function DashboardTotals({
             </Card>
           );
         })}
-      </div>
-      <div className="mt-2 grid grid-cols-1 md:grid-cols-3">
-        <p className="text-xs font-medium text-primary tabular-nums md:col-start-3">
-          {resume.montantGlobal > 0
-            ? `${pourcentage.format(resume.contributionRegionTotale / resume.montantGlobal)} du montant global`
-            : "— du montant global"}
-        </p>
       </div>
     </section>
   );
