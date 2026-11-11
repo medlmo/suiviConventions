@@ -119,11 +119,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
         {/* Top Header */}
         <header
-          className="h-16 bg-card border-b border-border flex items-center justify-between px-6 lg:px-8 shadow-sm z-10 shrink-0"
+          className="h-16 border-b border-border flex items-center justify-between px-6 lg:px-8 shadow-sm z-10 shrink-0"
           style={{
+            backgroundColor: "#fff",
             backgroundImage: `url(${mosaicRibbon})`,
             backgroundRepeat: "repeat",
-            backgroundSize: "236px 118px",
+            backgroundSize: "188px 94px",
             backgroundPosition: "center",
           }}
         >
