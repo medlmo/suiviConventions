@@ -123,7 +123,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           style={{
             backgroundImage: `url(${mosaicRibbon})`,
             backgroundRepeat: "repeat",
-            backgroundSize: "296px 148px",
+            backgroundSize: "236px 118px",
+            backgroundPosition: "center",
           }}
         >
           <div className="md:hidden flex items-center gap-2">
