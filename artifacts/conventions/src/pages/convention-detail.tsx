@@ -551,7 +551,7 @@ export default function ConventionDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="statutConvention" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Statut</FormLabel>
@@ -589,7 +589,7 @@ export default function ConventionDetail() {
                       </FormItem>
                     )} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="responsableProjet" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Responsable Projet</FormLabel>
@@ -620,7 +620,7 @@ export default function ConventionDetail() {
                       </FormItem>
                     )} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="session" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Session *</FormLabel>
@@ -649,7 +649,7 @@ export default function ConventionDetail() {
                       </FormItem>
                     )} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="nature" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nature du projet</FormLabel>
@@ -744,7 +744,7 @@ export default function ConventionDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="enveloppeBudgetaire" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Enveloppe budgétaire (MAD)</FormLabel>
@@ -844,7 +844,7 @@ export default function ConventionDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-5">
-                  <div className="grid grid-cols-2 gap-4 bg-red-50/30 p-4 rounded-lg border border-red-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-red-50/30 p-4 rounded-lg border border-red-100">
                     <FormField control={form.control} name="prochaineEcheance" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-bold text-red-900">Date Prochaine Échéance</FormLabel>
@@ -879,7 +879,7 @@ export default function ConventionDetail() {
                     )} />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="dernierComite" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Date Dernier Comité</FormLabel>
@@ -902,7 +902,7 @@ export default function ConventionDetail() {
                     </FormItem>
                   )} />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="presidenceComite" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Présidence</FormLabel>
