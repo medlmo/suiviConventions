@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { NotificationCenter } from "@/components/notification-center";
-import mosaicRibbon from "@/assets/mosaic-ribbon.svg";
+import mosaicRibbon from "@/assets/mosaic-ribbon-reference.png";
 
 const navigation = [
   { name: "Tableau de bord", href: "/", icon: LayoutDashboard },
@@ -123,8 +123,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           style={{
             backgroundColor: "#fff",
             backgroundImage: `url(${mosaicRibbon})`,
-            backgroundRepeat: "repeat",
-            backgroundSize: "188px 94px",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "cover",
             backgroundPosition: "center",
           }}
         >
