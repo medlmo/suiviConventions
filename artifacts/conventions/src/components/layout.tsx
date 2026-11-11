@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { NotificationCenter } from "@/components/notification-center";
+import mosaicRibbon from "@/assets/mosaic-ribbon.svg";
 
 const navigation = [
   { name: "Tableau de bord", href: "/", icon: LayoutDashboard },
@@ -117,7 +118,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 lg:px-8 shadow-sm z-10 shrink-0">
+        <header
+          className="h-16 bg-card border-b border-border flex items-center justify-between px-6 lg:px-8 shadow-sm z-10 shrink-0"
+          style={{
+            backgroundImage: `url(${mosaicRibbon})`,
+            backgroundRepeat: "repeat",
+            backgroundSize: "296px 148px",
+          }}
+        >
           <div className="md:hidden flex items-center gap-2">
             <Sheet>
               <SheetTrigger asChild>
