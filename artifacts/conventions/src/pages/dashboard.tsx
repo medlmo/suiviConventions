@@ -6,13 +6,12 @@ import {
   AlerteCouleur,
   Convention 
 } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertCircle, Calendar, ArrowRight, Activity, Clock, FileWarning, CheckCircle2, Info, RefreshCw, WifiOff } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, Calendar, ArrowRight, Activity, Clock, FileWarning, CheckCircle2, RefreshCw, WifiOff } from "lucide-react";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { DashboardTotals } from "@/components/dashboard-totals";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -51,57 +50,6 @@ const BG_COLORS: Record<AlerteCouleur, string> = {
   vert: "bg-green-50 text-green-700 border-green-100",
   gris: "bg-slate-50 text-slate-700 border-slate-100",
 };
-
-const EXPLICATIONS_ALERTES = [
-  {
-    niveau: "EN_RETARD",
-    libelle: "Hors échéance",
-    couleur: "rouge" as AlerteCouleur,
-    periode: "Échéance dépassée",
-    explication: "La date prévue du comité est passée et aucune nouvelle échéance n’est renseignée.",
-    action: "Organiser ou régulariser immédiatement",
-  },
-  {
-    niveau: "A_DECLENCHER",
-    libelle: "À tenir entre 0 et 30 jours",
-    couleur: "orange" as AlerteCouleur,
-    periode: "Échéance dans 0 à 30 jours",
-    explication: "Le comité est imminent. La convocation et les pièces nécessaires doivent être préparées.",
-    action: "Préparer la convocation et les pièces",
-  },
-  {
-    niveau: "A_PREPARER",
-    libelle: "À tenir entre 31 et 60 jours",
-    couleur: "jaune" as AlerteCouleur,
-    periode: "Échéance dans 31 à 60 jours",
-    explication: "Le comité approche, mais il reste encore du temps pour coordonner sa préparation.",
-    action: "Anticiper avec le responsable",
-  },
-  {
-    niveau: "TENU",
-    libelle: "Tenu",
-    couleur: "vert" as AlerteCouleur,
-    periode: "Dernier comité tenu dans les délais",
-    explication: "L’historique confirme que le dernier comité a eu lieu au plus tard à l’échéance qui le précédait.",
-    action: "Aucune action immédiate",
-  },
-  {
-    niveau: "A_SURVEILLER",
-    libelle: "Fréquence conditionnelle",
-    couleur: "gris" as AlerteCouleur,
-    periode: "Fréquence conditionnelle",
-    explication: "La convention prévoit un déclenchement selon les besoins, à la demande ou en cas de nécessité.",
-    action: "Vérifier le déclencheur ou la clause",
-  },
-  {
-    niveau: "A_QUALIFIER",
-    libelle: "Échéance non renseignée",
-    couleur: "gris" as AlerteCouleur,
-    periode: "Échéance non renseignée",
-    explication: "Aucune date ni fréquence conditionnelle exploitable ne permet de déterminer la prochaine action.",
-    action: "Compléter les informations de suivi",
-  },
-] as const;
 
 /**
  * Une section qui n'a pas pu être chargée doit le dire : sans ce bloc, une
@@ -164,7 +112,6 @@ export default function Dashboard() {
   const totalConventions = resume?.total ?? 0;
 
   return (
-    <Dialog>
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex flex-col gap-2">
@@ -179,12 +126,6 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-        <DialogTrigger asChild>
-          <Button variant="outline" className="shrink-0 gap-2 whitespace-normal h-auto min-h-10 py-2 text-left">
-            <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
-            Comprendre les niveaux d’alerte
-          </Button>
-        </DialogTrigger>
       </div>
 
       {/* Compteurs */}
@@ -240,49 +181,6 @@ export default function Dashboard() {
       </div>
       </div>
       )}
-
-      <DialogContent className="w-[calc(100%-2rem)] max-w-4xl max-h-[85dvh] rounded-lg">
-        <DialogHeader className="pr-6 text-left">
-          <DialogTitle className="text-xl">Comprendre les niveaux d’alerte</DialogTitle>
-          <DialogDescription>
-            Le niveau est recalculé chaque jour à partir de la prochaine échéance ou de la fréquence de la convention.
-          </DialogDescription>
-        </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {EXPLICATIONS_ALERTES.map((explication) => {
-              const Icon = ICONS[explication.couleur];
-              const bgClass = BG_COLORS[explication.couleur];
-
-              return (
-                <div
-                  key={explication.niveau}
-                  className="rounded-lg border border-border/70 bg-background p-4"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={cn("rounded-md border p-1.5", bgClass)}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="font-semibold text-foreground">{explication.libelle}</div>
-                  </div>
-                  <div className="mt-3 text-sm font-medium text-foreground">
-                    {explication.periode}
-                  </div>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                    {explication.explication}
-                  </p>
-                  <p className="mt-3 border-t border-border/60 pt-2 text-xs font-semibold text-primary">
-                    Action : {explication.action}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Fermer</Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Actions urgentes */}
@@ -450,6 +348,5 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
-    </Dialog>
   );
 }
