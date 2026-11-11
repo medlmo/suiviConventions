@@ -78,11 +78,11 @@ const EXPLICATIONS_ALERTES = [
     action: "Anticiper avec le responsable",
   },
   {
-    niveau: "A_JOUR",
-    libelle: "À jour",
+    niveau: "TENU",
+    libelle: "Tenu",
     couleur: "vert" as AlerteCouleur,
-    periode: "Échéance dans plus de 60 jours",
-    explication: "Une échéance est renseignée et elle ne nécessite pas encore d’action immédiate.",
+    periode: "Dernier comité tenu dans les délais",
+    explication: "L’historique confirme que le dernier comité a eu lieu au plus tard à l’échéance qui le précédait.",
     action: "Aucune action immédiate",
   },
   {
@@ -368,7 +368,7 @@ export default function Dashboard() {
               <div className="py-12 text-center text-muted-foreground bg-muted/30 rounded-lg border border-dashed">
                 <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-green-500 opacity-50" />
                 <p className="font-medium text-lg">Aucune alerte prioritaire</p>
-                <p className="text-sm mt-1">Toutes vos conventions sont à jour.</p>
+                <p className="text-sm mt-1">Aucune échéance prioritaire pour le moment.</p>
               </div>
             )}
           </CardContent>

@@ -837,13 +837,15 @@ components:
         EN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).
         A_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).
         A_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).
-        A_JOUR : échéance au-delà de 60 jours.
+        TENU : dernière échéance respectée d'après l'historique avant/après de la date du comité.
+        A_JOUR : échéance au-delà de 60 jours sans preuve historique d'une échéance respectée (libellé affiché : « Sans échéance prioritaire »); non compté dans les indicateurs du dashboard.
         A_SURVEILLER : pas d'échéance, fréquence conditionnelle (libellé affiché : « Fréquence conditionnelle »).
         A_QUALIFIER : pas d'échéance, donnée manquante (libellé affiché : « Échéance non renseignée »).
       enum:
         - EN_RETARD
         - A_DECLENCHER
         - A_PREPARER
+        - TENU
         - A_JOUR
         - A_SURVEILLER
         - A_QUALIFIER
@@ -1258,7 +1260,7 @@ components:
           $ref: "#/components/schemas/VentilationSessions"
         compteurs:
           type: array
-          description: Un compteur par niveau d'alerte, dans l'ordre d'urgence
+          description: Compteurs des niveaux d'alerte visibles dans l'ordre d'urgence; les échéances au-delà de 60 jours sans preuve ne sont pas affichées comme indicateur.
           items: { $ref: "#/components/schemas/CompteurAlerte" }
         aTraiter:
           type: integer

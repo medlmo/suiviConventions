@@ -16,12 +16,23 @@ export const NIVEAUX_ALERTE = [
   "EN_RETARD",
   "A_DECLENCHER",
   "A_PREPARER",
+  "TENU",
   "A_JOUR",
   "A_SURVEILLER",
   "A_QUALIFIER",
 ] as const;
 
 export type NiveauAlerte = (typeof NIVEAUX_ALERTE)[number];
+
+/** Niveaux présentés dans les compteurs du dashboard; A_JOUR reste neutre. */
+export const NIVEAUX_COMPTEURS: readonly NiveauAlerte[] = [
+  "EN_RETARD",
+  "A_DECLENCHER",
+  "A_PREPARER",
+  "TENU",
+  "A_SURVEILLER",
+  "A_QUALIFIER",
+];
 
 export type CouleurAlerte = "rouge" | "orange" | "jaune" | "vert" | "gris";
 
@@ -47,8 +58,13 @@ export const META_ALERTES: Record<NiveauAlerte, MetaAlerte> = {
     action: "Anticiper avec le responsable",
     couleur: "jaune",
   },
+  TENU: {
+    libelle: "Tenu",
+    action: "Le dernier comité a respecté l’échéance précédente.",
+    couleur: "vert",
+  },
   A_JOUR: {
-    libelle: "À jour",
+    libelle: "Sans échéance prioritaire",
     action: "Aucune action immédiate",
     couleur: "vert",
   },
@@ -95,6 +111,30 @@ const MOTIFS_CONDITIONNELS = [
  */
 const MOTIFS_CONDITIONNELS_SQL = sql.raw(`'${MOTIFS_CONDITIONNELS}'`);
 
+/**
+ * Vrai uniquement si l'historique prouve que la date du dernier comité,
+ * enregistrée lors d'une modification, ne dépasse pas l'échéance qui la
+ * précédait. Les dossiers sans cette preuve ne sont pas classés « Tenu ».
+ */
+const dernierComiteRespecteEcheanceSql = sql<boolean>`
+  (
+    SELECT CASE
+      WHEN convention_audit.before->>'prochaineEcheance' IS NULL THEN FALSE
+      ELSE
+        (convention_audit.after->>'dernierComite')::date
+        <= (convention_audit.before->>'prochaineEcheance')::date
+    END
+    FROM convention_audit
+    WHERE convention_audit.convention_id = conventions.id
+      AND convention_audit.action = 'update'
+      AND convention_audit.after->>'dernierComite' = conventions.dernier_comite::text
+      AND convention_audit.after->>'dernierComite'
+        IS DISTINCT FROM convention_audit.before->>'dernierComite'
+    ORDER BY convention_audit.created_at DESC, convention_audit.id DESC
+    LIMIT 1
+  ) IS TRUE
+`;
+
 /** Niveau d'alerte recalculé par rapport à la date du jour. */
 export const niveauAlerteSql: SQL<NiveauAlerte> = sql<NiveauAlerte>`
   CASE
@@ -103,6 +143,7 @@ export const niveauAlerteSql: SQL<NiveauAlerte> = sql<NiveauAlerte>`
         WHEN conventions.prochaine_echeance < CURRENT_DATE THEN 'EN_RETARD'
         WHEN conventions.prochaine_echeance <= CURRENT_DATE + 30 THEN 'A_DECLENCHER'
         WHEN conventions.prochaine_echeance <= CURRENT_DATE + 60 THEN 'A_PREPARER'
+        WHEN ${dernierComiteRespecteEcheanceSql} THEN 'TENU'
         ELSE 'A_JOUR'
       END
     WHEN COALESCE(conventions.frequence_reunions, '') ~* ${MOTIFS_CONDITIONNELS_SQL} THEN 'A_SURVEILLER'

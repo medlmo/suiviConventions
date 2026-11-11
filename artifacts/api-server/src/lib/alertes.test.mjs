@@ -24,7 +24,14 @@ const cas = [
   { nom: "frequence-conditionnelle-arabe", date: null, frequence: "كلما دعت الضرورة إلى ذلك", niveau: "A_SURVEILLER", rang: 4 },
   { nom: "frequence-conditionnelle-francaise", date: null, frequence: "EN CAS DE BESOIN", niveau: "A_SURVEILLER", rang: 4 },
   { nom: "sans-echeance-ni-clause", date: null, frequence: "Tous les six mois", niveau: "A_QUALIFIER", rang: 5 },
-  { nom: "date-prioritaire-sur-clause", date: "2026-12-20", frequence: "si besoin", niveau: "A_JOUR", rang: 3 },
+  {
+    nom: "date-prioritaire-sur-clause",
+    date: "2026-12-20",
+    frequence: "si besoin",
+    dernierComite: "2026-09-20",
+    niveau: "TENU",
+    rang: 3,
+  },
 ];
 
 let repertoireTemporaire;
@@ -69,6 +76,27 @@ before(() => {
     "-o", `-c listen_addresses='' -c unix_socket_directories=${repertoireSocket}`,
     "-w", "start",
   ], { stdio: "ignore" });
+  lancerPsql(`
+    CREATE TABLE convention_audit (
+      id integer PRIMARY KEY,
+      convention_id integer NOT NULL,
+      action text NOT NULL,
+      "before" jsonb,
+      "after" jsonb,
+      created_at timestamptz NOT NULL
+    )
+  `);
+  lancerPsql(`
+    INSERT INTO convention_audit (id, convention_id, action, "before", "after", created_at)
+    VALUES (
+      1,
+      10,
+      'update',
+      '{"dernierComite":null,"prochaineEcheance":"2026-09-30"}'::jsonb,
+      '{"dernierComite":"2026-09-20"}'::jsonb,
+      CURRENT_TIMESTAMP
+    )
+  `);
 
   const dialect = new PgDialect();
   const niveauSql = dialect.sqlToQuery(niveauAlerteSql).sql
@@ -76,11 +104,11 @@ before(() => {
   const rangSql = dialect.sqlToQuery(rangUrgenceSql).sql
     .replaceAll("CURRENT_DATE", `DATE '${AUJOURDHUI}'`);
   const valeurs = cas.map((ligne, index) =>
-    `(${citerDate(ligne.date)}, ${citerTexte(ligne.frequence)}, ${citerTexte(ligne.nom)}, ${index})`,
+    `(${index + 1}, ${citerDate(ligne.dernierComite ?? null)}, ${citerDate(ligne.date)}, ${citerTexte(ligne.frequence)}, ${citerTexte(ligne.nom)}, ${index})`,
   ).join(",\n");
 
   resultats = lancerPsql(`
-    WITH conventions(prochaine_echeance, frequence_reunions, scenario, ordre) AS (
+    WITH conventions(id, dernier_comite, prochaine_echeance, frequence_reunions, scenario, ordre) AS (
       VALUES ${valeurs}
     )
     SELECT scenario || '|' || (${niveauSql}) || '|' || (${rangSql})
@@ -115,7 +143,7 @@ test("sans échéance, les clauses conditionnelles sont surveillées et les autr
 });
 
 test("une échéance présente détermine le niveau même si la fréquence est conditionnelle", () => {
-  assert.equal(resultats[9], "date-prioritaire-sur-clause|A_JOUR|3");
+  assert.equal(resultats[9], "date-prioritaire-sur-clause|TENU|3");
 });
 
 test("les libellés, couleurs et jours restants correspondent aux niveaux calculés", () => {

@@ -11,7 +11,8 @@
  * EN_RETARD : échéance dépassée (libellé affiché : « Hors échéance »).
  * A_DECLENCHER : échéance dans 0 à 30 jours (libellé affiché : « À tenir entre 0 et 30 jours »).
  * A_PREPARER : échéance dans 31 à 60 jours (libellé affiché : « À tenir entre 31 et 60 jours »).
- * A_JOUR : échéance au-delà de 60 jours.
+ * TENU : dernière échéance respectée d'après l'historique avant/après de la date du comité.
+ * A_JOUR : échéance au-delà de 60 jours sans preuve historique d'une échéance respectée (libellé affiché : « Sans échéance prioritaire »); non compté dans les indicateurs du dashboard.
  * A_SURVEILLER : pas d'échéance, fréquence conditionnelle (libellé affiché : « Fréquence conditionnelle »).
  * A_QUALIFIER : pas d'échéance, donnée manquante (libellé affiché : « Échéance non renseignée »).
  */
@@ -22,6 +23,7 @@ export const NiveauAlerte = {
   EN_RETARD: 'EN_RETARD',
   A_DECLENCHER: 'A_DECLENCHER',
   A_PREPARER: 'A_PREPARER',
+  TENU: 'TENU',
   A_JOUR: 'A_JOUR',
   A_SURVEILLER: 'A_SURVEILLER',
   A_QUALIFIER: 'A_QUALIFIER',

@@ -11,7 +11,7 @@ import {
 import { conditionsVisibles } from "../../lib/convention-access";
 import {
   META_ALERTES,
-  NIVEAUX_ALERTE,
+  NIVEAUX_COMPTEURS,
   niveauAlerteSql,
   rangUrgenceSql,
   type NiveauAlerte,
@@ -122,14 +122,16 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
     repartition.map((ligne) => [ligne.niveau, ligne.nombre]),
   );
 
-  const compteurs = NIVEAUX_ALERTE.map((niveau) => ({
+  const compteurs = NIVEAUX_COMPTEURS.map((niveau) => ({
     niveau,
     libelle: META_ALERTES[niveau].libelle,
     couleur: META_ALERTES[niveau].couleur,
     nombre: parNiveau.get(niveau) ?? 0,
   }));
 
-  const total = compteurs.reduce((somme, compteur) => somme + compteur.nombre, 0);
+  // Le total garde aussi les conventions au-delà de l'horizon prioritaire,
+  // même si elles ne sont plus présentées comme un indicateur du dashboard.
+  const total = repartition.reduce((somme, ligne) => somme + ligne.nombre, 0);
   const aTraiter =
     (parNiveau.get("EN_RETARD") ?? 0) +
     (parNiveau.get("A_DECLENCHER") ?? 0) +

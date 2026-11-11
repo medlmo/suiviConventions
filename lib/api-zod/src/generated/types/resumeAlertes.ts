@@ -19,7 +19,7 @@ export interface ResumeAlertes {
   /** Synthèses par statut dans le même périmètre de consultation. Toutes les conventions saisies sont considérées visées ; les statuts non renseignés ou résiliés restent inclus dans le total général uniquement. */
   parStatut: ResumeAlertesParStatut;
   parSession: VentilationSessions;
-  /** Un compteur par niveau d'alerte, dans l'ordre d'urgence */
+  /** Compteurs des niveaux d'alerte visibles dans l'ordre d'urgence; les échéances au-delà de 60 jours sans preuve ne sont pas affichées comme indicateur. */
   compteurs: CompteurAlerte[];
   /** Conventions hors échéance ou arrivant à échéance dans 60 jours */
   aTraiter: number;
