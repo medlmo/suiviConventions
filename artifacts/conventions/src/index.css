@@ -175,4 +175,9 @@
   [dir="auto"] {
     text-align: start;
   }
+
+  input[type="date"] {
+    min-width: 0;
+    max-width: 100%;
+  }
 }
