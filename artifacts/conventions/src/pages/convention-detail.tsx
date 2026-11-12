@@ -17,6 +17,7 @@ import { api, canEditConvention, errorMessage, useAuth, type ApiError } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { DocumentHistoryField } from "@/components/document-history-field";
 import { SuiviFinancierEditor, parseMontant, versApi, versBrouillon } from "@/components/suivi-financier-editor";
+import { MontantInput } from "@/components/montant-input";
 import type { FieldErrors } from "react-hook-form";
 import { AvancementPhysiqueVolet, COMMENTAIRE_MAX, dateCalendaireValide, natureAvancementEligible, parseTaux } from "@/components/avancement-physique-volet";
 import { SituationVersementsVolet, erreursVersements, versApiVersements, versBrouillonVersements } from "@/components/situation-versements-volet";
@@ -720,7 +721,7 @@ export default function ConventionDetail() {
                       <FormItem>
                         <FormLabel>Enveloppe budgétaire (MAD)</FormLabel>
                         <FormControl>
-                          <Input type="number" min="0" step="0.01" {...field} value={field.value ?? ""} />
+                          <MontantInput {...field} value={field.value ?? ""} placeholder="0,00" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -729,7 +730,7 @@ export default function ConventionDetail() {
                       <FormItem>
                         <FormLabel>Contribution de la Région (MAD)</FormLabel>
                         <FormControl>
-                          <Input type="number" min="0" step="0.01" {...field} value={field.value ?? ""} />
+                          <MontantInput {...field} value={field.value ?? ""} placeholder="0,00" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

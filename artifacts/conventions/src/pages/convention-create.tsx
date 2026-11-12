@@ -15,6 +15,7 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentHistoryField } from "@/components/document-history-field";
 import { useAuth, errorMessage, rattachementUtilisateur } from "@/hooks/use-auth";
+import { MontantInput } from "@/components/montant-input";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -408,14 +409,14 @@ export default function ConventionCreate() {
                 <FormField control={form.control} name="enveloppeBudgetaire" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Enveloppe budgétaire (MAD)</FormLabel>
-                    <FormControl><Input type="number" min="0" step="0.01" {...field} value={field.value ?? ""} /></FormControl>
+                    <FormControl><MontantInput {...field} value={field.value ?? ""} placeholder="0,00" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="contributionRegion" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contribution de la Région (MAD)</FormLabel>
-                    <FormControl><Input type="number" min="0" step="0.01" {...field} value={field.value ?? ""} /></FormControl>
+                    <FormControl><MontantInput {...field} value={field.value ?? ""} placeholder="0,00" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
