@@ -3,20 +3,13 @@ import { ArrowRight, Banknote, Files, Wallet } from "lucide-react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const montant = new Intl.NumberFormat("de-DE", {
-  useGrouping: true,
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { formatMontantMAD } from "@/lib/utils";
 
 const nombre = new Intl.NumberFormat("fr-FR");
 const pourcentage = new Intl.NumberFormat("fr-FR", {
   style: "percent",
   maximumFractionDigits: 1,
 });
-
-const formaterMontant = (value: number) => `${montant.format(value)} MAD`;
 
 const PERIODES = [
   { key: "avant2021", libelle: "Avant 2021" },
@@ -61,18 +54,18 @@ export function DashboardTotals({
       cle: "budget",
       titre: "Budget alloué",
       valeur: resume.montantGlobal,
-      formater: formaterMontant,
+      formater: formatMontantMAD,
       mesure: (periode: ResumeAlertes["parSession"]["avant2021"]) => periode.montantGlobal,
-      formaterMesure: formaterMontant,
+      formaterMesure: formatMontantMAD,
       Icon: Wallet,
     },
     {
       cle: "contribution",
       titre: "Contribution de la Région",
       valeur: resume.contributionRegionTotale,
-      formater: formaterMontant,
+      formater: formatMontantMAD,
       mesure: (periode: ResumeAlertes["parSession"]["avant2021"]) => periode.contributionRegionTotale,
-      formaterMesure: formaterMontant,
+      formaterMesure: formatMontantMAD,
       Icon: Banknote,
     },
   ];

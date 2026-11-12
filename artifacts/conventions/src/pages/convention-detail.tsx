@@ -55,7 +55,6 @@ import { calculerEcheance } from "@/lib/echeances";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { ArrowLeft, AlertTriangle, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatNumber } from "@/lib/utils";
 import { format } from "date-fns";
 
 // Un champ montant vidé doit repartir à NULL, pas à 0 : z.coerce.number()

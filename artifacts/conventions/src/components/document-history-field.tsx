@@ -101,7 +101,6 @@ export function DocumentHistoryField({
           disabled={uploading}
           onChange={event => setDatePvComite(event.target.value)}
         />
-        <p className="text-xs text-muted-foreground">Facultative; si elle est saisie, elle sera conservée avec ce document.</p>
       </div>}
       <DocumentUploadField id={`ajout-document-${category}`} field={category === "pv" ? "pv" : "documentConvention"}
         datePvComite={category === "pv" ? datePvComite : undefined}

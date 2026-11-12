@@ -17,7 +17,7 @@ import { AlerteBadge } from "@/components/alerte-badge";
 import { FicheTechniqueButton } from "@/components/fiche-technique-button";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatNumber } from "@/lib/utils";
+import { formatMontantMAD } from "@/lib/utils";
 import { useAuth, errorMessage } from "@/hooks/use-auth";
 import { PartenaireMultiSelect } from "@/components/partenaire-multi-select";
 
@@ -336,8 +336,8 @@ export default function ConventionsList() {
                       </div>
                       {(conv.enveloppeBudgetaire || conv.contributionRegion) && (
                         <div className="mt-2 text-xs font-medium text-muted-foreground flex gap-3">
-                          {conv.enveloppeBudgetaire && <span>Budget: {formatNumber(conv.enveloppeBudgetaire)} MAD</span>}
-                          {conv.contributionRegion && <span className="text-primary/80">Région: {formatNumber(conv.contributionRegion)} MAD</span>}
+                          {conv.enveloppeBudgetaire && <span>Budget: {formatMontantMAD(conv.enveloppeBudgetaire)}</span>}
+                          {conv.contributionRegion && <span className="text-primary/80">Région: {formatMontantMAD(conv.contributionRegion)}</span>}
                         </div>
                       )}
                     </td>
