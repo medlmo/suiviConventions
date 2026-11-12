@@ -443,14 +443,14 @@ export async function genererFicheTechnique(convention: ConventionApi): Promise<
   })] });
   const rows = [
     rubrique("01  OBJET DE LA CONVENTION"),
-    ligne("Objet de la convention (arabe)", convention.nomConvention),
-    ligne("Objet de la convention (français)", convention.objetConventionFr),
+    ligne("Intitulé de la convention (arabe)", convention.nomConvention),
+    ligne("Intitulé de la convention (français)", convention.objetConventionFr),
     rubrique("02  IDENTIFICATION"),
     ligne("Session", [
       dateFr(convention.session),
       ...(convention.typeSession ? [`Session ${convention.typeSession.toLocaleLowerCase("fr")}`] : []),
     ]),
-    ligne("Nature du projet", convention.nature),
+    ligne("Objet", convention.nature),
     ligne("Compétence", convention.competence),
     ligne("Date de Visa", dateFr(convention.dateVisa)),
     rubrique("03  LOCALISATION"),

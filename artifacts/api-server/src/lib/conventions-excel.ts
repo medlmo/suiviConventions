@@ -27,7 +27,7 @@ export class ExportExcelError extends Error {
 
 const colonnes: ColonneExport[] = [
   { titre: "Convention visée", extraire: c => c.nomConvention, largeurMin: 28, largeurMax: 55 },
-  { titre: "Objet de la convention (français)", extraire: c => c.objetConventionFr, largeurMin: 32, largeurMax: 60 },
+  { titre: "Intitulé de la convention (français)", extraire: c => c.objetConventionFr, largeurMin: 32, largeurMax: 60 },
   { titre: "Rattachement", extraire: c => c.rattachement, largeurMin: 18, largeurMax: 38 },
   { titre: "Responsable du projet", extraire: c => c.responsableProjet, largeurMin: 20, largeurMax: 36 },
   { titre: "Statut de la convention", extraire: c => c.statutConvention, largeurMin: 18, largeurMax: 30 },
@@ -36,7 +36,7 @@ const colonnes: ColonneExport[] = [
   { titre: "Date de visa", extraire: c => c.dateVisa, largeurMin: 12, largeurMax: 14, date: true, format: "dd/mm/yyyy" },
   { titre: "Décision", extraire: c => c.decision, largeurMin: 18, largeurMax: 40 },
   { titre: "Compétence", extraire: c => c.competence, largeurMin: 18, largeurMax: 32 },
-  { titre: "Nature du projet", extraire: c => c.nature, largeurMin: 18, largeurMax: 32 },
+  { titre: "Objet", extraire: c => c.nature, largeurMin: 18, largeurMax: 32 },
   { titre: "Enveloppe budgétaire (MAD)", extraire: c => c.enveloppeBudgetaire, largeurMin: 20, largeurMax: 24, format: '#,##0.00 "MAD"' },
   { titre: "Contribution de la Région (MAD)", extraire: c => c.contributionRegion, largeurMin: 22, largeurMax: 26, format: '#,##0.00 "MAD"' },
   { titre: "Nature des fonds", extraire: c => c.natureFonds, largeurMin: 18, largeurMax: 30 },

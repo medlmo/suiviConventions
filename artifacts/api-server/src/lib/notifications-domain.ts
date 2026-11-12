@@ -26,10 +26,10 @@ function serviceDansDivision(reference: ReferenceData, division: string, service
 }
 
 const FIELD_LABELS: Partial<Record<keyof Convention, string>> = {
-  nomConvention: "Nom de la convention", objetConventionFr: "Objet de la convention",
+  nomConvention: "Nom de la convention", objetConventionFr: "Intitulé de la convention",
   rattachement: "Rattachement", responsableProjet: "Service responsable",
   typeSession: "Type de session", session: "Session", dateVisa: "Date de visa",
-  statutConvention: "Statut", decision: "Décision", competence: "Compétence", nature: "Nature du projet",
+  statutConvention: "Statut", decision: "Décision", competence: "Compétence", nature: "Objet",
   provincesPrefectures: "Provinces / préfectures", communes: "Communes",
   presidenceComite: "Présidence du comité", membresComite: "Membres du comité",
   frequenceReunions: "Fréquence des réunions", dernierComite: "Dernier comité",

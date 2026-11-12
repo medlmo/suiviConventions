@@ -212,7 +212,7 @@ export default function ConventionCreate() {
                 name="nomConvention"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base font-bold uppercase tracking-wider text-primary">Objet de la convention (arabe) *</FormLabel>
+                    <FormLabel className="text-base font-bold uppercase tracking-wider text-primary">Intitulé de la convention (arabe) *</FormLabel>
                     <FormControl>
                       <Textarea 
                         {...field} 
@@ -230,7 +230,7 @@ export default function ConventionCreate() {
                 name="objetConventionFr"
                 render={({ field }) => (
                   <FormItem className="mt-5">
-                    <FormLabel className="text-base font-bold uppercase tracking-wider text-primary">Objet de la convention (français)</FormLabel>
+                    <FormLabel className="text-base font-bold uppercase tracking-wider text-primary">Intitulé de la convention (français)</FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
@@ -346,7 +346,7 @@ export default function ConventionCreate() {
                 )} />
                 <FormField control={form.control} name="nature" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nature du projet</FormLabel>
+                    <FormLabel>Objet</FormLabel>
                     <Select value={field.value || ""} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>

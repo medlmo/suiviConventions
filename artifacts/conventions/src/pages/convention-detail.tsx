@@ -504,7 +504,7 @@ export default function ConventionDetail() {
                 name="nomConvention"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-primary">Objet de la convention (arabe)</FormLabel>
+                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-primary">Intitulé de la convention (arabe)</FormLabel>
                     <FormControl>
                       <Textarea 
                         {...field} 
@@ -521,7 +521,7 @@ export default function ConventionDetail() {
                 name="objetConventionFr"
                 render={({ field }) => (
                   <FormItem className="mt-5">
-                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-primary">Objet de la convention (français)</FormLabel>
+                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-primary">Intitulé de la convention (français)</FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
@@ -652,7 +652,7 @@ export default function ConventionDetail() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={form.control} name="nature" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nature du projet</FormLabel>
+                        <FormLabel>Objet</FormLabel>
                         <Select value={field.value || ""} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger>

@@ -165,7 +165,7 @@ export default function ConventionsList() {
               {(options?.naturesProjet.length ?? 0) > 0 && (
                 <Select value={natureProjet || "all"} onValueChange={(v) => { setNatureProjet(v === "all" ? undefined : v); setPage(1); }}>
                   <SelectTrigger className="w-[200px] h-10 [&>span]:truncate" data-testid="select-filter-nature-projet">
-                    <SelectValue placeholder="Nature du projet" />
+                    <SelectValue placeholder="Objet" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Toutes les natures</SelectItem>
