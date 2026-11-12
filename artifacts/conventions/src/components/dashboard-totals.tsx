@@ -24,7 +24,7 @@ const PERIODES = [
 ] as const;
 
 const PERIODES_COMPLEMENTAIRES = [
-  { key: "sansDate", libelle: "Session non renseignée" },
+  { key: "sansDate", libelle: "Date de visa non renseignée" },
   { key: "apres2026", libelle: "Après 2026" },
 ] as const;
 

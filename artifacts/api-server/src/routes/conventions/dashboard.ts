@@ -22,17 +22,17 @@ import { valide } from "./commun";
 
 const router: IRouter = Router();
 
-const periodeSessionSql = sql<string>`CASE
-  WHEN ${conventionsTable.session} IS NULL THEN 'sansDate'
-  WHEN ${conventionsTable.session} < DATE '2021-01-01' THEN 'avant2021'
-  WHEN ${conventionsTable.session} < DATE '2027-01-01' THEN 'de2021A2026'
+const periodeVisaSql = sql<string>`CASE
+  WHEN ${conventionsTable.dateVisa} IS NULL THEN 'sansDate'
+  WHEN ${conventionsTable.dateVisa} < DATE '2021-01-01' THEN 'avant2021'
+  WHEN ${conventionsTable.dateVisa} < DATE '2027-01-01' THEN 'de2021A2026'
   ELSE 'apres2026'
 END`;
 
 router.get("/conventions/resume", async (req, res): Promise<void> => {
   const reference = await chargerReferentiel();
   const visible = conditionsVisibles(req.user!, reference);
-  const [repartition, [prochaine], jourCourant, synthesesParStatut, synthesesParSession] = await Promise.all([
+  const [repartition, [prochaine], jourCourant, synthesesParStatut, synthesesParVisa] = await Promise.all([
     db
       .select({ niveau: niveauAlerteSql, nombre: count() })
       .from(conventionsTable)
@@ -57,14 +57,14 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
       .groupBy(conventionsTable.statutConvention),
     db
       .select({
-        periode: periodeSessionSql,
+        periode: periodeVisaSql,
         total: count(),
         montantGlobal: sql<string>`coalesce(sum(${conventionsTable.enveloppeBudgetaire}), 0)`,
         contributionRegionTotale: sql<string>`coalesce(sum(${conventionsTable.contributionRegion}), 0)`,
       })
       .from(conventionsTable)
       .where(visible)
-      .groupBy(periodeSessionSql),
+      .groupBy(periodeVisaSql),
   ]);
 
   const syntheseVide = () => ({
@@ -102,16 +102,16 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
     montantGlobal: 0,
     contributionRegionTotale: 0,
   });
-  const parSession = {
+  const parDateVisa = {
     avant2021: periodeVide(),
     de2021A2026: periodeVide(),
     sansDate: periodeVide(),
     apres2026: periodeVide(),
   };
-  for (const ligne of synthesesParSession) {
-    const key = ligne.periode as keyof typeof parSession;
-    if (!(key in parSession)) continue;
-    parSession[key] = {
+  for (const ligne of synthesesParVisa) {
+    const key = ligne.periode as keyof typeof parDateVisa;
+    if (!(key in parDateVisa)) continue;
+    parDateVisa[key] = {
       total: ligne.total,
       montantGlobal: Number(ligne.montantGlobal),
       contributionRegionTotale: Number(ligne.contributionRegionTotale),
@@ -145,7 +145,8 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
       montantGlobal: Number(montants.montantGlobal),
       contributionRegionTotale: Number(montants.contributionRegionTotale),
       parStatut,
-      parSession,
+      // Nom conservé pour compatibilité avec le contrat API existant.
+      parSession: parDateVisa,
       compteurs,
       aTraiter,
       sansEcheance,
