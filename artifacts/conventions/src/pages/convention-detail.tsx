@@ -865,6 +865,14 @@ export default function ConventionDetail() {
                     )} />
                   </div>
 
+                  <FormField control={form.control} name="frequenceReunions" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fréquence prévue des réunions (mois)</FormLabel>
+                      <FormControl><Input {...field} value={field.value || ""} dir="auto" placeholder="Ex. : 3" /></FormControl>
+                      <p className="text-xs text-muted-foreground">Indiquer un nombre de mois, ou la mention « كلما دعت الضرورة الى ذلك » si la fréquence est inconnue.</p>
+                    </FormItem>
+                  )} />
+
                   <FormField control={form.control} name="decision" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Décision</FormLabel>
@@ -890,14 +898,6 @@ export default function ConventionDetail() {
                           <SelectItem value="A clôturer">A clôturer</SelectItem>
                         </SelectContent>
                       </Select>
-                    </FormItem>
-                  )} />
-
-                  <FormField control={form.control} name="frequenceReunions" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fréquence prévue des réunions (mois)</FormLabel>
-                      <FormControl><Input {...field} value={field.value || ""} dir="auto" placeholder="Ex. : 3" /></FormControl>
-                      <p className="text-xs text-muted-foreground">Indiquer un nombre de mois, ou la mention « كلما دعت الضرورة الى ذلك » si la fréquence est inconnue.</p>
                     </FormItem>
                   )} />
 
