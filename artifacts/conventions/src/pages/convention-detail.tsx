@@ -678,35 +678,6 @@ export default function ConventionDetail() {
                       </FormItem>
                     )} />
                   </div>
-                  <div>
-                    <FormField control={form.control} name="decision" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Décision</FormLabel>
-                        <Select
-                          value={field.value || "non-renseigne"}
-                          onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choisir une décision" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {field.value && !["A renouveler", "A reconduire tacitemment", "A maintenir", "A ne pas renouveler", "A résilier", "A clôturer"].includes(field.value) && (
-                              <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
-                            )}
-                            <SelectItem value="non-renseigne">Non renseignée</SelectItem>
-                            <SelectItem value="A renouveler">A renouveler</SelectItem>
-                            <SelectItem value="A reconduire tacitemment">A reconduire tacitemment</SelectItem>
-                            <SelectItem value="A maintenir">A maintenir</SelectItem>
-                            <SelectItem value="A ne pas renouveler">A ne pas renouveler</SelectItem>
-                            <SelectItem value="A résilier">A résilier</SelectItem>
-                            <SelectItem value="A clôturer">A clôturer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )} />
-                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="provincesPrefectures" render={({ field }) => (
                       <FormItem>
@@ -893,6 +864,34 @@ export default function ConventionDetail() {
                       </FormItem>
                     )} />
                   </div>
+
+                  <FormField control={form.control} name="decision" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Décision</FormLabel>
+                      <Select
+                        value={field.value || "non-renseigne"}
+                        onValueChange={(value) => field.onChange(value === "non-renseigne" ? null : value)}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choisir une décision" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {field.value && !["A renouveler", "A reconduire tacitemment", "A maintenir", "A ne pas renouveler", "A résilier", "A clôturer"].includes(field.value) && (
+                            <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
+                          )}
+                          <SelectItem value="non-renseigne">Non renseignée</SelectItem>
+                          <SelectItem value="A renouveler">A renouveler</SelectItem>
+                          <SelectItem value="A reconduire tacitemment">A reconduire tacitemment</SelectItem>
+                          <SelectItem value="A maintenir">A maintenir</SelectItem>
+                          <SelectItem value="A ne pas renouveler">A ne pas renouveler</SelectItem>
+                          <SelectItem value="A résilier">A résilier</SelectItem>
+                          <SelectItem value="A clôturer">A clôturer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
 
                   <FormField control={form.control} name="frequenceReunions" render={({ field }) => (
                     <FormItem>
