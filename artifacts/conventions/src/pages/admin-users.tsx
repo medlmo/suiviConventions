@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type FormData = { username: string; email: string; password: string; role: Role; direction: string; division: string; service: string };
+type FormData = { username: string; password: string; role: Role; direction: string; division: string; service: string };
 type Confirmation = { kind: "toggle" | "delete"; user: User };
 const PASSWORD_PATTERN = String.raw`(?=.*[A-Z])(?=.*[a-z])(?=.*(?:[0-9]|[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])).{8,1024}`;
 const PASSWORD_POLICY_MESSAGE = "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial, et être différent de l'identifiant.";
@@ -31,7 +31,7 @@ function validatePasswordForUsername(password: string, username: string): string
   return null;
 }
 
-const blank: FormData = { username: "", email: "", password: "", role: "chef_service", direction: "", division: "", service: "" };
+const blank: FormData = { username: "", password: "", role: "chef_service", direction: "", division: "", service: "" };
 const roles: Role[] = ["admin", "directeur", "directeur_general_services", "chef_division", "chef_service"];
 const field = "w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
@@ -65,10 +65,10 @@ export default function AdminUsers() {
   const division = direction?.divisions.find(item => item.nom === form.division);
   const directDgs = form.role === "chef_service" && form.direction === DIRECTION_GENERALE_SERVICES;
   const services = directDgs ? reference.data?.servicesDgs : division?.services;
-  const visible = query.data?.filter(item => `${item.username} ${item.email ?? ""} ${roleLabels[item.role]} ${item.direction ?? ""} ${item.division ?? ""} ${item.service ?? ""}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+  const visible = query.data?.filter(item => `${item.username} ${roleLabels[item.role]} ${item.direction ?? ""} ${item.division ?? ""} ${item.service ?? ""}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
   function begin(user?: User) {
     setEditing(user ?? null);
-    setForm(user ? { username: user.username, email: user.email ?? "", password: "", role: user.role, direction: user.direction ?? (user.role === "chef_service" && !user.division && user.service ? DIRECTION_GENERALE_SERVICES : ""), division: user.division ?? "", service: user.service ?? "" } : blank);
+    setForm(user ? { username: user.username, password: "", role: user.role, direction: user.direction ?? (user.role === "chef_service" && !user.division && user.service ? DIRECTION_GENERALE_SERVICES : ""), division: user.division ?? "", service: user.service ?? "" } : blank);
     setError(""); setOpen(true);
   }
   async function save(event: FormEvent) {
@@ -84,9 +84,8 @@ export default function AdminUsers() {
       : form.role === "chef_division" ? { direction: form.direction || null, division: form.division || null, service: null }
        : { direction: directDgs ? null : form.direction || null, division: directDgs ? null : form.division || null, service: form.service || null };
     try {
-      const email = form.email.trim() || null;
-      if (editing) await api<AdminUser>(`/admin/users/${editing.id}`, { method: "PATCH", body: JSON.stringify({ username: form.username.trim(), email, role: form.role, ...scope }) });
-      else await api<AdminUser>("/admin/users", { method: "POST", body: JSON.stringify({ username: form.username.trim(), email, password: form.password, role: form.role, ...scope }) });
+      if (editing) await api<User>(`/admin/users/${editing.id}`, { method: "PATCH", body: JSON.stringify({ username: form.username.trim(), role: form.role, ...scope }) });
+      else await api<User>("/admin/users", { method: "POST", body: JSON.stringify({ username: form.username.trim(), password: form.password, role: form.role, ...scope }) });
       setOpen(false); await client.invalidateQueries({ queryKey: ["admin", "users"] });
     } catch (cause) { setError(errorMessage(cause)); }
     finally { setBusy(false); }
@@ -138,12 +137,11 @@ export default function AdminUsers() {
       : query.isError ? <Card><CardContent className="py-10 text-center"><p role="alert">{errorMessage(query.error)}</p><Button variant="outline" className="mt-4" onClick={() => void query.refetch()}>Réessayer</Button></CardContent></Card>
       : visible?.length === 0 ? <Card><CardContent className="py-16 text-center text-muted-foreground"><UserRound className="mx-auto mb-4 w-9 h-9 text-secondary" />{search ? "Aucun compte ne correspond à votre recherche." : "Aucun compte pour le moment."}</CardContent></Card>
       : <div className="border rounded-xl bg-card divide-y overflow-hidden">{visible?.map(user => <div key={user.id} className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center gap-4">
-         <div className="flex gap-4 flex-1 min-w-0"><div className="rounded-lg bg-accent text-primary w-11 h-11 shrink-0 grid place-items-center"><Shield className="w-5 h-5" /></div><div className="min-w-0"><div className="font-semibold flex flex-wrap items-center gap-2">{user.username}<span className={`text-xs rounded-full px-2 py-0.5 ${user.active ? "bg-emerald-50 text-emerald-800" : "bg-muted text-muted-foreground"}`}>{user.active ? "Actif" : "Inactif"}</span></div><div className="text-sm text-muted-foreground">{roleLabels[user.role]}{user.division ? ` · ${user.division}` : user.direction ? ` · ${user.direction}` : ""}{user.service ? ` · ${user.service}` : ""}</div><div className="mt-1 text-xs text-muted-foreground">{user.email ?? "Adresse e-mail non renseignée"}</div><div className="mt-1 text-xs text-muted-foreground">Dernière connexion : {afficherDerniereConnexion(user.lastLoginAt)}</div></div></div>
+         <div className="flex gap-4 flex-1 min-w-0"><div className="rounded-lg bg-accent text-primary w-11 h-11 shrink-0 grid place-items-center"><Shield className="w-5 h-5" /></div><div className="min-w-0"><div className="font-semibold flex flex-wrap items-center gap-2">{user.username}<span className={`text-xs rounded-full px-2 py-0.5 ${user.active ? "bg-emerald-50 text-emerald-800" : "bg-muted text-muted-foreground"}`}>{user.active ? "Actif" : "Inactif"}</span></div><div className="text-sm text-muted-foreground">{roleLabels[user.role]}{user.division ? ` · ${user.division}` : user.direction ? ` · ${user.direction}` : ""}{user.service ? ` · ${user.service}` : ""}</div><div className="mt-1 text-xs text-muted-foreground">Dernière connexion : {afficherDerniereConnexion(user.lastLoginAt)}</div></div></div>
         <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => begin(user)}><Pencil className="w-3.5 h-3.5 mr-2" /> Modifier</Button><Button size="sm" variant="outline" onClick={() => { setError(""); setPassword(""); setPasswordFor(user); }}><KeyRound className="w-3.5 h-3.5 mr-2" /> Mot de passe</Button><Button size="sm" variant="ghost" disabled={busy || user.id === current?.id} onClick={() => askToggle(user)}>{user.active ? "Désactiver" : "Réactiver"}</Button>{user.role !== "admin" && <Button size="sm" variant="destructive" disabled={busy || user.id === current?.id} onClick={() => askDelete(user)}><Trash2 className="w-3.5 h-3.5 mr-2" /> Supprimer</Button>}</div>
       </div>)}</div>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl"><DialogHeader><DialogTitle>{editing ? "Modifier le compte" : "Nouveau compte"}</DialogTitle><DialogDescription>Définissez le rôle et le périmètre de l'utilisateur.</DialogDescription></DialogHeader><form onSubmit={save} className="space-y-4">
        <div className="space-y-1.5"><label htmlFor="account-name" className="text-sm font-medium">Nom d'utilisateur</label><Input id="account-name" autoComplete="off" required value={form.username} onChange={event => setForm({ ...form, username: event.target.value })} /></div>
-       <div className="space-y-1.5"><label htmlFor="account-email" className="text-sm font-medium">Adresse e-mail</label><Input id="account-email" type="email" autoComplete="email" maxLength={254} value={form.email} onChange={event => setForm({ ...form, email: event.target.value })} /><p className="text-xs text-muted-foreground">Utilisée pour les rappels de comité de suivi des chefs de service.</p></div>
        {!editing && <div className="space-y-1.5"><label htmlFor="account-password" className="text-sm font-medium">Mot de passe initial</label><Input id="account-password" type="password" autoComplete="new-password" minLength={8} maxLength={1024} pattern={PASSWORD_PATTERN} title={PASSWORD_POLICY_MESSAGE} required value={form.password} onChange={event => setForm({ ...form, password: event.target.value })} /><p className="text-xs text-muted-foreground">8 caractères minimum, avec une majuscule, une minuscule et un chiffre ou caractère spécial. Différent de l'identifiant.</p></div>}
       <div className="space-y-1.5"><label htmlFor="account-role" className="text-sm font-medium">Rôle</label><select id="account-role" className={field} value={form.role} onChange={event => setForm({ ...form, role: event.target.value as Role, direction: "", division: "", service: "" })}>{roles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}</select></div>
        {reference.isPending && <p className="text-sm text-muted-foreground">Chargement de l’organigramme…</p>}

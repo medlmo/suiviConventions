@@ -45,23 +45,9 @@ function idFrom(raw: string | string[] | undefined): number | undefined {
 function publicUser(user: typeof usersTable.$inferSelect) {
   return {
     ...versUtilisateur(user),
-    email: user.email,
     createdAt: user.createdAt.toISOString(),
     lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
   };
-}
-
-function parseEmail(value: unknown): { valid: true; email?: string | null } | { valid: false } {
-  if (value === undefined) return { valid: true };
-  if (value === null || (typeof value === "string" && !value.trim())) {
-    return { valid: true, email: null };
-  }
-  if (typeof value !== "string") return { valid: false };
-  const email = value.trim().toLowerCase();
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { valid: false };
-  }
-  return { valid: true, email };
 }
 
 router.get("/admin/users", adminRequired, async (_req, res): Promise<void> => {
@@ -87,13 +73,8 @@ router.post("/admin/users", adminRequired, async (req, res): Promise<void> => {
   }
   const username = body.username.trim();
   const role = body.role as Role;
-  const parsedEmail = parseEmail(body.email);
   if (!username || username.length > 100) {
     res.status(400).json({ error: "Identifiant invalide." });
-    return;
-  }
-  if (!parsedEmail.valid) {
-    res.status(400).json({ error: "Adresse e-mail invalide." });
     return;
   }
   const passwordError = validateNewPassword(body.password, username);
@@ -126,7 +107,6 @@ router.post("/admin/users", adminRequired, async (req, res): Promise<void> => {
       if (!profileIsValid(profile, reference)) return { kind: "invalid-profile" as const };
       const [user] = await tx.insert(usersTable).values({
         username,
-        email: parsedEmail.email ?? null,
         passwordHash,
         ...profile,
         active: typeof body.active === "boolean" ? body.active : true,
@@ -158,14 +138,9 @@ router.patch("/admin/users/:id", adminRequired, async (req, res): Promise<void> 
     res.status(400).json({ error: "Paramètres ou corps invalides." });
     return;
   }
-  const allowed = new Set(["username", "email", "role", "direction", "division", "service", "active"]);
+  const allowed = new Set(["username", "role", "direction", "division", "service", "active"]);
   if (Object.keys(body).some((key) => !allowed.has(key))) {
     res.status(400).json({ error: "Champ non autorisé." });
-    return;
-  }
-  const parsedEmail = parseEmail(body.email);
-  if (!parsedEmail.valid) {
-    res.status(400).json({ error: "Adresse e-mail invalide." });
     return;
   }
   if (body.username !== undefined) {
@@ -223,7 +198,6 @@ router.patch("/admin/users/:id", adminRequired, async (req, res): Promise<void> 
 
       const patch: Partial<typeof usersTable.$inferInsert> = { ...profile, updatedAt: new Date() };
       if (typeof body.username === "string") patch.username = body.username.trim();
-      if (parsedEmail.email !== undefined) patch.email = parsedEmail.email;
       if (typeof body.active === "boolean") patch.active = body.active;
       const [updated] = await tx.update(usersTable).set(patch)
         .where(eq(usersTable.id, id))
