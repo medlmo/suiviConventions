@@ -27,19 +27,11 @@ export default function SignIn() {
   }
   return <main className="min-h-[100dvh] grid lg:grid-cols-[minmax(0,1.04fr)_minmax(440px,.96fr)] bg-background">
     <section className="auth-panel auth-grid text-sidebar-foreground min-h-[36dvh] lg:min-h-[100dvh] p-8 md:p-14 lg:p-20 flex flex-col justify-between overflow-hidden">
-      <div className="flex items-center gap-4">
-        <div className="bg-card rounded-lg p-1.5 w-14 h-14">
-          <img
-            src="/logo-crsm.png"
-            alt="Emblème de la Région Souss-Massa"
-            className="w-full h-full object-contain"
-          />
-        </div>
-        <div className="leading-tight">
-          <strong className="block text-lg">Région Souss Massa</strong>
-          <span className="text-sm text-sidebar-foreground/65">Suivi des conventions</span>
-        </div>
-      </div>
+      <img
+        src="/logo-crsm-blanc.png"
+        alt="Région Souss Massa"
+        className="h-20 w-20 max-w-[35vw] object-contain object-left sm:h-24 sm:w-24 lg:h-32 lg:w-32"
+      />
       <div className="max-w-xl py-12 lg:py-0">
         <div className="w-14 h-1 bg-secondary mb-8" />
         <p className="uppercase tracking-[.22em] text-xs text-sidebar-foreground/65 mb-5">Suivi des conventions</p>
