@@ -5,20 +5,12 @@ import { DocumentSecurityError, documentAnalysisBusy, documentRejected } from ".
 import { runDocumentTool } from "./document-tools";
 import { logger } from "./logger";
 import { safeErrorFields } from "./error-logging";
-import {
-  acquireAntivirusUpdateLease,
-  ANTIVIRUS_INSTANCE_ID,
-  publishAntivirusSignatureSnapshot,
-  restoreAntivirusSignatureSnapshot,
-  type AntivirusUpdateLease,
-} from "./antivirus-signature-cache";
 
 const DATABASE_DIR = join(tmpdir(), "conventions-antivirus");
 const MAX_DB_AGE = 24 * 60 * 60 * 1000;
 const SIGNATURE_REFRESH_INTERVAL = 12 * 60 * 60 * 1000;
 const UPDATE_MIN_INTERVAL = 60 * 1000;
 const UPDATE_RETRY_INTERVAL = 5 * 60 * 1000;
-const SHARED_UPDATE_RETRY_INTERVAL = 30 * 1000;
 const UPLOAD_WAIT_FOR_UPDATE_MS = 12_000;
 const ENGINE_CHECK_INTERVAL_MS = 60 * 1000;
 let updating: Promise<void> | undefined;
@@ -39,33 +31,6 @@ function scheduleUpdateRetry(delay: number): void {
     void prepareDocumentAntivirus();
   }, delay);
   retryTimer.unref();
-}
-
-async function restoreSharedSignatureSnapshot(): Promise<number | null> {
-  try {
-    return await restoreAntivirusSignatureSnapshot(DATABASE_DIR, MAX_DB_AGE);
-  } catch (error) {
-    logger.warn({
-      event: "antivirus.cache.restore.failed",
-      operation: "antivirus.cache",
-      instanceId: ANTIVIRUS_INSTANCE_ID,
-      ...safeErrorFields(error),
-    }, "Impossible de restaurer la base antivirus partagée");
-    return null;
-  }
-}
-
-async function publishSharedSignatureSnapshot(updatedAt: number): Promise<void> {
-  try {
-    await publishAntivirusSignatureSnapshot(DATABASE_DIR, updatedAt);
-  } catch (error) {
-    logger.warn({
-      event: "antivirus.cache.publish.failed",
-      operation: "antivirus.cache",
-      instanceId: ANTIVIRUS_INSTANCE_ID,
-      ...safeErrorFields(error),
-    }, "La base locale est prête mais n'a pas pu être publiée dans le cache partagé");
-  }
 }
 
 async function databaseDate(): Promise<number> {
@@ -113,7 +78,6 @@ export function prepareDocumentAntivirus(): Promise<void> {
   updating = (async () => {
     let failureStage = "database_directory";
     let toolExitCode: number | undefined;
-    let lease: AntivirusUpdateLease | undefined;
     try {
       await mkdir(DATABASE_DIR, { recursive: true, mode: 0o700 });
       failureStage = "scanner_check";
@@ -121,54 +85,8 @@ export function prepareDocumentAntivirus(): Promise<void> {
         throw new DocumentSecurityError("Moteur antimalware indisponible.", "ANALYSIS_UNAVAILABLE");
       }
 
-      failureStage = "shared_cache_restore";
-      let priorDate = await databaseDate();
-      if (priorDate <= Date.now() - MAX_DB_AGE) {
-        priorDate = await restoreSharedSignatureSnapshot() ?? priorDate;
-      }
+      const priorDate = await databaseDate();
       readyAt = priorDate;
-      if (priorDate > Date.now() - SIGNATURE_REFRESH_INTERVAL) {
-        lastUpdateFailed = false;
-        failureStage = "shared_cache_publish";
-        await publishSharedSignatureSnapshot(priorDate);
-        return;
-      }
-
-      failureStage = "shared_update_lock";
-      try {
-        lease = await acquireAntivirusUpdateLease();
-      } catch (error) {
-        // Le scan local reste disponible si App Storage est momentanément inaccessible.
-        logger.warn({
-          event: "antivirus.cache.lock.failed",
-          operation: "antivirus.cache",
-          instanceId: ANTIVIRUS_INSTANCE_ID,
-          ...safeErrorFields(error),
-        }, "Verrou du cache antivirus indisponible ; mise à jour locale tentée");
-        lease = { status: "disabled" };
-      }
-
-      if (lease.status === "busy") {
-        failureStage = "shared_cache_restore";
-        const restored = await restoreSharedSignatureSnapshot();
-        priorDate = await databaseDate();
-        if (restored && priorDate > Date.now() - MAX_DB_AGE) readyAt = priorDate;
-        logger.info({
-          event: "antivirus.update.deferred",
-          operation: "antivirus.update",
-          instanceId: ANTIVIRUS_INSTANCE_ID,
-          localDatabaseReady: priorDate > Date.now() - MAX_DB_AGE,
-        }, "Une autre instance met à jour le cache antivirus");
-        scheduleUpdateRetry(SHARED_UPDATE_RETRY_INTERVAL);
-        return;
-      }
-
-      // Une autre instance a pu publier le cache pendant l'acquisition du verrou.
-      if (priorDate <= Date.now() - MAX_DB_AGE) {
-        failureStage = "shared_cache_restore";
-        priorDate = await restoreSharedSignatureSnapshot() ?? priorDate;
-        readyAt = priorDate;
-      }
       if (priorDate > Date.now() - SIGNATURE_REFRESH_INTERVAL) {
         lastUpdateFailed = false;
         return;
@@ -193,11 +111,7 @@ export function prepareDocumentAntivirus(): Promise<void> {
       logger.info({
         event: "antivirus.ready",
         operation: "antivirus.update",
-        instanceId: ANTIVIRUS_INSTANCE_ID,
       }, "Base antimalware locale disponible");
-
-      failureStage = "shared_cache_publish";
-      await publishSharedSignatureSnapshot(readyAt);
     } catch (error) {
       lastUpdateFailed = true;
       // Ne jamais journaliser la sortie brute des outils ni le contenu d'un document.
@@ -205,14 +119,12 @@ export function prepareDocumentAntivirus(): Promise<void> {
         event: "antivirus.update.failed",
         operation: "antivirus.update",
         errorCode: "ANTIVIRUS_UPDATE_FAILED",
-        instanceId: ANTIVIRUS_INSTANCE_ID,
         failureStage,
         ...(toolExitCode === undefined ? {} : { toolExitCode }),
         ...safeErrorFields(error),
       }, "Mise à jour antimalware impossible ; les fichiers non contrôlés restent bloqués");
       scheduleUpdateRetry(UPDATE_RETRY_INTERVAL);
     } finally {
-      if (lease?.status === "acquired") await lease.release();
       updating = undefined;
     }
   })();
@@ -268,9 +180,6 @@ export async function requireDocumentAntivirus(): Promise<void> {
       if (timer) clearTimeout(timer);
     }
     readyAt = await databaseDate().catch(() => 0);
-    if (readyAt <= Date.now() - MAX_DB_AGE) {
-      readyAt = await restoreSharedSignatureSnapshot() ?? readyAt;
-    }
     engineIsAvailable = await verifierMoteurAntimalware();
     if (readyAt > Date.now() - MAX_DB_AGE && engineIsAvailable) return;
   }
