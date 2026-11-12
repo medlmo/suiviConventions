@@ -59,7 +59,7 @@ export const META_ALERTES: Record<NiveauAlerte, MetaAlerte> = {
     couleur: "jaune",
   },
   TENU: {
-    libelle: "Tenu",
+    libelle: "Tenus",
     action: "Le dernier comité a respecté l’échéance précédente.",
     couleur: "vert",
   },
