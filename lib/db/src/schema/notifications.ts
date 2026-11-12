@@ -13,6 +13,12 @@ export const notificationsTable = pgTable("convention_notifications", {
   reminderDays: integer("reminder_days"),
   changedFields: jsonb("changed_fields").$type<string[]>().notNull().default([]),
   eventCount: integer("event_count").notNull().default(1),
+  emailDeliveryStatus: text("email_delivery_status")
+    .$type<"pending" | "sending" | "sent" | "skipped" | "failed" | null>(),
+  emailDeliveryAttempts: integer("email_delivery_attempts").notNull().default(0),
+  emailDeliveryAttemptedAt: timestamp("email_delivery_attempted_at", { withTimezone: true }),
+  emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
+  emailDeliveryErrorCode: text("email_delivery_error_code"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   readAt: timestamp("read_at", { withTimezone: true }),

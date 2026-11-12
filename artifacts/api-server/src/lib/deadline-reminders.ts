@@ -50,6 +50,7 @@ export async function genererRappelsEcheance(user: SessionUser, reference: Refer
       deadlineDate: convention.deadlineDate,
       reminderDays: convention.daysLeft <= 14 ? 14 : 30,
       changedFields: [],
+      emailDeliveryStatus: "pending" as const,
       createdAt: now,
       updatedAt: now,
     }))).onConflictDoNothing({
