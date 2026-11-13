@@ -262,7 +262,7 @@ async function createConvention(baseUrl, cookie, origin, body) {
     cookie,
     origin,
     method: "POST",
-    body,
+    body: { session: "2026-01-01", ...body },
   });
   assert.equal(response.status, 201, `la convention « ${body.nomConvention} » doit être créée`);
   return response.json();
@@ -509,6 +509,160 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       cookies[account.key] = await loginAs(baseUrl, origin, account.username);
     }
 
+    await t.test("le référentiel est administrable et ses erreurs sont validées", async () => {
+      const readableReference = await apiRequest(baseUrl, "/reference-data", { cookie: cookies.chef_service });
+      assert.equal(readableReference.status, 200, "un utilisateur connecté peut lire le référentiel");
+      const referenceData = await readableReference.json();
+      assert.ok(Array.isArray(referenceData.maitrisesOuvrage));
+
+      const forbiddenCreate = await apiRequest(baseUrl, "/admin/reference-data/maitrises-ouvrage", {
+        cookie: cookies.chef_service,
+        origin,
+        method: "POST",
+        body: { nom: "Référentiel interdit — test" },
+      });
+      assert.equal(forbiddenCreate.status, 403, "seul un administrateur peut modifier le référentiel");
+
+      const invalidKind = await apiRequest(baseUrl, "/admin/reference-data/inconnu", {
+        cookie,
+        origin,
+        method: "POST",
+        body: { nom: "Type inconnu" },
+      });
+      assert.equal(invalidKind.status, 400);
+
+      const missingParent = await apiRequest(baseUrl, "/admin/reference-data/services", {
+        cookie,
+        origin,
+        method: "POST",
+        body: { nom: "Service sans parent", parentId: 999999 },
+      });
+      assert.equal(missingParent.status, 400, "un service ne peut pas être créé sans division valide");
+
+      const firstName = "Maîtrise d’ouvrage intégration — source";
+      const secondName = "Maîtrise d’ouvrage intégration — cible";
+      const createFirst = await apiRequest(baseUrl, "/admin/reference-data/maitrises-ouvrage", {
+        cookie,
+        origin,
+        method: "POST",
+        body: { nom: firstName },
+      });
+      assert.equal(createFirst.status, 200);
+      const createdReference = await createFirst.json();
+      const firstEntry = createdReference.maitrisesOuvrage.find(entry => entry.nom === firstName);
+      assert.ok(firstEntry, "l’entrée créée est renvoyée dans le référentiel");
+
+      const divisionWithService = referenceData.organisation
+        .flatMap(direction => direction.divisions)
+        .find(entry => entry.services.length > 0 &&
+          entry.nom !== roles.find(account => account.key === "chef_service").profile.division);
+      assert.ok(divisionWithService, "le référentiel contient au moins un service valide");
+      const linkedConvention = await createConvention(baseUrl, cookie, origin, {
+        nomConvention: "Test — renommage du référentiel",
+        rattachement: divisionWithService.nom,
+        responsableProjet: divisionWithService.services[0].nom,
+        maitriseOuvrage: [firstName],
+      });
+
+      const createSecond = await apiRequest(baseUrl, "/admin/reference-data/maitrises-ouvrage", {
+        cookie,
+        origin,
+        method: "POST",
+        body: { nom: secondName },
+      });
+      assert.equal(createSecond.status, 200);
+      const secondEntry = (await createSecond.json()).maitrisesOuvrage.find(entry => entry.nom === secondName);
+      assert.ok(secondEntry);
+
+      const duplicate = await apiRequest(baseUrl, "/admin/reference-data/maitrises-ouvrage", {
+        cookie,
+        origin,
+        method: "POST",
+        body: { nom: firstName },
+      });
+      assert.equal(duplicate.status, 409, "les doublons sont refusés");
+
+      const conflictingRename = await apiRequest(
+        baseUrl,
+        `/admin/reference-data/maitrises-ouvrage/${secondEntry.id}`,
+        { cookie, origin, method: "PATCH", body: { nom: firstName } },
+      );
+      assert.equal(conflictingRename.status, 409, "un renommage vers un nom déjà utilisé est refusé");
+
+      const forbiddenRename = await apiRequest(
+        baseUrl,
+        `/admin/reference-data/maitrises-ouvrage/${firstEntry.id}`,
+        {
+          cookie: cookies.chef_service,
+          origin,
+          method: "PATCH",
+          body: { nom: "Renommage interdit" },
+        },
+      );
+      assert.equal(forbiddenRename.status, 403);
+
+      const rename = await apiRequest(
+        baseUrl,
+        `/admin/reference-data/maitrises-ouvrage/${firstEntry.id}`,
+        { cookie, origin, method: "PATCH", body: { nom: "Maîtrise d’ouvrage intégration — renommée" } },
+      );
+      assert.equal(rename.status, 200);
+      const renamedReference = await rename.json();
+      assert.ok(renamedReference.maitrisesOuvrage.some(entry => entry.id === firstEntry.id &&
+        entry.nom === "Maîtrise d’ouvrage intégration — renommée"));
+      const linkedAfterRename = await apiRequest(baseUrl, `/conventions/${linkedConvention.id}`, { cookie });
+      assert.equal(linkedAfterRename.status, 200);
+      const updatedLinkedConvention = await linkedAfterRename.json();
+      assert.deepEqual(
+        updatedLinkedConvention.maitriseOuvrage,
+        ["Maîtrise d’ouvrage intégration — renommée"],
+        "le renommage met à jour les conventions déjà liées à cette entrée",
+      );
+      const cleanupLinkedConvention = await apiRequest(
+        baseUrl,
+        `/conventions/${linkedConvention.id}?version=${updatedLinkedConvention.version}`,
+        { cookie, origin, method: "DELETE" },
+      );
+      assert.equal(cleanupLinkedConvention.status, 204, "la convention créée par le test est nettoyée");
+
+      const missingRename = await apiRequest(
+        baseUrl,
+        "/admin/reference-data/maitrises-ouvrage/999999",
+        { cookie, origin, method: "PATCH", body: { nom: "Entrée absente" } },
+      );
+      assert.equal(missingRename.status, 404);
+    });
+
+    await t.test("le tableau d’exploitation est réservé à l’administration et ne révèle pas les détails du scanner", async () => {
+      const response = await apiRequest(baseUrl, "/admin/operations", { cookie });
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      const snapshot = await response.json();
+      assert.equal(snapshot.database.status, "ready");
+      assert.ok(["ready", "unavailable"].includes(snapshot.antivirus.status));
+      assert.ok(Number.isInteger(snapshot.requests.total));
+      assert.equal(snapshot.scope, "instance");
+      assert.equal(JSON.stringify(snapshot).includes("clamscan"), false);
+      assert.equal(JSON.stringify(snapshot).includes("/tmp/"), false);
+
+      const forbidden = await apiRequest(baseUrl, "/admin/operations", {
+        cookie: cookies.chef_service,
+      });
+      assert.equal(forbidden.status, 403);
+    });
+
+    const missingSessionDate = await apiRequest(baseUrl, "/conventions", {
+      cookie,
+      origin,
+      method: "POST",
+      body: {
+        nomConvention: "Test — date de session obligatoire",
+        rattachement: "Direction de test",
+        responsableProjet: "Service de test",
+      },
+    });
+    assert.equal(missingSessionDate.status, 400, "la date de session est obligatoire à la création");
+
     const uploadSansSession = await apiRequest(baseUrl, "/storage/uploads/request-url", {
       origin,
       method: "POST",
@@ -630,11 +784,13 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
         username: "admin-managed-account",
         password: fixturePassword,
         role: "directeur_general_services",
+        email: "admin-managed@example.ma",
       },
     });
     assert.equal(managedAccount.status, 201, "l'administrateur peut créer un compte");
     const createdAccount = await managedAccount.json();
     assert.equal(createdAccount.username, "admin-managed-account");
+    assert.equal(createdAccount.email, "admin-managed@example.ma");
     assert.equal(createdAccount.active, true);
     assert.equal(Object.hasOwn(createdAccount, "passwordHash"), false);
 
@@ -651,10 +807,20 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       cookie,
       origin,
       method: "PATCH",
-      body: { username: "admin-managed-account-renamed" },
+      body: { username: "admin-managed-account-renamed", email: "managed-renamed@example.ma" },
     });
     assert.equal(updateAccount.status, 200, "l'administrateur peut modifier un compte");
-    assert.equal((await updateAccount.json()).username, "admin-managed-account-renamed");
+    const updatedAccount = await updateAccount.json();
+    assert.equal(updatedAccount.username, "admin-managed-account-renamed");
+    assert.equal(updatedAccount.email, "managed-renamed@example.ma");
+
+    const invalidEmail = await apiRequest(baseUrl, `/admin/users/${createdAccount.id}`, {
+      cookie,
+      origin,
+      method: "PATCH",
+      body: { email: "adresse-invalide" },
+    });
+    assert.equal(invalidEmail.status, 400, "une adresse e-mail invalide est refusée");
 
     const promoteAccount = await apiRequest(baseUrl, `/admin/users/${createdAccount.id}`, {
       cookie,
@@ -718,6 +884,31 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       nomConvention: "Test périmètre — service propre",
       rattachement: division,
       responsableProjet: service,
+    });
+    await t.test("l’audit admin est paginé, filtrable et protégé", async () => {
+      const page = await apiRequest(baseUrl, "/admin/audit?limit=1&offset=0", { cookie });
+      assert.equal(page.status, 200);
+      const firstPage = await page.json();
+      assert.ok(Number.isInteger(firstPage.total) && firstPage.total > 0);
+      assert.ok(firstPage.items.length <= 1, "la limite de pagination est appliquée");
+
+      const conventionAudit = await apiRequest(
+        baseUrl,
+        `/admin/audit?conventionId=${ownService.id}`,
+        { cookie },
+      );
+      assert.equal(conventionAudit.status, 200);
+      const filteredAudit = await conventionAudit.json();
+      assert.ok(filteredAudit.total > 0, "la création de convention est conservée dans l’audit");
+      assert.ok(filteredAudit.items.every(item => item.conventionId === ownService.id));
+
+      const invalidPage = await apiRequest(baseUrl, "/admin/audit?limit=201", { cookie });
+      assert.equal(invalidPage.status, 400);
+      const invalidConvention = await apiRequest(baseUrl, "/admin/audit?conventionId=0", { cookie });
+      assert.equal(invalidConvention.status, 400);
+
+      const forbidden = await apiRequest(baseUrl, "/admin/audit", { cookie: cookies.chef_service });
+      assert.equal(forbidden.status, 403, "l’audit est réservé à l’administration");
     });
     const peerServiceConvention = await createConvention(baseUrl, cookie, origin, {
       nomConvention: "Test périmètre — service voisin",
@@ -1021,6 +1212,7 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       method: "POST",
       body: {
         nomConvention: "Test périmètre — création interdite",
+        session: "2026-01-01",
         rattachement: division,
         responsableProjet: peerService,
       },
@@ -1070,6 +1262,7 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       method: "POST",
       body: {
         nomConvention: "Test périmètre — création hors division",
+        session: "2026-01-01",
         rattachement: otherDivision,
         responsableProjet: otherDivisionService,
       },
