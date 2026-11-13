@@ -631,6 +631,169 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
         { cookie, origin, method: "PATCH", body: { nom: "Entrée absente" } },
       );
       assert.equal(missingRename.status, 404);
+
+      const renameDirectionName = "Direction intégration — renommages";
+      const createDirection = await apiRequest(baseUrl, "/admin/reference-data/directions", {
+        cookie,
+        origin,
+        method: "POST",
+        body: { nom: renameDirectionName },
+      });
+      assert.equal(createDirection.status, 200);
+      const directionEntry = (await createDirection.json()).organisation
+        .find(entry => entry.direction === renameDirectionName);
+      assert.ok(directionEntry, "la direction de test est créée");
+
+      const divisionName = "Division intégration — source";
+      const renamedDivisionName = "Division intégration — renommée";
+      const divisionConflictName = "Division intégration — cible";
+      const createDivision = async nom => apiRequest(baseUrl, "/admin/reference-data/divisions", {
+        cookie,
+        origin,
+        method: "POST",
+        body: { nom, parentId: directionEntry.id },
+      });
+      const createdDivision = await createDivision(divisionName);
+      assert.equal(createdDivision.status, 200);
+      const conflictDivision = await createDivision(divisionConflictName);
+      assert.equal(conflictDivision.status, 200);
+      const referenceAfterDivisions = await (await apiRequest(baseUrl, "/reference-data", { cookie })).json();
+      const divisionEntry = referenceAfterDivisions.organisation
+        .flatMap(entry => entry.divisions)
+        .find(entry => entry.nom === divisionName);
+      const divisionConflictEntry = referenceAfterDivisions.organisation
+        .flatMap(entry => entry.divisions)
+        .find(entry => entry.nom === divisionConflictName);
+      assert.ok(divisionEntry);
+      assert.ok(divisionConflictEntry);
+
+      const serviceName = "Service intégration — source";
+      const renamedServiceName = "Service intégration — renommé";
+      const serviceConflictName = "Service intégration — cible";
+      const createService = async nom => apiRequest(baseUrl, "/admin/reference-data/services", {
+        cookie,
+        origin,
+        method: "POST",
+        body: { nom, parentId: divisionEntry.id },
+      });
+      const createdService = await createService(serviceName);
+      assert.equal(createdService.status, 200);
+      const conflictService = await createService(serviceConflictName);
+      assert.equal(conflictService.status, 200);
+      const referenceAfterServices = await (await apiRequest(baseUrl, "/reference-data", { cookie })).json();
+      const serviceEntry = referenceAfterServices.organisation
+        .flatMap(entry => entry.divisions)
+        .flatMap(entry => entry.services)
+        .find(entry => entry.nom === serviceName);
+      const serviceConflictEntry = referenceAfterServices.organisation
+        .flatMap(entry => entry.divisions)
+        .flatMap(entry => entry.services)
+        .find(entry => entry.nom === serviceConflictName);
+      assert.ok(serviceEntry);
+      assert.ok(serviceConflictEntry);
+
+      const renameAccountResponse = await apiRequest(baseUrl, "/admin/users", {
+        cookie,
+        origin,
+        method: "POST",
+        body: {
+          username: "reference-rename-fixture",
+          password: fixturePassword,
+          role: "chef_service",
+          direction: renameDirectionName,
+          division: divisionName,
+          service: serviceName,
+        },
+      });
+      assert.equal(renameAccountResponse.status, 201, "le compte lié à la division et au service est créé");
+      const renameAccount = await renameAccountResponse.json();
+      const renameConvention = await createConvention(baseUrl, cookie, origin, {
+        nomConvention: "Test — rattachements après renommage",
+        rattachement: divisionName,
+        responsableProjet: serviceName,
+      });
+
+      const conflictingDivisionRename = await apiRequest(
+        baseUrl,
+        `/admin/reference-data/divisions/${divisionEntry.id}`,
+        { cookie, origin, method: "PATCH", body: { nom: divisionConflictName } },
+      );
+      assert.equal(conflictingDivisionRename.status, 409, "un doublon de division est refusé");
+      const missingDivisionRename = await apiRequest(
+        baseUrl,
+        "/admin/reference-data/divisions/999999",
+        { cookie, origin, method: "PATCH", body: { nom: "Division absente" } },
+      );
+      assert.equal(missingDivisionRename.status, 404, "une division introuvable est refusée");
+
+      const conflictingServiceRename = await apiRequest(
+        baseUrl,
+        `/admin/reference-data/services/${serviceEntry.id}`,
+        { cookie, origin, method: "PATCH", body: { nom: serviceConflictName } },
+      );
+      assert.equal(conflictingServiceRename.status, 409, "un doublon de service est refusé");
+      const missingServiceRename = await apiRequest(
+        baseUrl,
+        "/admin/reference-data/services/999999",
+        { cookie, origin, method: "PATCH", body: { nom: "Service absent" } },
+      );
+      assert.equal(missingServiceRename.status, 404, "un service introuvable est refusé");
+
+      const divisionRename = await apiRequest(
+        baseUrl,
+        `/admin/reference-data/divisions/${divisionEntry.id}`,
+        { cookie, origin, method: "PATCH", body: { nom: renamedDivisionName } },
+      );
+      assert.equal(divisionRename.status, 200);
+      const usersAfterDivisionRename = await apiRequest(baseUrl, "/admin/users", { cookie });
+      assert.equal(usersAfterDivisionRename.status, 200);
+      const renamedAccountAfterDivision = (await usersAfterDivisionRename.json())
+        .find(entry => entry.id === renameAccount.id);
+      assert.equal(renamedAccountAfterDivision?.division, renamedDivisionName,
+        "le renommage de division met à jour l’affectation du compte");
+      const conventionAfterDivisionRename = await apiRequest(
+        baseUrl,
+        `/conventions/${renameConvention.id}`,
+        { cookie },
+      );
+      assert.equal(conventionAfterDivisionRename.status, 200);
+      assert.equal((await conventionAfterDivisionRename.json()).rattachement, renamedDivisionName,
+        "le renommage de division met à jour le rattachement de la convention");
+
+      const serviceRename = await apiRequest(
+        baseUrl,
+        `/admin/reference-data/services/${serviceEntry.id}`,
+        { cookie, origin, method: "PATCH", body: { nom: renamedServiceName } },
+      );
+      assert.equal(serviceRename.status, 200);
+      const usersAfterServiceRename = await apiRequest(baseUrl, "/admin/users", { cookie });
+      assert.equal(usersAfterServiceRename.status, 200);
+      const renamedAccountAfterService = (await usersAfterServiceRename.json())
+        .find(entry => entry.id === renameAccount.id);
+      assert.equal(renamedAccountAfterService?.service, renamedServiceName,
+        "le renommage de service met à jour l’affectation du compte");
+      const conventionAfterServiceRename = await apiRequest(
+        baseUrl,
+        `/conventions/${renameConvention.id}`,
+        { cookie },
+      );
+      assert.equal(conventionAfterServiceRename.status, 200);
+      const updatedConventionAfterService = await conventionAfterServiceRename.json();
+      assert.equal(updatedConventionAfterService.rattachement, renamedDivisionName);
+      assert.equal(updatedConventionAfterService.responsableProjet, renamedServiceName,
+        "le renommage de service met à jour le responsable de la convention");
+      const deleteRenameConvention = await apiRequest(
+        baseUrl,
+        `/conventions/${renameConvention.id}?version=${updatedConventionAfterService.version}`,
+        { cookie, origin, method: "DELETE" },
+      );
+      assert.equal(deleteRenameConvention.status, 204, "la convention de test est nettoyée");
+      const deleteRenameAccount = await apiRequest(baseUrl, `/admin/users/${renameAccount.id}`, {
+        cookie,
+        origin,
+        method: "DELETE",
+      });
+      assert.equal(deleteRenameAccount.status, 204, "le compte de test est nettoyé");
     });
 
     await t.test("le tableau d’exploitation est réservé à l’administration et ne révèle pas les détails du scanner", async () => {
