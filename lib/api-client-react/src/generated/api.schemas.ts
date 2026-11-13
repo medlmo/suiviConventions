@@ -783,9 +783,16 @@ export interface AuthUser {
   active: boolean;
 }
 
-export type AdminUser = AuthUser & {
+export type AdminUser = AuthUser & ({
   createdAt: string;
-};
+  /**
+     * @maxLength 254
+     * @nullable
+     */
+  email: string | null;
+  /** @nullable */
+  lastLoginAt: string | null;
+});
 
 export interface LoginInput {
   /**
@@ -806,6 +813,11 @@ export interface UserInput {
      * @maxLength 100
      */
   username: string;
+  /**
+     * @maxLength 254
+     * @nullable
+     */
+  email?: string | null;
   /**
      * Au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial.
      * @minLength 8
@@ -829,6 +841,11 @@ export interface UserUpdate {
      * @maxLength 100
      */
   username?: string;
+  /**
+     * @maxLength 254
+     * @nullable
+     */
+  email?: string | null;
   role?: Role;
   /** @nullable */
   direction?: string | null;

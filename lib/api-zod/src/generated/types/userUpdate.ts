@@ -13,6 +13,11 @@ export interface UserUpdate {
      * @maxLength 100
      */
   username?: string;
+  /**
+     * @maxLength 254
+     * @nullable
+     */
+  email?: string | null;
   role?: Role;
   /** @nullable */
   direction?: string | null;

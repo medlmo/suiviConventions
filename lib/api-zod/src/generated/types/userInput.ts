@@ -14,6 +14,11 @@ export interface UserInput {
      */
   username: string;
   /**
+     * @maxLength 254
+     * @nullable
+     */
+  email?: string | null;
+  /**
      * Au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial.
      * @minLength 8
      * @maxLength 1024

@@ -247,6 +247,10 @@ export const LogoutResponse = zod.void()
 /**
  * @summary Lister les comptes (administrateur uniquement)
  */
+export const listUsersResponseTwoEmailMax = 254;
+
+
+
 export const ListUsersResponseItem = zod.object({
   "id": zod.int(),
   "username": zod.string(),
@@ -256,7 +260,9 @@ export const ListUsersResponseItem = zod.object({
   "service": zod.string().nullable(),
   "active": zod.boolean()
 }).and(zod.object({
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "email": zod.email().max(listUsersResponseTwoEmailMax).nullable(),
+  "lastLoginAt": zod.coerce.date().nullable()
 }))
 export const ListUsersResponse = zod.array(ListUsersResponseItem)
 
@@ -265,6 +271,8 @@ export const ListUsersResponse = zod.array(ListUsersResponseItem)
  * @summary Créer un compte (administrateur uniquement)
  */
 export const createUserBodyUsernameMax = 100;
+
+export const createUserBodyEmailMax = 254;
 
 export const createUserBodyPasswordMin = 8;
 export const createUserBodyPasswordMax = 1024;
@@ -275,6 +283,7 @@ export const createUserBodyActiveDefault = true;
 
 export const CreateUserBody = zod.object({
   "username": zod.string().min(1).max(createUserBodyUsernameMax),
+  "email": zod.email().max(createUserBodyEmailMax).nullish(),
   "password": zod.string().min(createUserBodyPasswordMin).max(createUserBodyPasswordMax).regex(createUserBodyPasswordRegExp).describe('Au moins 8 caractères, une majuscule, une minuscule et un chiffre ou un caractère spécial.'),
   "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']),
   "direction": zod.string().nullish(),
@@ -282,6 +291,10 @@ export const CreateUserBody = zod.object({
   "service": zod.string().nullish(),
   "active": zod.boolean().default(createUserBodyActiveDefault)
 })
+
+export const createUserResponseTwoEmailMax = 254;
+
+
 
 export const CreateUserResponse = zod.object({
   "id": zod.int(),
@@ -292,7 +305,9 @@ export const CreateUserResponse = zod.object({
   "service": zod.string().nullable(),
   "active": zod.boolean()
 }).and(zod.object({
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "email": zod.email().max(createUserResponseTwoEmailMax).nullable(),
+  "lastLoginAt": zod.coerce.date().nullable()
 }))
 
 
@@ -416,16 +431,23 @@ export const UpdateUserParams = zod.object({
 
 export const updateUserBodyUsernameMax = 100;
 
+export const updateUserBodyEmailMax = 254;
+
 
 
 export const UpdateUserBody = zod.object({
   "username": zod.string().min(1).max(updateUserBodyUsernameMax).optional(),
+  "email": zod.email().max(updateUserBodyEmailMax).nullish(),
   "role": zod.enum(['admin', 'directeur', 'directeur_general_services', 'chef_division', 'chef_service']).optional(),
   "direction": zod.string().nullish(),
   "division": zod.string().nullish(),
   "service": zod.string().nullish(),
   "active": zod.boolean().optional()
 })
+
+export const updateUserResponseTwoEmailMax = 254;
+
+
 
 export const UpdateUserResponse = zod.object({
   "id": zod.int(),
@@ -436,7 +458,9 @@ export const UpdateUserResponse = zod.object({
   "service": zod.string().nullable(),
   "active": zod.boolean()
 }).and(zod.object({
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "email": zod.email().max(updateUserResponseTwoEmailMax).nullable(),
+  "lastLoginAt": zod.coerce.date().nullable()
 }))
 
 

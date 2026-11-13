@@ -7,6 +7,13 @@
  */
 import type { AuthUser } from './authUser';
 
-export type AdminUser = AuthUser & {
+export type AdminUser = AuthUser & ({
   createdAt: Date;
-};
+  /**
+     * @maxLength 254
+     * @nullable
+     */
+  email: string | null;
+  /** @nullable */
+  lastLoginAt: Date | null;
+});
