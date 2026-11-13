@@ -12,6 +12,7 @@ const SIGNATURE_REFRESH_INTERVAL = 12 * 60 * 60 * 1000;
 const UPDATE_MIN_INTERVAL = 60 * 1000;
 const UPDATE_RETRY_INTERVAL = 5 * 60 * 1000;
 const UPLOAD_WAIT_FOR_UPDATE_MS = 12_000;
+const FRESHCLAM_MAX_RUNTIME_MS = 15 * 60 * 1000;
 const ENGINE_CHECK_INTERVAL_MS = 60 * 1000;
 let updating: Promise<void> | undefined;
 let lastAttempt = 0;
@@ -22,6 +23,23 @@ let engineCheckedAt = 0;
 let engineCheck: Promise<boolean> | undefined;
 let retryTimer: ReturnType<typeof setTimeout> | undefined;
 let scanning = false;
+
+function freshclamFailureCategory(output: Buffer): string {
+  const text = output.toString("utf8").toLowerCase();
+  if (/429|too many requests|rate.?limit|cool.?down/.test(text)) return "rate_limited";
+  if (/could not resolve|temporary failure in name resolution|can't query|cannot query|dns/.test(text)) {
+    return "dns_or_network";
+  }
+  if (/connection.*(timed out|refused|reset)|network.*(unreachable|problem)|timeout/.test(text)) {
+    return "network_timeout";
+  }
+  if (/permission denied|can't create|cannot create|read-only file system/.test(text)) return "filesystem_permission";
+  if (/no space left|disk full/.test(text)) return "filesystem_full";
+  if (/mirror.*(synchron|unavailable)|http.*(403|404|5\d\d)/.test(text)) return "mirror_response";
+  if (/signature|checksum|md5|corrupt|validation/.test(text)) return "database_integrity";
+  if (/config|parse/.test(text)) return "configuration";
+  return "unclassified";
+}
 
 function scheduleUpdateRetry(delay: number): void {
   if (retryTimer) clearTimeout(retryTimer);
@@ -78,6 +96,7 @@ export function prepareDocumentAntivirus(): Promise<void> {
   updating = (async () => {
     let failureStage = "database_directory";
     let toolExitCode: number | undefined;
+    let freshclamOutput: Buffer | undefined;
     try {
       await mkdir(DATABASE_DIR, { recursive: true, mode: 0o700 });
       failureStage = "scanner_check";
@@ -95,11 +114,16 @@ export function prepareDocumentAntivirus(): Promise<void> {
       failureStage = "freshclam";
       const config = join(DATABASE_DIR, "freshclam.conf");
       await writeFile(config,
-        `DatabaseDirectory ${DATABASE_DIR}\nDatabaseMirror database.clamav.net\nDatabaseOwner ${userInfo().username}\nConnectTimeout 10\nReceiveTimeout 45\nMaxAttempts 1\n`,
+        `DatabaseDirectory ${DATABASE_DIR}\nDatabaseMirror database.clamav.net\nDatabaseOwner ${userInfo().username}\nConnectTimeout 10\nReceiveTimeout 0\nMaxAttempts 3\n`,
         { mode: 0o600 });
-      const result = await runDocumentTool("freshclam", ["--config-file=" + config, "--stdout"], 180_000);
+      const result = await runDocumentTool(
+        "freshclam",
+        ["--config-file=" + config, "--stdout"],
+        FRESHCLAM_MAX_RUNTIME_MS,
+      );
       if (result.code !== 0) {
         toolExitCode = result.code;
+        freshclamOutput = Buffer.concat([result.stdout, result.stderr]);
         throw new DocumentSecurityError("Mise à jour antimalware indisponible.", "ANALYSIS_UNAVAILABLE");
       }
 
@@ -121,6 +145,9 @@ export function prepareDocumentAntivirus(): Promise<void> {
         errorCode: "ANTIVIRUS_UPDATE_FAILED",
         failureStage,
         ...(toolExitCode === undefined ? {} : { toolExitCode }),
+        ...(failureStage === "freshclam" && toolExitCode !== undefined
+          ? { freshclamCategory: freshclamFailureCategory(freshclamOutput ?? Buffer.alloc(0)) }
+          : {}),
         ...safeErrorFields(error),
       }, "Mise à jour antimalware impossible ; les fichiers non contrôlés restent bloqués");
       scheduleUpdateRetry(UPDATE_RETRY_INTERVAL);
