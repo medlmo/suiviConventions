@@ -25,6 +25,7 @@ import type {
   AuditPage,
   AuthUser,
   CompleteUploadInput,
+  CompleteUploadResult,
   Convention,
   ConventionInput,
   ConventionPage,
@@ -50,7 +51,7 @@ import type {
   ReferenceDataKind,
   ReferenceDataRename,
   ResumeAlertes,
-  StoredDocument,
+  UploadStatus,
   UploadUrl,
   UploadUrlInput,
   UserInput,
@@ -601,8 +602,9 @@ export const getUploadDocumentBytesUrl = (token: string,) => {
  * Session authentifiée du propriétaire requise. Usage unique et délai
  * de réception de 60 secondes. Contrôle effectif de la taille (10 Mio),
  * du type MIME et de la signature PDF/Word, même sans Content-Length.
- * Conservation temporaire bornée en mémoire ; la finalisation effectue
- * les contrôles de structure et antivirus avant tout stockage App Storage.
+ * Conservation temporaire bornée en mémoire. Si l’antivirus est
+ * indisponible, le document est placé en quarantaine privée pour 24 heures,
+ * puis rendu disponible uniquement après validation complète.
  * @summary Recevoir les octets sans stockage persistant avant validation
  */
 export const uploadDocumentBytes = async (token: string,
@@ -669,6 +671,83 @@ export const useUploadDocumentBytes = <TError = ErrorType<void>,
       return useMutation(getUploadDocumentBytesMutationOptions(options));
     }
 
+export const getGetUploadStatusUrl = (token: string,) => {
+
+
+
+
+  return `/api/storage/uploads/${token}`
+}
+
+/**
+ * @summary Consulter l’état d’analyse d’un dépôt mis en quarantaine
+ */
+export const getUploadStatus = async (token: string, options?: Parameters<typeof customFetch>[1]): Promise<UploadStatus> => {
+
+  return customFetch<UploadStatus>(getGetUploadStatusUrl(token),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUploadStatusQueryKey = (token: string,) => {
+    return [
+    `/api/storage/uploads/${token}`
+    ] as const;
+    }
+
+
+export const getGetUploadStatusQueryOptions = <TData = Awaited<ReturnType<typeof getUploadStatus>>, TError = ErrorType<void>>(token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUploadStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUploadStatusQueryKey(token);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUploadStatus>>> = ({ signal }) => getUploadStatus(token, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: token !== null && token !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUploadStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUploadStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getUploadStatus>>>
+export type GetUploadStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Consulter l’état d’analyse d’un dépôt mis en quarantaine
+ */
+
+export function useGetUploadStatus<TData = Awaited<ReturnType<typeof getUploadStatus>>, TError = ErrorType<void>>(
+ token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUploadStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUploadStatusQueryOptions(token,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getCompleteUploadUrl = () => {
 
 
@@ -678,9 +757,9 @@ export const getCompleteUploadUrl = () => {
 }
 
 /**
- * @summary Analyser la structure et le contenu antimalware avant de finaliser un document
+ * @summary Finaliser un document ou le mettre en quarantaine temporaire
  */
-export const completeUpload = async (completeUploadInput: CompleteUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<StoredDocument> => {
+export const completeUpload = async (completeUploadInput: CompleteUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<CompleteUploadResult> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -696,7 +775,7 @@ export const completeUpload = async (completeUploadInput: CompleteUploadInput, o
     }
     return headers;
   };
-return customFetch<StoredDocument>(getCompleteUploadUrl(),
+return customFetch<CompleteUploadResult>(getCompleteUploadUrl(),
   {
     ...options,
     method: 'POST',
@@ -744,7 +823,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CompleteUploadMutationVariables = {data: BodyType<CompleteUploadInput>}
 
     /**
- * @summary Analyser la structure et le contenu antimalware avant de finaliser un document
+ * @summary Finaliser un document ou le mettre en quarantaine temporaire
  */
 export const useCompleteUpload = <TError = ErrorType<Erreur | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeUpload>>, TError,CompleteUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}

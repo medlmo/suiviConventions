@@ -162,8 +162,9 @@ paths:
         Session authentifiée du propriétaire requise. Usage unique et délai
         de réception de 60 secondes. Contrôle effectif de la taille (10 Mio),
         du type MIME et de la signature PDF/Word, même sans Content-Length.
-        Conservation temporaire bornée en mémoire ; la finalisation effectue
-        les contrôles de structure et antivirus avant tout stockage App Storage.
+        Conservation temporaire bornée en mémoire. Si l’antivirus est
+        indisponible, le document est placé en quarantaine privée pour 24 heures,
+        puis rendu disponible uniquement après validation complète.
       parameters:
         - in: path
           name: token
@@ -187,11 +188,29 @@ paths:
         "409": { description: Réservation déjà utilisée }
         "413": { description: Limite de 10 Mio dépassée pendant la réception }
         "415": { description: Encodage compressé interdit }
+    get:
+      operationId: getUploadStatus
+      tags: [storage]
+      summary: Consulter l’état d’analyse d’un dépôt mis en quarantaine
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: État du dépôt appartenant à l’utilisateur connecté
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadStatus" }
+        "401": { description: Authentification requise }
+        "403": { description: Rôle non autorisé à téléverser }
+        "404": { description: "Dépôt inconnu, expiré ou appartenant à un autre utilisateur" }
   /storage/uploads/complete:
     post:
       operationId: completeUpload
       tags: [storage]
-      summary: Analyser la structure et le contenu antimalware avant de finaliser un document
+      summary: Finaliser un document ou le mettre en quarantaine temporaire
       requestBody:
         required: true
         content:
@@ -202,7 +221,7 @@ paths:
           description: Document validé
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/StoredDocument" }
+              schema: { $ref: "#/components/schemas/CompleteUploadResult" }
         "400":
           description: Document invalide, trop volumineux ou de format non autorisé
           content:
@@ -216,13 +235,18 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
         "409": { description: Réception inachevée ou finalisation déjà en cours }
+        "429":
+          description: Quarantaine temporairement saturée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Erreur" }
         "423":
-          description: Document refusé après contrôle ; octets provisoires supprimés sans stockage
+          description: Document refusé après contrôle ; objet de quarantaine supprimé
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
         "503":
-          description: Analyse indisponible ou occupée ; octets en mémoire jusqu'à expiration de la réservation
+          description: Impossible de conserver le document en quarantaine pour le moment
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
@@ -829,6 +853,27 @@ components:
         name: { type: string }
         contentType: { type: string }
         size: { type: integer, minimum: 1, maximum: 10485760 }
+        generation: { type: string }
+    CompleteUploadResult:
+      oneOf:
+        - $ref: "#/components/schemas/StoredDocument"
+        - $ref: "#/components/schemas/PendingUpload"
+    PendingUpload:
+      type: object
+      required: [status, uploadId, expiresAt]
+      properties:
+        status: { type: string, const: pending }
+        uploadId: { type: string, format: uuid }
+        expiresAt: { type: string, format: date-time }
+    UploadStatus:
+      type: object
+      required: [status, expiresAt]
+      properties:
+        status:
+          type: string
+          enum: [pending, scanning, ready, rejected]
+        expiresAt: { type: string, format: date-time }
+        document: { $ref: "#/components/schemas/StoredDocument" }
 
     NiveauAlerte:
       type: string

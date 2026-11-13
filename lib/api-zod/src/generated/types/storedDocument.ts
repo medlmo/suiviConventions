@@ -15,4 +15,5 @@ export interface StoredDocument {
      * @maximum 10485760
      */
   size: number;
+  generation?: string;
 }

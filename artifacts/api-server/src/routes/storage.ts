@@ -2,6 +2,8 @@ import { raw, Router, type IRouter } from "express";
 import {
   CompleteUploadBody,
   CompleteUploadResponse,
+  GetUploadStatusParams,
+  GetUploadStatusResponse,
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
@@ -21,6 +23,7 @@ import {
   reserveUpload,
 } from "../lib/upload-staging";
 import { DocumentSecurityError } from "../lib/document-security-errors";
+import { getQuarantineStatus, mettreEnQuarantaine, QuarantineQueueFullError } from "../lib/document-quarantine";
 import { recordRequestFailure } from "../lib/http-logging";
 
 const router: IRouter = Router();
@@ -126,6 +129,28 @@ router.put("/storage/uploads/:token", (req, res, next): void => {
   });
 });
 
+router.get("/storage/uploads/:token", async (req, res): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ error: "Authentification requise." });
+    return;
+  }
+  if (!peutTeleverser(req.user.role)) {
+    res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
+    return;
+  }
+  const parsed = GetUploadStatusParams.safeParse(req.params);
+  if (!parsed.success) {
+    res.status(404).json({ error: "Dépôt introuvable ou expiré." });
+    return;
+  }
+  const status = await getQuarantineStatus(parsed.data.token, req.user.id);
+  if (!status) {
+    res.status(404).json({ error: "Dépôt introuvable ou expiré." });
+    return;
+  }
+  res.json(GetUploadStatusResponse.parse(status));
+});
+
 router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
   if (!req.user) {
     res.status(401).json({ error: "Authentification requise." });
@@ -151,6 +176,31 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     res.json(CompleteUploadResponse.parse(upload.document));
     return;
   }
+  if (upload.state === "completed" && upload.quarantineUploadId) {
+    const status = await getQuarantineStatus(upload.quarantineUploadId, req.user.id);
+    if (!status) {
+      res.status(404).json({ error: "Le dépôt en quarantaine a expiré." });
+      return;
+    }
+    if (status.status === "ready" && status.document) {
+      res.json(CompleteUploadResponse.parse(status.document));
+      return;
+    }
+    if (status.status === "rejected") {
+      res.status(423).json({
+        error: "Le document n’a pas passé les contrôles de sécurité. Il n’est pas disponible.",
+        code: "DOCUMENT_REJECTED",
+        securityStatus: "rejected",
+      });
+      return;
+    }
+    res.json(CompleteUploadResponse.parse({
+      status: "pending",
+      uploadId: upload.quarantineUploadId,
+      expiresAt: status.expiresAt,
+    }));
+    return;
+  }
   if (upload.state !== "ready" || !upload.bytes) {
     res.status(409).json({ error: "Le fichier n'est pas prêt ou son analyse est déjà en cours." });
     return;
@@ -163,6 +213,41 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     res.json(CompleteUploadResponse.parse(document));
   } catch (error) {
     if (error instanceof DocumentSecurityError) {
+      if ((error.code === "ANALYSIS_UNAVAILABLE" || error.code === "ANALYSIS_BUSY") && upload.bytes) {
+        try {
+          const pending = await mettreEnQuarantaine(
+            req.user.id,
+            upload.name,
+            upload.contentType,
+            upload.bytes,
+          );
+          upload.quarantineUploadId = pending.uploadId;
+          upload.bytes = undefined;
+          upload.state = "completed";
+          upload.expiresAt = Date.now() + 10 * 60 * 1000;
+          res.json(CompleteUploadResponse.parse({ status: "pending", ...pending }));
+          return;
+        } catch (queueError) {
+          if (queueError instanceof QuarantineQueueFullError) {
+            res.setHeader("Retry-After", "60");
+            res.status(429).json({ error: queueError.message });
+            return;
+          }
+          recordRequestFailure(res, queueError, {
+            event: "document.upload.complete.failed",
+            operation: "document.upload.complete",
+            status: 503,
+            errorCode: "INTERNAL_ERROR",
+          });
+          res.setHeader("Retry-After", "60");
+          res.status(503).json({
+            error: "La quarantaine est temporairement indisponible. Le fichier n’a pas été validé; réessayez.",
+            code: "ANALYSIS_UNAVAILABLE",
+            securityStatus: "quarantined",
+          });
+          return;
+        }
+      }
       if (error.code === "DOCUMENT_REJECTED") discardUpload(parsed.data.objectPath);
       recordRequestFailure(res, error, {
         event: "document.security.blocked", operation: "document.upload.complete",

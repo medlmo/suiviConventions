@@ -4,6 +4,7 @@ import { bootstrapAdmin, nettoyerSessionsExpirees } from "./lib/auth";
 import { prepareDocumentAntivirus } from "./lib/document-antivirus";
 import { safeErrorFields } from "./lib/error-logging";
 import { purgerConventionsSupprimees } from "./lib/convention-purge";
+import { startQuarantinedUploadWorker } from "./lib/document-quarantine";
 
 const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 const CONVENTION_PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -27,6 +28,7 @@ async function start(): Promise<void> {
 
     logger.info({ event: "server.started", operation: "server.listen", port }, "Server listening");
     void prepareDocumentAntivirus();
+    startQuarantinedUploadWorker();
     const antivirusTimer = setInterval(() => void prepareDocumentAntivirus(), 12 * 60 * 60 * 1000);
     antivirusTimer.unref();
 

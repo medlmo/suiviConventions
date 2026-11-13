@@ -115,8 +115,9 @@ export const RequestUploadUrlResponse = zod.object({
  * Session authentifiée du propriétaire requise. Usage unique et délai
  * de réception de 60 secondes. Contrôle effectif de la taille (10 Mio),
  * du type MIME et de la signature PDF/Word, même sans Content-Length.
- * Conservation temporaire bornée en mémoire ; la finalisation effectue
- * les contrôles de structure et antivirus avant tout stockage App Storage.
+ * Conservation temporaire bornée en mémoire. Si l’antivirus est
+ * indisponible, le document est placé en quarantaine privée pour 24 heures,
+ * puis rendu disponible uniquement après validation complète.
  * @summary Recevoir les octets sans stockage persistant avant validation
  */
 export const UploadDocumentBytesParams = zod.object({
@@ -127,7 +128,31 @@ export const UploadDocumentBytesResponse = zod.void()
 
 
 /**
- * @summary Analyser la structure et le contenu antimalware avant de finaliser un document
+ * @summary Consulter l’état d’analyse d’un dépôt mis en quarantaine
+ */
+export const GetUploadStatusParams = zod.object({
+  "token": zod.uuid()
+})
+
+export const getUploadStatusResponseDocumentSizeMax = 10485760;
+
+
+
+export const GetUploadStatusResponse = zod.object({
+  "status": zod.enum(['pending', 'scanning', 'ready', 'rejected']),
+  "expiresAt": zod.coerce.date(),
+  "document": zod.object({
+  "objectPath": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.int().min(1).max(getUploadStatusResponseDocumentSizeMax),
+  "generation": zod.string().optional()
+}).optional()
+})
+
+
+/**
+ * @summary Finaliser un document ou le mettre en quarantaine temporaire
  */
 
 export const completeUploadBodyNameMax = 255;
@@ -139,16 +164,21 @@ export const CompleteUploadBody = zod.object({
   "name": zod.string().min(1).max(completeUploadBodyNameMax)
 })
 
-export const completeUploadResponseSizeMax = 10485760;
+export const completeUploadResponseOneSizeMax = 10485760;
 
 
 
-export const CompleteUploadResponse = zod.object({
+export const CompleteUploadResponse = zod.union([zod.object({
   "objectPath": zod.string(),
   "name": zod.string(),
   "contentType": zod.string(),
-  "size": zod.int().min(1).max(completeUploadResponseSizeMax)
-})
+  "size": zod.int().min(1).max(completeUploadResponseOneSizeMax),
+  "generation": zod.string().optional()
+}),zod.object({
+  "status": zod.literal("pending"),
+  "uploadId": zod.uuid(),
+  "expiresAt": zod.coerce.date()
+})])
 
 
 /**

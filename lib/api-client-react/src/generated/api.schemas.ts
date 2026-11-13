@@ -86,6 +86,31 @@ export interface StoredDocument {
      * @maximum 10485760
      */
   size: number;
+  generation?: string;
+}
+
+export interface PendingUpload {
+  status: 'pending';
+  uploadId: string;
+  expiresAt: string;
+}
+
+export type CompleteUploadResult = StoredDocument | PendingUpload;
+
+export type UploadStatusStatus = typeof UploadStatusStatus[keyof typeof UploadStatusStatus];
+
+
+export const UploadStatusStatus = {
+  pending: 'pending',
+  scanning: 'scanning',
+  ready: 'ready',
+  rejected: 'rejected',
+} as const;
+
+export interface UploadStatus {
+  status: UploadStatusStatus;
+  expiresAt: string;
+  document?: StoredDocument;
 }
 
 /**

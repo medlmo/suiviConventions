@@ -17,13 +17,26 @@ type StoredDocument = {
   contentType: string;
   size: number;
   datePvComite?: string;
+  documentType?: "convention" | "avenant" | "pv";
 };
 
-type PendingCompletion = { objectPath: string; name: string; datePvComite?: string };
+type UploadContext = {
+  name: string;
+  datePvComite?: string;
+  documentType?: "convention" | "avenant" | "pv";
+};
+type PendingCompletion = UploadContext & { uploadId: string };
+type CompletionResult = StoredDocument | { status: "pending"; uploadId: string; expiresAt: string };
+type UploadStatus = {
+  status: "pending" | "scanning" | "ready" | "rejected";
+  expiresAt: string;
+  document?: Omit<StoredDocument, "datePvComite" | "documentType"> & { generation?: string };
+};
 
 type Props = {
   id: string;
   field: DocumentField;
+  documentType?: "convention" | "avenant" | "pv";
   datePvComite?: string;
   value?: string | null;
   persistedValue?: string | null;
@@ -40,6 +53,14 @@ const MIME_BY_EXTENSION: Record<string, string> = {
   ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 };
 
+function savePendingUpload(key: string, pending: PendingCompletion): void {
+  try { if (key) window.localStorage.setItem(key, JSON.stringify(pending)); } catch { /* Le suivi reste actif dans cette page. */ }
+}
+
+function clearPendingUpload(key: string): void {
+  try { if (key) window.localStorage.removeItem(key); } catch { /* Le statut serveur reste la source de vérité. */ }
+}
+
 function mimePourNom(nom: string): string | null {
   return MIME_BY_EXTENSION[nom.slice(nom.lastIndexOf(".")).toLowerCase()] ?? null;
 }
@@ -47,6 +68,7 @@ function mimePourNom(nom: string): string | null {
 export function DocumentUploadField({
   id,
   field,
+  documentType,
   datePvComite,
   value,
   persistedValue,
@@ -60,8 +82,18 @@ export function DocumentUploadField({
   const [error, setError] = useState("");
   const [uploadedName, setUploadedName] = useState("");
   const [pendingCompletion, setPendingCompletion] = useState<PendingCompletion | null>(null);
+  const [retryCompletion, setRetryCompletion] = useState<(UploadContext & { objectPath: string }) | null>(null);
+  const [scanStatus, setScanStatus] = useState<"pending" | "scanning">("pending");
   const mounted = useRef(true);
   const uploadActive = useRef(false);
+  const onChangeRef = useRef(onChange);
+  const onUploadedRef = useRef(onUploaded);
+  const pendingStorageKey = typeof window === "undefined" ? "" :
+    `conventions:pending-document:${window.location.pathname}:${field}`;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onUploadedRef.current = onUploaded;
+  }, [onChange, onUploaded]);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -69,6 +101,21 @@ export function DocumentUploadField({
       if (uploadActive.current) onUploadingChange?.(false);
     };
   }, []);
+  useEffect(() => {
+    if (!pendingStorageKey) return;
+    try {
+      const raw = window.localStorage.getItem(pendingStorageKey);
+      if (!raw) return;
+      const pending = JSON.parse(raw) as PendingCompletion;
+      if (typeof pending.uploadId === "string" && typeof pending.name === "string") {
+        setPendingCompletion(pending);
+      } else {
+        clearPendingUpload(pendingStorageKey);
+      }
+    } catch {
+      clearPendingUpload(pendingStorageKey);
+    }
+  }, [pendingStorageKey]);
 
   const uploadFile = async (file: File) => {
     const contentType = mimePourNom(file.name);
@@ -108,8 +155,9 @@ export function DocumentUploadField({
         objectPath: upload.objectPath,
         name: file.name,
         ...(field === "pv" ? { datePvComite } : {}),
+        ...(documentType ? { documentType } : {}),
       };
-      if (mounted.current) setPendingCompletion(completion);
+      if (mounted.current) setRetryCompletion(completion);
       await finaliserTeleversement(completion);
     } catch (uploadError) {
       if (mounted.current) setError(uploadError instanceof ApiError ? errorMessage(uploadError) :
@@ -124,42 +172,67 @@ export function DocumentUploadField({
     }
   };
 
-  const finaliserTeleversement = async (completion: PendingCompletion) => {
+  const accepterDocument = (stored: StoredDocument, context: UploadContext) => {
+    if (!mounted.current) return;
+    clearPendingUpload(pendingStorageKey);
+    setPendingCompletion(null);
+    setError("");
+    onChangeRef.current(stored.objectPath);
+    onUploadedRef.current?.({
+      ...stored,
+      datePvComite: context.datePvComite,
+      documentType: context.documentType,
+    });
+    setUploadedName(stored.name);
+  };
+
+  const finaliserTeleversement = async (completion: UploadContext & { objectPath: string }) => {
     try {
-      const stored = await api<StoredDocument>("/storage/uploads/complete", {
+      const result = await api<CompletionResult>("/storage/uploads/complete", {
         method: "POST",
         body: JSON.stringify({ objectPath: completion.objectPath, name: completion.name }),
       });
-      if (mounted.current) {
-        setPendingCompletion(null);
-        setError("");
-        onChange(stored.objectPath);
-        onUploaded?.({ ...stored, datePvComite: completion.datePvComite });
-        setUploadedName(stored.name);
+      if (!("objectPath" in result)) {
+        const pending: PendingCompletion = {
+          uploadId: result.uploadId,
+          name: completion.name,
+          ...(completion.datePvComite ? { datePvComite: completion.datePvComite } : {}),
+          ...(completion.documentType ? { documentType: completion.documentType } : {}),
+        };
+        savePendingUpload(pendingStorageKey, pending);
+        if (mounted.current) {
+          setRetryCompletion(null);
+          setPendingCompletion(pending);
+          setScanStatus("pending");
+          setError("");
+        }
+        return;
       }
+      setRetryCompletion(null);
+      accepterDocument(result, completion);
     } catch (cause) {
       if (!mounted.current) return;
       if (cause instanceof ApiError &&
         (cause.code === "ANALYSIS_UNAVAILABLE" || cause.code === "ANALYSIS_BUSY")) {
-        setPendingCompletion(completion);
         setError(cause.code === "ANALYSIS_UNAVAILABLE"
-          ? "L’antivirus est temporairement indisponible. Votre fichier reste en mémoire dix minutes au maximum ; réessayez l’analyse sans le téléverser à nouveau."
-          : "Une autre analyse est en cours. Votre fichier reste en mémoire dix minutes au maximum ; réessayez dans quelques instants.");
+          ? "L’antivirus est indisponible et la mise en quarantaine n’a pas abouti. Réessayez le téléversement."
+          : "Une autre analyse est en cours. Réessayez le téléversement dans quelques instants.");
         return;
       }
+      setRetryCompletion(null);
       setPendingCompletion(null);
       setError(errorMessage(cause));
     }
   };
 
   const retryFinalisation = async () => {
-    if (!pendingCompletion || uploadActive.current) return;
+    if (!retryCompletion || uploadActive.current) return;
     setIsUploading(true);
     uploadActive.current = true;
     onUploadingChange?.(true);
     setError("");
     try {
-      await finaliserTeleversement(pendingCompletion);
+      await finaliserTeleversement(retryCompletion);
     } finally {
       uploadActive.current = false;
       if (mounted.current) {
@@ -168,6 +241,46 @@ export function DocumentUploadField({
       }
     }
   };
+
+  useEffect(() => {
+    if (!pendingCompletion) return;
+    let active = true;
+    let checking = false;
+    const verifier = async () => {
+      if (checking) return;
+      checking = true;
+      try {
+        const result = await api<UploadStatus>(`/storage/uploads/${encodeURIComponent(pendingCompletion.uploadId)}`);
+        if (!active) return;
+        if (result.status === "ready" && result.document) {
+          accepterDocument(result.document, pendingCompletion);
+        } else if (result.status === "rejected") {
+          clearPendingUpload(pendingStorageKey);
+          setPendingCompletion(null);
+          setError("L’antivirus a refusé le document. Le fichier n’est pas disponible.");
+        } else {
+          setScanStatus(result.status === "scanning" ? "scanning" : "pending");
+        }
+      } catch (cause) {
+        if (!active) return;
+        if (cause instanceof ApiError && cause.status === 404) {
+          clearPendingUpload(pendingStorageKey);
+          setPendingCompletion(null);
+          setError("L’attente d’analyse a expiré. Sélectionnez à nouveau le fichier.");
+        } else {
+          setError("La vérification est temporairement indisponible; le fichier reste en quarantaine.");
+        }
+      } finally {
+        checking = false;
+      }
+    };
+    void verifier();
+    const timer = window.setInterval(() => void verifier(), 5_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [pendingCompletion?.uploadId, pendingStorageKey]);
 
   const isStoredFile = Boolean(value?.startsWith("/objects/documents/"));
   const isPersisted = isStoredFile && value === persistedValue && conventionId != null;
@@ -192,6 +305,11 @@ export function DocumentUploadField({
           ? "Finalisation et analyse antimalware… Le fichier reste en quarantaine jusqu’à validation."
           : "Téléversement, contrôle du document et analyse antimalware… Le fichier reste en quarantaine jusqu’à validation."}
       </p>}
+      {pendingCompletion && <p className="text-sm text-amber-700" role="status">
+        {scanStatus === "scanning"
+          ? "Fichier conservé en quarantaine; analyse de sécurité en cours."
+          : "Fichier reçu et conservé en quarantaine. Il sera ajouté après validation antivirus (durée maximale : 24 h). Vous pouvez continuer à remplir la fiche."}
+      </p>}
       {!isUploading && isStoredFile && uploadedName && (
         <p className="text-sm text-muted-foreground">Fichier chargé : {uploadedName}</p>
       )}
@@ -209,9 +327,9 @@ export function DocumentUploadField({
         </p>
       )}
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-      {pendingCompletion && !isUploading && (
+      {retryCompletion && !isUploading && (
         <Button type="button" variant="outline" size="sm" onClick={() => void retryFinalisation()}>
-          Réessayer l’analyse
+          Réessayer la mise en quarantaine
         </Button>
       )}
     </div>

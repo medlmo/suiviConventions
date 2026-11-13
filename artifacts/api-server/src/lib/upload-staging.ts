@@ -13,6 +13,7 @@ export interface StagedUpload {
   state: "waiting" | "receiving" | "ready" | "finalizing" | "completed";
   bytes?: Buffer;
   document?: VerifiedDocument;
+  quarantineUploadId?: string;
 }
 const uploads = new Map<string, StagedUpload>();
 

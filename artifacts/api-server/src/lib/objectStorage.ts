@@ -16,6 +16,7 @@ const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
 
 const OBJECT_PATH_PATTERN = /^\/objects\/(?:uploads|documents)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DOCUMENT_PATH_PATTERN = /^\/objects\/documents\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -97,7 +98,42 @@ export class ObjectStorageService {
     await objectStorageClient.bucket(bucketName).file(objectName).delete({ ignoreNotFound: true });
   }
 
-  async finalizeUploadedDocument(bytes: Buffer, rawName: string): Promise<VerifiedDocument> {
+  async storeQuarantinedUpload(
+    id: string,
+    bytes: Buffer,
+    name: string,
+    contentType: string,
+  ): Promise<void> {
+    if (!UUID_PATTERN.test(id) || bytes.length < 1 || bytes.length > DOCUMENT_MAX_SIZE_BYTES ||
+      typeDocumentPourNom(name) !== contentType) {
+      throw new InvalidDocumentError();
+    }
+    const { bucketName, objectName } = parseObjectPath(`${this.getPrivateObjectDir()}/quarantine/${id}`);
+    await objectStorageClient.bucket(bucketName).file(objectName).save(bytes, {
+      resumable: false,
+      preconditionOpts: { ifGenerationMatch: 0 },
+      metadata: {
+        contentType,
+        metadata: { originalName: name, securityStatus: "quarantined", documentVerified: "false" },
+      },
+    });
+  }
+
+  async readQuarantinedUpload(id: string): Promise<Buffer> {
+    if (!UUID_PATTERN.test(id)) throw new ObjectNotFoundError();
+    const { bucketName, objectName } = parseObjectPath(`${this.getPrivateObjectDir()}/quarantine/${id}`);
+    const [bytes] = await objectStorageClient.bucket(bucketName).file(objectName).download();
+    if (bytes.length < 1 || bytes.length > DOCUMENT_MAX_SIZE_BYTES) throw new InvalidDocumentError();
+    return bytes;
+  }
+
+  async deleteQuarantinedUpload(id: string): Promise<void> {
+    if (!UUID_PATTERN.test(id)) throw new ObjectNotFoundError();
+    const { bucketName, objectName } = parseObjectPath(`${this.getPrivateObjectDir()}/quarantine/${id}`);
+    await objectStorageClient.bucket(bucketName).file(objectName).delete({ ignoreNotFound: true });
+  }
+
+  async finalizeUploadedDocument(bytes: Buffer, rawName: string, stableId?: string): Promise<VerifiedDocument> {
     const name = normaliserNomDocument(rawName);
     if (!name || name !== rawName) throw new InvalidDocumentError();
     const expectedContentType = typeDocumentPourNom(name);
@@ -106,11 +142,23 @@ export class ObjectStorageService {
     // Aucun objet n'est créé avant les contrôles de structure et l'antivirus.
     const security = await inspectDocument(name, async () => bytes);
     const size = bytes.length;
-    const objectId = randomUUID();
+    if (stableId !== undefined && !UUID_PATTERN.test(stableId)) throw new InvalidDocumentError();
+    const objectId = stableId ?? randomUUID();
+    const objectPath = `/objects/documents/${objectId}`;
     const { bucketName, objectName } = parseObjectPath(
       `${this.getPrivateObjectDir()}/documents/${objectId}`,
     );
     const destination = objectStorageClient.bucket(bucketName).file(objectName);
+    const [alreadyExists] = await destination.exists();
+    if (alreadyExists) {
+      const existing = await this.getVerifiedDocumentInfo(objectPath);
+      if (existing && existing.name === name && existing.size === size) {
+        const existingFile = await this.getObjectEntityFile(objectPath, existing.generation);
+        const [existingMetadata] = await existingFile.getMetadata();
+        if (existingMetadata.metadata?.securityHash === security.securityHash) return existing;
+      }
+      await destination.delete({ ignoreNotFound: true });
+    }
     let generation: string;
     try {
       await destination.save(bytes, {
@@ -136,7 +184,7 @@ export class ObjectStorageService {
       throw error;
     }
     return {
-      objectPath: `/objects/documents/${objectId}`,
+      objectPath,
       name,
       contentType: expectedContentType,
       size,

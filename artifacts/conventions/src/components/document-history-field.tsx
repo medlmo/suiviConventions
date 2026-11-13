@@ -103,10 +103,13 @@ export function DocumentHistoryField({
         />
       </div>}
       <DocumentUploadField id={`ajout-document-${category}`} field={category === "pv" ? "pv" : "documentConvention"}
+        documentType={category === "pv" ? "pv" : type}
         datePvComite={category === "pv" ? datePvComite : undefined}
         value={null} onChange={() => {}}
         onUploaded={document => {
-          const typeDocument = category === "pv" ? "pv" : type;
+          const typeDocument = category === "pv" ? "pv" :
+            document.documentType === "avenant" ? "avenant" : type;
+          if (typeDocument !== "pv") setType(typeDocument);
           onAdd({
             objectPath: document.objectPath,
             name: document.name,
