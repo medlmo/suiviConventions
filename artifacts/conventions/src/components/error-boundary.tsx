@@ -4,6 +4,7 @@ import {
   type ErrorInfo,
   type ReactNode,
 } from 'react';
+import { CircleAlert } from 'lucide-react';
 
 export interface ErrorFallbackProps {
   error: Error;
@@ -37,30 +38,51 @@ function toError(value: unknown): Error {
 
 function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 p-6">
-      <div className="max-w-lg w-full text-center">
-        <h1 className="text-xl font-semibold text-gray-900">
-          Something went wrong
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          This part of the app hit an error. The rest of the app is still
-          running.
+    <main
+      role="alert"
+      aria-labelledby="error-fallback-title"
+      className="flex min-h-[100dvh] w-full items-center justify-center bg-background px-4 py-8 text-foreground"
+    >
+      <section className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 text-center shadow-sm sm:p-8">
+        <div className="mx-auto mb-5 grid size-14 place-items-center rounded-full bg-amber-100 text-amber-800">
+          <CircleAlert aria-hidden="true" className="size-7" />
+        </div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Suivi des conventions
         </p>
+        <h1 id="error-fallback-title" className="mt-2 text-2xl font-bold tracking-tight">
+          Une erreur est survenue
+        </h1>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+          Cette page n’a pas pu s’afficher correctement. Vous pouvez réessayer
+          ou recharger l’application.
+        </p>
+
+        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={resetError}
+            className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Réessayer
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Recharger la page
+          </button>
+        </div>
+
         {/* Dev only: messages can carry API responses and other internals. */}
         {import.meta.env.DEV ? (
-          <pre className="mt-4 overflow-x-auto rounded bg-gray-100 p-3 text-left text-xs text-gray-800">
+          <pre className="mt-6 max-h-48 overflow-auto rounded-lg bg-muted p-3 text-left text-xs text-muted-foreground">
             {error.message || String(error)}
           </pre>
         ) : null}
-        <button
-          type="button"
-          onClick={resetError}
-          className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700"
-        >
-          Try again
-        </button>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
 
