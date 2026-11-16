@@ -18,7 +18,10 @@ let executionEnCours = false;
 /** No dependency on a login or on the read state of in-app notifications. */
 export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
   const result = { eligible: 0, queued: 0, sent: 0, cancelled: 0, failed: 0 };
-  if ((!options.dryRun && process.env.MAIL_ENABLED !== "true") || executionEnCours) return result;
+  if (
+    (!options.dryRun && (process.env.NODE_ENV !== "production" || process.env.MAIL_ENABLED !== "true")) ||
+    executionEnCours
+  ) return result;
   executionEnCours = true;
   try {
     const config = configurationMail();
@@ -126,12 +129,23 @@ export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
   }
 }
 
-export function demarrerRappelsMail(): void {
-  // Prevent accidental emails from the development workspace.
+let prochaineVerification = 0;
+let verificationEnCours: Promise<void> | undefined;
+
+/** Activity-triggered check, not a timer. Await SMTP work before ending the request. */
+export async function verifierRappelsMail(): Promise<void> {
   if (process.env.NODE_ENV !== "production" || process.env.MAIL_ENABLED !== "true") return;
-  const run = () => void envoyerRappelsComite().catch(() => {
-    logger.error({ event: "mail.reminders.failed", operation: "mail.reminders", errorCode: "MAIL_REMINDERS_FAILED" }, "Committee reminder worker failed");
-  });
-  run();
-  setInterval(run, 15 * 60_000).unref();
+  if (verificationEnCours) return verificationEnCours;
+  if (Date.now() < prochaineVerification) return;
+  prochaineVerification = Date.now() + 15 * 60_000;
+  verificationEnCours = envoyerRappelsComite()
+    .then(() => undefined)
+    .catch(() => {
+      logger.error({
+        event: "mail.reminders.failed", operation: "mail.reminders",
+        errorCode: "MAIL_REMINDERS_FAILED",
+      }, "Committee email reminder check failed; in-app notifications remain available");
+    })
+    .finally(() => { verificationEnCours = undefined; });
+  return verificationEnCours;
 }

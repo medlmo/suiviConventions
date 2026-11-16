@@ -6,6 +6,7 @@ import { filtrePerimetre } from "../lib/convention-access";
 import { chargerReferentiel } from "../lib/reference-data";
 import { resumeNotification } from "../lib/notifications";
 import { genererRappelsEcheance, rappelEcheanceVisible, resumeRappelEcheance } from "../lib/deadline-reminders";
+import { verifierRappelsMail } from "../lib/committee-mail-reminders";
 
 const router: IRouter = Router();
 
@@ -22,6 +23,7 @@ router.get("/notifications", async (req, res) => {
   const reference = await chargerReferentiel();
   const user = req.user!;
   await genererRappelsEcheance(user, reference);
+  await verifierRappelsMail();
   const asOf = new Date();
   const visible = and(
     eq(notificationsTable.recipientId, user.id),

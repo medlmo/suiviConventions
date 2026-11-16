@@ -18,7 +18,8 @@ Variables : `SMTP_HOST`, `SMTP_PORT=465`, `SMTP_USER`, `MAIL_FROM`,
 `APP_PUBLIC_URL` (URL HTTPS publiée).
 Secret : `SMTP_PASSWORD`.
 L'envoi nécessite explicitement `MAIL_ENABLED=true`. Le développement ne lance
-jamais le minuteur d'envoi automatiquement. Le chiffrement TLS et la validation
+jamais le minuteur d'envoi automatiquement, et la commande planifiée n'envoie rien
+hors production. Le chiffrement TLS et la validation
 du certificat sont obligatoires ; aucun contournement n'est prévu.
 IMAP et POP3 ne sont pas utilisés.
 
@@ -35,23 +36,36 @@ Après compilation de l'API :
   des couples chef/convention éligibles, sans écriture et sans envoi. Ce comptage
   inclut les rappels éventuellement déjà expédiés : ce n'est pas le nombre d'envois à faire.
 - `pnpm --filter @workspace/api-server run mail:reminders` : préparation et traitement
-  d'au maximum 100 envois. Le code de sortie est non nul si le traitement échoue
-  ou si un envoi échoue. Réexécuter périodiquement pour les volumes supérieurs.
+  d'au maximum 100 envois. La commande ne fait rien et réussit si `MAIL_ENABLED`
+  n'est pas exactement `true` ou si elle n'est pas exécutée en production. Le code
+  de sortie est non nul si le traitement échoue ou si un envoi échoue. Réexécuter
+  périodiquement pour les volumes supérieurs.
 
-## Planification et activation
+## Déclenchement et activation
 
-Le serveur de production activé lance un passage au démarrage, puis toutes les
-15 minutes **tant qu'il est actif**. Autoscale peut s'arrêter sans trafic :
-ce minuteur n'est donc pas une garantie d'envoi à date fixe.
-Pour une garantie hors connexion, planifier la commande indépendante sur un
-exécuteur disposant du même code, de la base et des variables, ou utiliser
-un serveur toujours actif. Le site web doit rester déployé comme site web :
-ne pas le convertir en déploiement planifié.
+Seulement les rappels de comité à J−30 et J−14 : aucun horaire quotidien,
+aucun ordonnanceur externe, aucune route ni aucun secret supplémentaires.
+Le site reste en Autoscale.
 
-Le choix de la planification reste à finaliser avant de promettre un envoi
-quotidien indépendant des connexions. Aucune tâche externe n'est créée par ce code.
-La nouvelle table est créée en développement ; sa création en production
-passe par la publication normale du projet, pas par du DDL au démarrage.
+La consultation du flux de notifications par un utilisateur connecté vérifie
+aussi les rappels e-mail pour tous les chefs éligibles, selon leurs propres
+périmètres. Le destinataire n'a donc pas besoin d'être connecté lui-même.
+La lecture d'une notification interne n'empêche jamais son rappel e-mail.
+
+Pour éviter un traitement complet à chaque actualisation, les vérifications
+sont espacées d'au moins 15 minutes par instance active. Ce délai est uniquement
+une protection contre les vérifications répétées, pas une planification.
+Les traitements simultanés partagent la même promesse et la requête attend la
+fin du passage SMTP ; une erreur SMTP ne bloque pas les notifications internes.
+
+Sans utilisation de l'application, aucune vérification n'a lieu. Au prochain
+accès, seule la fenêtre encore utile est rattrapée (J−30 à J−15, puis J−14 à J−1),
+sans cumuler les deux rappels manqués et sans envoyer après l'échéance.
+
+Conserver `MAIL_ENABLED=false` jusqu'à l'accord explicite d'activation de
+l'utilisateur. Aucun envoi n'est effectué en développement, même si cette
+variable est vraie. La création de la table en production passe par la
+publication normale du projet, pas par du DDL au démarrage.
 
 ## Cohérence et reprise
 
