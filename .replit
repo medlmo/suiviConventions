@@ -25,3 +25,13 @@ packages = ["clamav", "qpdf", "_7zz", "util-linux"]
 
 [objectStorage]
 defaultBucketID = "replit-objstore-5e7456db-566c-4a3b-b6fd-2f825410a3ee"
+
+[userenv]
+
+[userenv.shared]
+APP_PUBLIC_URL = "https://conventions-rsm.replit.app"
+MAIL_FROM = "conventions@soussmassa.ma"
+SMTP_HOST = "mail.soussmassa.ma"
+SMTP_PORT = "465"
+SMTP_USER = "conventions@soussmassa.ma"
+MAIL_ENABLED = "false"

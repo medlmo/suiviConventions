@@ -22,3 +22,4 @@ export * from "./auth";
 export * from "./reference-data";
 export * from "./notifications";
 export * from "./quarantined-uploads";
+export * from "./mail-reminders";
