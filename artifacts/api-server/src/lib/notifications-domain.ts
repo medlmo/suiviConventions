@@ -110,6 +110,42 @@ export function estDestinataire(
   return false;
 }
 
+/** Rappel d'échéance aux responsables hiérarchiques de la convention. */
+export function estResponsableRappel(
+  user: SessionUser,
+  convention: Pick<Convention, "rattachement" | "responsableProjet">,
+  reference: ReferenceData,
+): boolean {
+  if (!user.active) return false;
+  const division = reference.organisation.flatMap((direction) =>
+    direction.divisions.map((item) => ({ ...item, direction: direction.direction })),
+  ).find((item) => item.nom === convention.rattachement);
+  const directDgs = convention.rattachement === DIRECTION_GENERALE_SERVICES &&
+    (!convention.responsableProjet ||
+      reference.servicesDgs.some((service) => service.nom === convention.responsableProjet));
+  const scope = user.role !== "chef_service" || !user.service ? null
+    : !user.direction && !user.division
+      ? reference.servicesDgs.some((item) => item.nom === user.service) ? DIRECTION_GENERALE_SERVICES : null
+      : user.direction && user.division &&
+        divisionDansDirection(reference, user.direction, user.division) &&
+        serviceDansDivision(reference, user.division, user.service) ? user.division : null;
+  const responsableService = user.role === "chef_service" &&
+    !!user.service && !!convention.rattachement &&
+    user.service === convention.responsableProjet &&
+    scope === convention.rattachement;
+  const responsableDivision = user.role === "chef_division" && !!division &&
+    user.division === division.nom && user.direction === division.direction &&
+    divisionDansDirection(reference, user.direction, user.division);
+  const responsableDirection = user.role === "directeur" && (
+    (!!division && user.direction === division.direction) ||
+    reference.organisation.some((direction) =>
+      direction.direction === convention.rattachement && direction.direction === user.direction)
+  );
+  const responsableDgs = user.role === "directeur_general_services" && directDgs;
+
+  return responsableService || responsableDivision || responsableDirection || responsableDgs;
+}
+
 export function resumeNotification(kind: string, fields: string[], eventCount: number): string {
   if (kind === "creation") return "Nouvelle convention créée.";
   const detail = fields.slice(0, 6).join(", ") +

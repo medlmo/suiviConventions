@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, gte, isNotNull, isNull, lte, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, isNull, lte, notInArray, or, sql } from "drizzle-orm";
 import { conventionsTable, db, mailRemindersTable, usersTable } from "@workspace/db";
 import { filtrePerimetre } from "./convention-access";
 import { chargerReferentiel } from "./reference-data";
 import { configurationMail, creerTransportSmtp, codeErreurSmtp } from "./smtp-mail";
 import { contenuRappelComite } from "./committee-mail-content";
+import { estResponsableRappel } from "./notifications-domain";
 import { logger } from "./logger";
 
 const joursRestants = sql<number>`(${conventionsTable.prochaineEcheance} - CURRENT_DATE)::int`;
@@ -27,28 +28,32 @@ export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
     const config = configurationMail();
     const transport = creerTransportSmtp();
     const reference = await chargerReferentiel();
-    const chefs = await db.select({
+    const responsables = await db.select({
       id: usersTable.id, username: usersTable.username, role: usersTable.role,
       direction: usersTable.direction, division: usersTable.division,
       service: usersTable.service, active: usersTable.active, email: usersTable.email,
     }).from(usersTable).where(and(
-      eq(usersTable.active, true), eq(usersTable.role, "chef_service"), isNotNull(usersTable.email),
+      eq(usersTable.active, true),
+      inArray(usersTable.role, ["chef_service", "chef_division", "directeur", "directeur_general_services"]),
+      isNotNull(usersTable.email),
     ));
 
-    for (const chef of chefs) {
-      if (!chef.email || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(chef.email)) continue;
+    for (const responsable of responsables) {
+      if (!responsable.email || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(responsable.email)) continue;
       const upcoming = await db.select({
         id: conventionsTable.id, deadline: conventionsTable.prochaineEcheance,
         threshold: seuilActuel.mapWith(Number),
+        rattachement: conventionsTable.rattachement,
+        responsableProjet: conventionsTable.responsableProjet,
       }).from(conventionsTable).where(and(
-        isNull(conventionsTable.deletedAt), filtrePerimetre(chef, reference),
+        isNull(conventionsTable.deletedAt), filtrePerimetre(responsable, reference),
         conventionOuverte(), gte(joursRestants, 1), lte(joursRestants, 30),
-      ));
+      )).then((rows) => rows.filter((row) => estResponsableRappel(responsable, row, reference)));
       if (!upcoming.length) continue;
       result.eligible += upcoming.length;
       if (options.dryRun) continue;
       const inserted = await db.insert(mailRemindersTable).values(upcoming.map((row) => ({
-        recipientId: chef.id, conventionId: row.id, deadlineDate: row.deadline!,
+        recipientId: responsable.id, conventionId: row.id, deadlineDate: row.deadline!,
         reminderDays: row.threshold,
       }))).onConflictDoNothing().returning({ id: mailRemindersTable.id });
       result.queued += inserted.length;
@@ -77,21 +82,28 @@ export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
       const owned = and(eq(mailRemindersTable.id, job.id), eq(mailRemindersTable.leaseToken, token));
       try {
         // Resolve current account, address, organisation and deadline just before sending.
-        const [chef] = await db.select().from(usersTable).where(and(
+        const [responsable] = await db.select().from(usersTable).where(and(
           eq(usersTable.id, job.recipientId), eq(usersTable.active, true),
-          eq(usersTable.role, "chef_service"),
+          inArray(usersTable.role, ["chef_service", "chef_division", "directeur", "directeur_general_services"]),
         ));
         const referenceActuelle = await chargerReferentiel();
-        const [convention] = chef ? await db.select({
+        const [convention] = responsable ? await db.select({
           title: conventionsTable.nomConvention, days: joursRestants.mapWith(Number),
+          rattachement: conventionsTable.rattachement,
+          responsableProjet: conventionsTable.responsableProjet,
         }).from(conventionsTable).where(and(
           eq(conventionsTable.id, job.conventionId), isNull(conventionsTable.deletedAt),
           eq(conventionsTable.prochaineEcheance, job.deadlineDate),
           eq(seuilActuel, job.reminderDays),
-          filtrePerimetre(chef, referenceActuelle), conventionOuverte(),
+          filtrePerimetre(responsable, referenceActuelle), conventionOuverte(),
           gte(joursRestants, 1), lte(joursRestants, 30),
         )) : [];
-        if (!chef?.email || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(chef.email) || !convention) {
+        if (
+          !responsable?.email ||
+          !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(responsable.email) ||
+          !convention ||
+          !estResponsableRappel(responsable, convention, referenceActuelle)
+        ) {
           await db.update(mailRemindersTable).set({
             state: "cancelled", leaseUntil: null, leaseToken: null,
           }).where(owned);
@@ -104,7 +116,7 @@ export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
         );
         const delivered = await transport.sendMail({
           from: { name: "Suivi des conventions — Région Souss Massa", address: config.from },
-          to: chef.email, ...message,
+          to: responsable.email, ...message,
           messageId: `<committee-${job.recipientId}-${job.conventionId}-${job.deadlineDate}-${job.reminderDays}@${config.messageDomain}>`,
         });
         if (!delivered.accepted?.length) throw new Error("SMTP_RECIPIENT_NOT_ACCEPTED");

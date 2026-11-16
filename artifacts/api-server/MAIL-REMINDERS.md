@@ -2,9 +2,11 @@
 
 ## Périmètre
 
-Rappels aux chefs de service actifs disposant d'une adresse e-mail valide renseignée
-par l'administration. Le périmètre utilise les mêmes règles que l'application,
-y compris les services directement rattachés à la DGS.
+Rappels aux responsables actifs disposant d'une adresse e-mail valide renseignée
+par l'administration : chef de service responsable, chef de sa division et directeur
+de sa direction. Pour un service rattaché directement à la DGS, le directeur général
+des services remplace le chef de division et le directeur de direction. Le routage
+utilise le référentiel courant et vérifie à nouveau le rôle et le rattachement avant envoi.
 Les créations et modifications ordinaires ne déclenchent pas d'e-mail.
 
 L'échéance est `prochaineEcheance`, calculée ou renseignée dans la convention.
