@@ -1,10 +1,29 @@
 import { pool } from "@workspace/db";
-import { creerTransportSmtp, codeErreurSmtp } from "./lib/smtp-mail";
+import { configurationMail, creerTransportSmtp, codeErreurSmtp } from "./lib/smtp-mail";
 import { envoyerRappelsComite } from "./lib/committee-mail-reminders";
 import { logger } from "./lib/logger";
 
 try {
-  if (process.argv.includes("--verify")) {
+  const testArgIndex = process.argv.indexOf("--send-test");
+  if (testArgIndex >= 0) {
+    const recipient = process.argv[testArgIndex + 1] === "--"
+      ? process.argv[testArgIndex + 2]
+      : process.argv[testArgIndex + 1];
+    if (!recipient || recipient.length > 254 || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(recipient)) {
+      throw new Error("TEST_RECIPIENT_INVALID");
+    }
+    const config = configurationMail();
+    const result = await creerTransportSmtp().sendMail({
+      from: { name: "Suivi des conventions — Région Souss Massa", address: config.from },
+      to: recipient,
+      subject: "Test e-mail — Suivi des conventions",
+      text: "Ceci est un e-mail de test de la configuration SMTP. Aucun rappel réel ni aucune modification de convention n'est associé à ce message.",
+      html: "<div lang=\"fr\" style=\"font-family:Arial,sans-serif;line-height:1.6;color:#122b49\"><h2>Test des notifications par e-mail</h2><p>La configuration SMTP a accepté cet e-mail de test.</p><p>Aucun rappel réel ni aucune modification de convention n'est associé à ce message.</p><p>Suivi des conventions — Région Souss Massa</p></div>",
+      messageId: `<smtp-test-${Date.now()}@${config.messageDomain}>`,
+    });
+    if (!result.accepted?.length) throw new Error("SMTP_TEST_RECIPIENT_NOT_ACCEPTED");
+    logger.info({ event: "smtp.test.accepted", operation: "smtp.test" }, "SMTP accepted one test email; no reminder or delivery record was created");
+  } else if (process.argv.includes("--verify")) {
     await creerTransportSmtp().verify();
     logger.info({ event: "smtp.verify.success", operation: "smtp.verify" }, "SMTP TLS and authentication verified; no email sent");
   } else if (process.argv.includes("--preview")) {

@@ -13,6 +13,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "mail:verify": "node ./dist/mail-command.mjs --verify",
     "mail:preview": "node ./dist/mail-command.mjs --preview",
+    "mail:test": "node ./dist/mail-command.mjs --send-test",
     "mail:reminders": "node ./dist/mail-command.mjs"
   },
   "dependencies": {

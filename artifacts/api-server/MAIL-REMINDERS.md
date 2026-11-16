@@ -34,6 +34,8 @@ Après compilation de l'API :
 
 - `pnpm --filter @workspace/api-server run mail:verify` : connexion et authentification
   uniquement, sans envoyer de message.
+- `pnpm --filter @workspace/api-server run mail:test -- destinataire@exemple.ma` :
+  envoie un seul e-mail de test à l'adresse fournie, sans toucher à la file des rappels.
 - `pnpm --filter @workspace/api-server run mail:preview` : comptage en lecture seule
   des couples chef/convention éligibles, sans écriture et sans envoi. Ce comptage
   inclut les rappels éventuellement déjà expédiés : ce n'est pas le nombre d'envois à faire.
