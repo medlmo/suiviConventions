@@ -16,11 +16,29 @@ const conventionOuverte = () => or(
 );
 let executionEnCours = false;
 
+function configurationEssaiDev(): { email: string; conventionId: number } | null {
+  if (process.env.NODE_ENV !== "development" || process.env.MAIL_DEV_ENABLED !== "true") return null;
+  const email = process.env.MAIL_DEV_TEST_RECIPIENT?.trim();
+  const conventionId = Number(process.env.MAIL_DEV_TEST_CONVENTION_ID);
+  if (!email || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(email) ||
+      !Number.isSafeInteger(conventionId) || conventionId <= 0) {
+    logger.error({
+      event: "mail.dev_test.disabled", operation: "mail.reminders",
+      errorCode: "MAIL_DEV_TEST_CONFIGURATION_INVALID",
+    }, "Development reminder sending is disabled because its safety limits are invalid");
+    return null;
+  }
+  return { email: email.toLowerCase(), conventionId };
+}
+
 /** No dependency on a login or on the read state of in-app notifications. */
 export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
   const result = { eligible: 0, queued: 0, sent: 0, cancelled: 0, failed: 0 };
+  const devTest = configurationEssaiDev();
+  const envoiAutorise = (process.env.NODE_ENV === "production" && process.env.MAIL_ENABLED === "true") ||
+    devTest !== null;
   if (
-    (!options.dryRun && (process.env.NODE_ENV !== "production" || process.env.MAIL_ENABLED !== "true")) ||
+    (!options.dryRun && !envoiAutorise) ||
     executionEnCours
   ) return result;
   executionEnCours = true;
@@ -37,15 +55,21 @@ export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
       inArray(usersTable.role, ["chef_service", "chef_division", "directeur", "directeur_general_services"]),
       isNotNull(usersTable.email),
     ));
+    const devRecipientIds = devTest
+      ? responsables.filter((responsable) =>
+        responsable.email?.trim().toLowerCase() === devTest.email).map((responsable) => responsable.id)
+      : [];
 
     for (const responsable of responsables) {
       if (!responsable.email || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(responsable.email)) continue;
+      if (devTest && responsable.email.trim().toLowerCase() !== devTest.email) continue;
       const upcoming = await db.select({
         id: conventionsTable.id, deadline: conventionsTable.prochaineEcheance,
         threshold: seuilActuel.mapWith(Number),
         rattachement: conventionsTable.rattachement,
         responsableProjet: conventionsTable.responsableProjet,
       }).from(conventionsTable).where(and(
+        devTest ? eq(conventionsTable.id, devTest.conventionId) : undefined,
         isNull(conventionsTable.deletedAt), filtrePerimetre(responsable, reference),
         conventionOuverte(), gte(joursRestants, 1), lte(joursRestants, 30),
       )).then((rows) => rows.filter((row) => estResponsableRappel(responsable, row, reference)));
@@ -61,10 +85,12 @@ export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
     if (options.dryRun) return result;
 
     // Bound work per invocation; multiple instances claim different rows atomically.
-    for (let count = 0; count < 100; count++) {
+    for (let count = 0; count < (devTest ? 1 : 100); count++) {
       const token = randomUUID();
       const job = await db.transaction(async (tx) => {
         const [candidate] = await tx.select().from(mailRemindersTable).where(and(
+          devTest ? eq(mailRemindersTable.conventionId, devTest.conventionId) : undefined,
+          devTest ? (devRecipientIds.length ? inArray(mailRemindersTable.recipientId, devRecipientIds) : sql`FALSE`) : undefined,
           or(
             eq(mailRemindersTable.state, "pending"),
             and(eq(mailRemindersTable.state, "sending"), lte(mailRemindersTable.leaseUntil, new Date())),
@@ -101,6 +127,10 @@ export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
         if (
           !responsable?.email ||
           !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(responsable.email) ||
+          (devTest && (
+            job.conventionId !== devTest.conventionId ||
+            responsable.email.trim().toLowerCase() !== devTest.email
+          )) ||
           !convention ||
           !estResponsableRappel(responsable, convention, referenceActuelle)
         ) {
@@ -146,7 +176,11 @@ let verificationEnCours: Promise<void> | undefined;
 
 /** Activity-triggered check, not a timer. Await SMTP work before ending the request. */
 export async function verifierRappelsMail(): Promise<void> {
-  if (process.env.NODE_ENV !== "production" || process.env.MAIL_ENABLED !== "true") return;
+  const devTest = configurationEssaiDev();
+  if (
+    !devTest &&
+    (process.env.NODE_ENV !== "production" || process.env.MAIL_ENABLED !== "true")
+  ) return;
   if (verificationEnCours) return verificationEnCours;
   if (Date.now() < prochaineVerification) return;
   prochaineVerification = Date.now() + 15 * 60_000;

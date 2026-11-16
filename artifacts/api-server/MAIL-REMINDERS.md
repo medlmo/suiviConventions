@@ -28,6 +28,14 @@ IMAP et POP3 ne sont pas utilisés.
 Ne pas activer les envois dans un environnement de test utilisant des adresses réelles.
 Laisser `MAIL_ENABLED=false` tant que la configuration n'est pas validée.
 
+Un essai temporaire d'envoi automatique en développement exige en plus
+`MAIL_DEV_ENABLED=true`, `MAIL_DEV_TEST_RECIPIENT` et
+`MAIL_DEV_TEST_CONVENTION_ID`. Il est alors limité à cette seule adresse et cette
+seule convention, à un message par vérification. Supprimer ces variables après
+l'essai ; ce mode ne modifie pas l'activation de production. La commande
+`pnpm --filter @workspace/api-server run mail:dev-test` exécute une seule fois
+ce rappel limité pour vérifier le parcours complet.
+
 ## Commandes
 
 Après compilation de l'API :

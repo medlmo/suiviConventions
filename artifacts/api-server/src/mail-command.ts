@@ -23,6 +23,13 @@ try {
     });
     if (!result.accepted?.length) throw new Error("SMTP_TEST_RECIPIENT_NOT_ACCEPTED");
     logger.info({ event: "smtp.test.accepted", operation: "smtp.test" }, "SMTP accepted one test email; no reminder or delivery record was created");
+  } else if (process.argv.includes("--run-dev-test")) {
+    if (process.env.NODE_ENV !== "development" || process.env.MAIL_DEV_ENABLED !== "true") {
+      logger.info({ event: "mail.dev_test.skipped", operation: "mail.reminders", reason: "dev_test_disabled" }, "Development reminder test is not enabled");
+    } else {
+      const result = await envoyerRappelsComite();
+      if (result.failed > 0) process.exitCode = 1;
+    }
   } else if (process.argv.includes("--verify")) {
     await creerTransportSmtp().verify();
     logger.info({ event: "smtp.verify.success", operation: "smtp.verify" }, "SMTP TLS and authentication verified; no email sent");

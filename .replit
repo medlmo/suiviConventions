@@ -35,3 +35,6 @@ SMTP_HOST = "mail.soussmassa.ma"
 SMTP_PORT = "465"
 SMTP_USER = "conventions@soussmassa.ma"
 MAIL_ENABLED = "false"
+
+[userenv.development]
+MAIL_DEV_ENABLED = "false"
