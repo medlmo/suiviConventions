@@ -2,6 +2,22 @@ import type { conventionsTable, HistoriqueDocument } from "@workspace/db";
 
 type LigneConvention = typeof conventionsTable.$inferSelect;
 
+/** Attribue un numéro stable aux anciens avenants qui n'en avaient pas encore. */
+export function attribuerNumerosAvenants(documents: HistoriqueDocument[]): HistoriqueDocument[] {
+  let prochainNumero = documents.reduce((maximum, document) =>
+    document.type === "avenant" &&
+    Number.isSafeInteger(document.numeroAvenant) &&
+    (document.numeroAvenant ?? 0) > maximum
+      ? document.numeroAvenant!
+      : maximum, 0) + 1;
+
+  return documents.map(document => {
+    if (document.type !== "avenant") return document;
+    if (Number.isSafeInteger(document.numeroAvenant) && (document.numeroAvenant ?? 0) > 0) return document;
+    return { ...document, numeroAvenant: prochainNumero++ };
+  });
+}
+
 /** Les références anciennes restent consultables sans inventer une date d'ajout. */
 export function documentsConvention(
   ligne: Pick<LigneConvention, "documents" | "pv" | "documentConvention" | "datePvComite">,
@@ -30,5 +46,5 @@ export function documentsConvention(
       }
     }
   }
-  return documents;
+  return attribuerNumerosAvenants(documents);
 }

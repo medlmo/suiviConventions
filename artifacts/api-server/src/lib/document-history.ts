@@ -1,5 +1,5 @@
 import type { conventionsTable, HistoriqueDocument } from "@workspace/db";
-import { documentsConvention } from "./document-history-mapper";
+import { attribuerNumerosAvenants, documentsConvention } from "./document-history-mapper";
 import type { VerifiedDocument } from "./objectStorage";
 import { normaliserDatePv } from "./pv-date";
 
@@ -48,5 +48,5 @@ export async function preparerHistoriqueDocuments(
       ...(datePvComite ? { datePvComite } : {}),
     });
   }
-  return documents;
+  return attribuerNumerosAvenants(documents);
 }

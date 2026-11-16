@@ -31,6 +31,13 @@ export function DocumentHistoryField({
   const correspond = (type: string) => category === "pv" ? type === "pv" : type !== "pv";
   const enregistres = documents.filter(document => correspond(document.type));
   const brouillons = pending.filter(document => correspond(document.type));
+  const prochainNumeroAvenant = enregistres.reduce((maximum, document) =>
+    document.type === "avenant" ? Math.max(maximum, document.numeroAvenant ?? 0) : maximum, 0) + 1;
+  const numerosBrouillons = new Map<string, number>();
+  let numeroBrouillonSuivant = prochainNumeroAvenant;
+  for (const document of brouillons) {
+    if (document.type === "avenant") numerosBrouillons.set(document.objectPath, numeroBrouillonSuivant++);
+  }
   const [type, setType] = useState<"convention" | "avenant">(
     enregistres.some(document => document.type === "convention") ? "avenant" : "convention",
   );
@@ -46,7 +53,9 @@ export function DocumentHistoryField({
     {!enregistres.length && !brouillons.length && <p className="text-xs text-muted-foreground">Aucun document enregistré.</p>}
     <ul className="space-y-2">
       {[...enregistres].reverse().map(document => <li key={`${document.type}-${document.objectPath}`} className="rounded-md border p-3 text-sm space-y-1">
-        <div className="font-medium">{libelles[document.type]}</div>
+        <div className="font-medium">{document.type === "avenant"
+          ? `Avenant n° ${document.numeroAvenant ?? ""}`
+          : libelles[document.type]}</div>
         {conventionId != null && document.objectPath.startsWith("/objects/documents/") ? (
           <DocumentDownloadLink name={document.name} className="text-primary underline underline-offset-4 break-all"
             href={`${import.meta.env.BASE_URL}api/conventions/${conventionId}/documents/${category === "pv" ? "pv" : "documentConvention"}?objectPath=${encodeURIComponent(document.objectPath)}`}>
@@ -72,7 +81,9 @@ export function DocumentHistoryField({
         )}
       </li>)}
       {brouillons.map(document => <li key={document.objectPath} className="rounded-md border border-dashed p-3 text-sm">
-        <p className="font-medium">{libelles[document.type]} : {document.name}</p>
+        <p className="font-medium">{document.type === "avenant"
+          ? `Avenant n° ${numerosBrouillons.get(document.objectPath)} : ${document.name}`
+          : `${libelles[document.type]} : ${document.name}`}</p>
         {document.type === "pv" && (
           <p className="text-xs text-muted-foreground">
             Date du PV : {datePvAffichee(document.datePvComite) ?? "non renseignée"}

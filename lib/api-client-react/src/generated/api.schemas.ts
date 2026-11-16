@@ -203,6 +203,11 @@ export interface ConventionDocument {
   name: string;
   /** @nullable */
   addedAt: string | null;
+  /**
+     * Numéro d'affichage attribué à l'avenant dans la convention
+     * @minimum 1
+     */
+  numeroAvenant?: number;
   /** @nullable */
   datePvComite?: string | null;
 }

@@ -594,6 +594,7 @@ export const listConventionsResponseItemsItemAvancementPhysiqueHistoriqueItemTau
 
 
 
+
 export const ListConventionsResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.int(),
@@ -656,6 +657,7 @@ export const ListConventionsResponse = zod.object({
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
   "addedAt": zod.coerce.date().nullable(),
+  "numeroAvenant": zod.int().min(1).optional().describe('Numéro d\'affichage attribué à l\'avenant dans la convention'),
   "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
@@ -768,6 +770,7 @@ export const createConventionResponseAvancementPhysiqueHistoriqueItemTauxMax = 1
 
 
 
+
 export const CreateConventionResponse = zod.object({
   "id": zod.int(),
   "version": zod.int(),
@@ -829,6 +832,7 @@ export const CreateConventionResponse = zod.object({
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
   "addedAt": zod.coerce.date().nullable(),
+  "numeroAvenant": zod.int().min(1).optional().describe('Numéro d\'affichage attribué à l\'avenant dans la convention'),
   "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
@@ -958,6 +962,7 @@ export const listAlertesResponseAvancementPhysiqueHistoriqueItemTauxMax = 100;
 
 
 
+
 export const ListAlertesResponseItem = zod.object({
   "id": zod.int(),
   "version": zod.int(),
@@ -1019,6 +1024,7 @@ export const ListAlertesResponseItem = zod.object({
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
   "addedAt": zod.coerce.date().nullable(),
+  "numeroAvenant": zod.int().min(1).optional().describe('Numéro d\'affichage attribué à l\'avenant dans la convention'),
   "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
@@ -1090,6 +1096,7 @@ export const getAgendaResponseConventionsItemAvancementPhysiqueHistoriqueItemTau
 
 
 
+
 export const GetAgendaResponseItem = zod.object({
   "mois": zod.string().describe('Mois au format AAAA-MM'),
   "libelle": zod.string().describe('Libellé français du mois, ex. "octobre 2026"'),
@@ -1155,6 +1162,7 @@ export const GetAgendaResponseItem = zod.object({
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
   "addedAt": zod.coerce.date().nullable(),
+  "numeroAvenant": zod.int().min(1).optional().describe('Numéro d\'affichage attribué à l\'avenant dans la convention'),
   "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
@@ -1249,6 +1257,7 @@ export const getConventionResponseAvancementPhysiqueHistoriqueItemTauxMax = 100;
 
 
 
+
 export const GetConventionResponse = zod.object({
   "id": zod.int(),
   "version": zod.int(),
@@ -1310,6 +1319,7 @@ export const GetConventionResponse = zod.object({
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
   "addedAt": zod.coerce.date().nullable(),
+  "numeroAvenant": zod.int().min(1).optional().describe('Numéro d\'affichage attribué à l\'avenant dans la convention'),
   "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),
@@ -1489,6 +1499,7 @@ export const updateConventionResponseAvancementPhysiqueHistoriqueItemTauxMax = 1
 
 
 
+
 export const UpdateConventionResponse = zod.object({
   "id": zod.int(),
   "version": zod.int(),
@@ -1550,6 +1561,7 @@ export const UpdateConventionResponse = zod.object({
   "type": zod.enum(['convention', 'avenant', 'pv']),
   "name": zod.string(),
   "addedAt": zod.coerce.date().nullable(),
+  "numeroAvenant": zod.int().min(1).optional().describe('Numéro d\'affichage attribué à l\'avenant dans la convention'),
   "datePvComite": zod.coerce.date().nullish()
 })).optional(),
   "ficheTechnique": zod.string().nullish(),

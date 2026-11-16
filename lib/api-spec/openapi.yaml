@@ -929,6 +929,7 @@ components:
         type: { type: string, enum: [convention, avenant, pv] }
         name: { type: string }
         addedAt: { type: ["string", "null"], format: date-time }
+        numeroAvenant: { type: integer, minimum: 1, description: Numéro d'affichage attribué à l'avenant dans la convention }
         datePvComite: { type: ["string", "null"], format: date }
 
     ContributionAnnuelle:
