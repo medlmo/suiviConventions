@@ -748,12 +748,13 @@ export default function ConventionDetail() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {field.value && !["Propres", "FEC", "Contribution des partenaires", "Fonds internationaux"].includes(field.value) && (
+                          {field.value && !["Propres", "FEC", "Banque commerciale", "Contribution des partenaires", "Fonds internationaux"].includes(field.value) && (
                             <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
                           )}
                           <SelectItem value="non-renseigne">Non renseignée</SelectItem>
                           <SelectItem value="Propres">Propres</SelectItem>
                           <SelectItem value="FEC">FEC</SelectItem>
+                          <SelectItem value="Banque commerciale">Banque commerciale</SelectItem>
                           <SelectItem value="Contribution des partenaires">Contribution des partenaires</SelectItem>
                           <SelectItem value="Fonds internationaux">Fonds internationaux</SelectItem>
                         </SelectContent>
