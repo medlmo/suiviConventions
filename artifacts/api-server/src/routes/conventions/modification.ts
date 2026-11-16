@@ -5,7 +5,7 @@ import { UpdateConventionBody, UpdateConventionParams, UpdateConventionResponse 
 import { accessible, affectationsValides, peutEcrire } from "../../lib/convention-access";
 import { notifierChangementConvention } from "../../lib/notifications";
 import { colonnesConvention, versApi, versColonnes } from "../../lib/conventions-mapper";
-import { calculerEcheance } from "../../lib/echeances";
+import { appliquerColonnesDocumentsAjoutes, appliquerEcheanceModification } from "../../lib/convention-write-helpers";
 import { preparerHistoriqueDocuments } from "../../lib/document-history";
 import { erreurPartenairesFinanciers } from "../../lib/suivi-financier";
 import { creerConstatAvancement, natureAvecAvancement } from "../../lib/avancement-physique";
@@ -15,12 +15,8 @@ import { documentVerifie, snapshot, valide } from "./commun";
 import {
   contributionDepasseEnveloppe,
   ERREUR_CONTRIBUTION,
-  listeMoValide,
-  listeTerritoiresValide,
-  nomCommune,
-  nomProvinceOuPrefecture,
   normaliserCorps,
-  valeurMoValide,
+  referencesConventionValides,
 } from "./validation";
 
 const router: IRouter = Router();
@@ -94,19 +90,14 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     if (erreurFinanciere) return { status: 400 as const, error: erreurFinanciere };
     const anciennesProvincesPrefectures = current.provincesPrefectures ?? [];
     const anciennesCommunes = current.communes ?? [];
-    if (
-      !listeMoValide(parsed.data.maitriseOuvrage, reference, anciennesMo) ||
-      !listeMoValide(parsed.data.maitriseOuvrageDeleguee, reference, anciennesMoDeleguees) ||
-      !listeMoValide(parsed.data.partenaires, reference, anciensPartenaires) ||
-      !listeTerritoiresValide(
-        parsed.data.provincesPrefectures,
-        reference,
-        nomProvinceOuPrefecture,
-        anciennesProvincesPrefectures,
-      ) ||
-      !listeTerritoiresValide(parsed.data.communes, reference, nomCommune, anciennesCommunes) ||
-      !valeurMoValide(parsed.data.porteurProjet, reference, current.porteurProjet)
-    ) {
+    if (!referencesConventionValides(parsed.data, reference, {
+      maitriseOuvrage: anciennesMo,
+      maitriseOuvrageDeleguee: anciennesMoDeleguees,
+      partenaires: anciensPartenaires,
+      provincesPrefectures: anciennesProvincesPrefectures,
+      communes: anciennesCommunes,
+      porteurProjet: current.porteurProjet,
+    })) {
       return { status: 400 as const, error: "Le porteur, les maîtrises d'ouvrage, les partenaires et les territoires doivent appartenir au référentiel adapté." };
     }
 
@@ -114,10 +105,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     if (!documents) return { status: 400 as const, error: "Ajout ou retrait de document invalide. Seuls les documents de cette fiche peuvent être retirés et les nouveaux fichiers doivent être vérifiés." };
     valeurs.documents = documents;
     // Garder les anciens champs compatibles avec les exports et anciens clients.
-    for (const document of parsed.data.documentsAjoutes ?? []) {
-      if (document.type === "pv") valeurs.pv = document.objectPath;
-      if (document.type === "convention") valeurs.documentConvention = document.objectPath;
-    }
+    appliquerColonnesDocumentsAjoutes(valeurs, parsed.data.documentsAjoutes);
     // Ne pas ressusciter un document retiré via les anciennes colonnes scalaires.
     for (const [champ, type] of [["documentConvention", "convention"], ["pv", "pv"]] as const) {
       const cheminFinal = Object.hasOwn(valeurs, champ) ? valeurs[champ] : current[champ];
@@ -147,37 +135,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     ) {
       return { status: 403 as const };
     }
-    const valeurFinale = (champ: "nature" | "dateVisa" | "dernierComite" | "frequenceReunions") =>
-      Object.hasOwn(valeurs, champ) ? valeurs[champ] as string | null : current[champ];
-    const echeanceAvant = calculerEcheance(current);
-    const echeance = calculerEcheance({
-      nature: valeurFinale("nature"),
-      dateVisa: valeurFinale("dateVisa"),
-      dernierComite: valeurFinale("dernierComite"),
-      frequenceReunions: valeurFinale("frequenceReunions"),
-    });
-    const champsDeterminants = valeurFinale("dernierComite")
-      ? (["dernierComite", "frequenceReunions"] as const)
-      : (["dernierComite", "nature", "dateVisa"] as const);
-    const sourcesChangees = champsDeterminants
-      .some((champ) => Object.hasOwn(valeurs, champ) && valeurs[champ] !== current[champ]);
-    if (
-      echeance &&
-      (sourcesChangees || !current.prochaineEcheance || current.prochaineEcheance === echeance.date)
-    ) {
-      // Une ancienne date manuelle différente du calcul est conservée tant que
-      // ni la date de base, ni la fréquence, ni la nature n'ont changé.
-      valeurs.prochaineEcheance = echeance.date;
-    } else if (
-      echeanceAvant &&
-      current.prochaineEcheance === echeanceAvant.date &&
-      !Object.hasOwn(valeurs, "prochaineEcheance") &&
-      sourcesChangees
-    ) {
-      // Si l'ancien calcul n'est plus possible, ne pas laisser une ancienne
-      // échéance automatique passer pour une date saisie manuellement.
-      valeurs.prochaineEcheance = null;
-    }
+    appliquerEcheanceModification(current, valeurs);
     const [updated] = await tx.update(conventionsTable)
       .set({ ...valeurs, version: current.version + 1, updatedAt: new Date() })
       .where(and(

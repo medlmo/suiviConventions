@@ -164,3 +164,47 @@ export function valeurMoValide(
   const nom = valeur?.trim();
   return !nom || maitriseOuvrageConnue(reference, nom) || nom === historique;
 }
+
+export interface ValeursReferencesConvention {
+  maitriseOuvrage?: string[] | null;
+  maitriseOuvrageDeleguee?: string[] | null;
+  partenaires?: string[] | null;
+  provincesPrefectures?: string[] | null;
+  communes?: string[] | null;
+  porteurProjet?: string | null;
+}
+
+export interface HistoriqueReferencesConvention {
+  maitriseOuvrage?: string[];
+  maitriseOuvrageDeleguee?: string[];
+  partenaires?: string[];
+  provincesPrefectures?: string[];
+  communes?: string[];
+  porteurProjet?: string | null;
+}
+
+/** Applique les mêmes contrôles de référentiel à la création et à la modification. */
+export function referencesConventionValides(
+  valeurs: ValeursReferencesConvention,
+  reference: ReferenceData,
+  historique: HistoriqueReferencesConvention = {},
+): boolean {
+  return (
+    listeMoValide(valeurs.maitriseOuvrage, reference, historique.maitriseOuvrage) &&
+    listeMoValide(valeurs.maitriseOuvrageDeleguee, reference, historique.maitriseOuvrageDeleguee) &&
+    listeMoValide(valeurs.partenaires, reference, historique.partenaires) &&
+    listeTerritoiresValide(
+      valeurs.provincesPrefectures,
+      reference,
+      nomProvinceOuPrefecture,
+      historique.provincesPrefectures,
+    ) &&
+    listeTerritoiresValide(
+      valeurs.communes,
+      reference,
+      nomCommune,
+      historique.communes,
+    ) &&
+    valeurMoValide(valeurs.porteurProjet, reference, historique.porteurProjet)
+  );
+}

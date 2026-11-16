@@ -14,13 +14,10 @@ import {
   contributionDepasseEnveloppe,
   ERREUR_CONTRIBUTION,
   ERREUR_DOCUMENT,
-  listeMoValide,
-  listeTerritoiresValide,
-  nomCommune,
-  nomProvinceOuPrefecture,
   normaliserCorps,
-  valeurMoValide,
+  referencesConventionValides,
 } from "./validation";
+import { appliquerColonnesDocumentsAjoutes } from "../../lib/convention-write-helpers";
 
 const router: IRouter = Router();
 
@@ -61,10 +58,7 @@ router.post("/conventions", async (req, res): Promise<void> => {
     const reference = await chargerReferentielDepuis(tx);
     const valeurs = versColonnes(parsed.data);
     valeurs.documents = documents;
-    for (const document of parsed.data.documentsAjoutes ?? []) {
-      if (document.type === "pv") valeurs.pv = document.objectPath;
-      if (document.type === "convention") valeurs.documentConvention = document.objectPath;
-    }
+    appliquerColonnesDocumentsAjoutes(valeurs, parsed.data.documentsAjoutes);
     const echeance = calculerEcheance({
       nature: valeurs.nature as string | null | undefined,
       dateVisa: valeurs.dateVisa as string | null | undefined,
@@ -72,14 +66,7 @@ router.post("/conventions", async (req, res): Promise<void> => {
       frequenceReunions: valeurs.frequenceReunions as string | null | undefined,
     });
     if (echeance) valeurs.prochaineEcheance = echeance.date;
-    if (
-      !listeMoValide(parsed.data.maitriseOuvrage, reference) ||
-      !listeMoValide(parsed.data.maitriseOuvrageDeleguee, reference) ||
-      !listeMoValide(parsed.data.partenaires, reference) ||
-      !listeTerritoiresValide(parsed.data.provincesPrefectures, reference, nomProvinceOuPrefecture) ||
-      !listeTerritoiresValide(parsed.data.communes, reference, nomCommune) ||
-      !valeurMoValide(parsed.data.porteurProjet, reference)
-    ) {
+    if (!referencesConventionValides(parsed.data, reference)) {
       return { status: 400 as const, error: "Le porteur, les maîtrises d'ouvrage, les partenaires et les territoires doivent appartenir au référentiel adapté." };
     }
     if (typeof valeurs.nomConvention !== "string" || valeurs.nomConvention === "") {
