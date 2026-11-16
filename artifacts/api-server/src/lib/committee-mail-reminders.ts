@@ -183,7 +183,7 @@ export async function verifierRappelsMail(): Promise<void> {
   ) return;
   if (verificationEnCours) return verificationEnCours;
   if (Date.now() < prochaineVerification) return;
-  prochaineVerification = Date.now() + 15 * 60_000;
+  prochaineVerification = Date.now() + 60 * 60_000;
   verificationEnCours = envoyerRappelsComite()
     .then(() => undefined)
     .catch(() => {

@@ -65,7 +65,7 @@ périmètres. Le destinataire n'a donc pas besoin d'être connecté lui-même.
 La lecture d'une notification interne n'empêche jamais son rappel e-mail.
 
 Pour éviter un traitement complet à chaque actualisation, les vérifications
-sont espacées d'au moins 15 minutes par instance active. Ce délai est uniquement
+sont espacées d'au moins une heure par instance active. Ce délai est uniquement
 une protection contre les vérifications répétées, pas une planification.
 Les traitements simultanés partagent la même promesse et la requête attend la
 fin du passage SMTP ; une erreur SMTP ne bloque pas les notifications internes.
