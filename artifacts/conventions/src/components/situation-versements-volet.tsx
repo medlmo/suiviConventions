@@ -26,6 +26,8 @@ export type VersementApi = {
 
 export const VERSEMENTS_MAX_LIGNES = 301;
 export const PARTENAIRE_REGION = "Région Souss Massa";
+const nomPartenaireNormalise = (partenaire: string) =>
+  partenaire === "Région Souss-Massa" ? PARTENAIRE_REGION : partenaire;
 
 export function versBrouillonVersements(values?: VersementApi[] | null): VersementBrouillon[] {
   return [...(values ?? [])]
@@ -47,7 +49,7 @@ export function versBrouillonVersements(values?: VersementApi[] | null): Verseme
           : [];
       return {
         annee: v.annee,
-        partenaire: v.partenaire || PARTENAIRE_REGION,
+        partenaire: nomPartenaireNormalise(v.partenaire || PARTENAIRE_REGION),
         tranches,
       };
     });
@@ -152,25 +154,26 @@ export function SituationVersementsVolet({
   value, onChange, partenaires, contributionsPartenaires, contributionRegion, readOnly, erreurs,
 }: Props) {
   const [nouvelleAnnee, setNouvelleAnnee] = useState("");
-  const [nouveauPartenaire, setNouveauPartenaire] = useState("");
   const [erreurAnnee, setErreurAnnee] = useState("");
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const lignes = [...value].sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr"));
-  const partenairesDisponibles = [PARTENAIRE_REGION, ...partenaires]
-    .filter((p, i, tous) => tous.indexOf(p) === i);
+  const anneeSelectionnee = /^\d{4}$/.test(nouvelleAnnee.trim()) ? Number(nouvelleAnnee.trim()) : null;
+  const partenairesDisponibles = [PARTENAIRE_REGION, ...partenaires.map(nomPartenaireNormalise)]
+    .filter((p, i, tous) => tous.indexOf(p) === i)
+    .filter((p) => anneeSelectionnee === null || !value.some((v) =>
+      v.annee === anneeSelectionnee && nomPartenaireNormalise(v.partenaire) === p));
 
-  const ajouter = () => {
+  const ajouter = (partenaire: string) => {
     const s = nouvelleAnnee.trim();
     const n = Number(s);
     if (!/^\d{4}$/.test(s) || n < 1900 || n > 2200) return setErreurAnnee("Année entière entre 1900 et 2200.");
-    if (!nouveauPartenaire) return setErreurAnnee("Choisissez un partenaire.");
-    if (value.some((v) => v.annee === n && v.partenaire === nouveauPartenaire)) {
+    if (value.some((v) => v.annee === n && nomPartenaireNormalise(v.partenaire) === partenaire)) {
       return setErreurAnnee("Une ligne existe déjà pour ce partenaire et cette année.");
     }
     if (value.length >= VERSEMENTS_MAX_LIGNES) return setErreurAnnee(`${VERSEMENTS_MAX_LIGNES} lignes au maximum.`);
-    onChange([...value, { annee: n, partenaire: nouveauPartenaire, tranches: [] }]
+    onChange([...value, { annee: n, partenaire, tranches: [] }]
       .sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr")));
-    setNouvelleAnnee(""); setErreurAnnee("");
+    setErreurAnnee("");
   };
 
   const cleLigne = (v: VersementBrouillon) => `${v.annee}\u0000${v.partenaire}`;
@@ -213,21 +216,19 @@ export function SituationVersementsVolet({
           <div className="grid grid-cols-2 items-end gap-3 max-[380px]:grid-cols-1 sm:grid-cols-[minmax(14rem,auto)_minmax(16rem,1fr)]">
             <div className="space-y-1">
               <label htmlFor="nouvelle-annee-versement" className="block h-5 whitespace-nowrap text-sm font-medium leading-5">Ajouter une année</label>
-              <div className="flex gap-2">
-                <Input id="nouvelle-annee-versement" data-testid="input-nouvelle-annee-versement" type="text" inputMode="numeric" maxLength={4}
-                  className="h-10 w-20 min-w-0 sm:w-28" placeholder="2025" value={nouvelleAnnee} aria-invalid={!!erreurAnnee}
-                  onChange={(e) => { setNouvelleAnnee(e.target.value); setErreurAnnee(""); }}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); ajouter(); } }} />
-                <Button type="button" variant="outline" className="h-10 min-h-10 shrink-0 px-2 sm:px-4" data-testid="button-ajouter-annee-versement" onClick={ajouter}>
-                  <Plus className="w-4 h-4 mr-1" />Ajouter
-                </Button>
-              </div>
+              <Input id="nouvelle-annee-versement" data-testid="input-nouvelle-annee-versement" type="text" inputMode="numeric" maxLength={4}
+                className="h-9 w-20 min-w-0 sm:w-28" placeholder="2025" value={nouvelleAnnee} aria-invalid={!!erreurAnnee}
+                onChange={(e) => { setNouvelleAnnee(e.target.value); setErreurAnnee(""); }} />
             </div>
             <div className="space-y-1">
               <span className="block h-5 truncate whitespace-nowrap text-sm font-medium leading-5">Ajouter un partenaire</span>
-              <Select value={nouveauPartenaire} onValueChange={(p) => { setNouveauPartenaire(p); setErreurAnnee(""); }}>
+              <Select value="" onValueChange={ajouter} disabled={partenairesDisponibles.length === 0}>
                 <SelectTrigger className="h-9 min-h-9 w-full sm:w-64" data-testid="select-nouveau-partenaire-versement">
-                  <SelectValue placeholder="Choisir un partenaire" />
+                  <SelectValue placeholder={!nouvelleAnnee.trim()
+                    ? "Saisir d’abord une année"
+                    : partenairesDisponibles.length === 0
+                      ? "Tous ajoutés pour cette année"
+                      : "Choisir un partenaire"} />
                 </SelectTrigger>
                 <SelectContent>
                   {partenairesDisponibles.map((p) => <SelectItem key={p} value={p}><span dir="auto">{p}</span></SelectItem>)}
