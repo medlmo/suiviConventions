@@ -158,8 +158,9 @@ export function SituationVersementsVolet({
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const lignes = [...value].sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr"));
   const anneeSelectionnee = /^\d{4}$/.test(nouvelleAnnee.trim()) ? Number(nouvelleAnnee.trim()) : null;
-  const partenairesDisponibles = [PARTENAIRE_REGION, ...partenaires.map(nomPartenaireNormalise)]
-    .filter((p, i, tous) => tous.indexOf(p) === i)
+  const partenairesEligibles = [PARTENAIRE_REGION, ...partenaires.map(nomPartenaireNormalise)]
+    .filter((p, i, tous) => tous.indexOf(p) === i);
+  const partenairesDisponibles = partenairesEligibles
     .filter((p) => anneeSelectionnee === null || !value.some((v) =>
       v.annee === anneeSelectionnee && nomPartenaireNormalise(v.partenaire) === p));
 
@@ -226,7 +227,7 @@ export function SituationVersementsVolet({
                 <SelectTrigger className="h-9 min-h-9 w-full sm:w-64" data-testid="select-nouveau-partenaire-versement">
                   <SelectValue placeholder={!nouvelleAnnee.trim()
                     ? "Saisir d’abord une année"
-                    : partenairesDisponibles.length === 0
+                        : partenairesDisponibles.length === 0
                       ? "Tous ajoutés pour cette année"
                       : "Choisir un partenaire"} />
                 </SelectTrigger>
@@ -280,9 +281,10 @@ export function SituationVersementsVolet({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {!partenairesDisponibles.includes(v.partenaire) && <SelectItem value={v.partenaire}><span dir="auto">{v.partenaire} (historique)</span></SelectItem>}
-                              {partenairesDisponibles
-                                .filter((p) => p === v.partenaire || !value.some((autre) => autre.annee === v.annee && autre.partenaire === p))
+                              {!partenairesEligibles.includes(nomPartenaireNormalise(v.partenaire)) && <SelectItem value={v.partenaire}><span dir="auto">{v.partenaire} (historique)</span></SelectItem>}
+                              {partenairesEligibles
+                                .filter((p) => p === nomPartenaireNormalise(v.partenaire) || !value.some((autre) =>
+                                  autre.annee === v.annee && nomPartenaireNormalise(autre.partenaire) === p))
                                 .map((p) => <SelectItem key={p} value={p}><span dir="auto">{p}</span></SelectItem>)}
                             </SelectContent>
                           </Select>
