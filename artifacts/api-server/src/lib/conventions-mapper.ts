@@ -35,13 +35,23 @@ function versementsVersApi(lignes: SituationVersementAnnuelle[]) {
         dateVersement: tranche.dateVersement,
       }));
       const montantVerseCentimes = tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0);
-      const montantVerse = montantVerseCentimes / 100;
-      return { annee: ligne.annee, montantProgramme: ligne.montantProgramme, montantVerse, tranches };
+      const montantVerse = tranches.length > 0 ? montantVerseCentimes / 100 : ligne.montantVerse;
+      return {
+        annee: ligne.annee,
+        partenaire: "partenaire" in ligne ? ligne.partenaire : "Région Souss-Massa",
+        montantVerse,
+        tranches,
+      };
     }
     const tranches = ligne.montantVerse > 0 && ligne.dateDernierVersement
       ? [{ montant: ligne.montantVerse, dateVersement: ligne.dateDernierVersement }]
       : [];
-    return { annee: ligne.annee, montantProgramme: ligne.montantProgramme, montantVerse: ligne.montantVerse, tranches };
+    return {
+      annee: ligne.annee,
+      partenaire: "Région Souss-Massa",
+      montantVerse: ligne.montantVerse,
+      tranches,
+    };
   });
 }
 
@@ -153,7 +163,7 @@ type ChampsEcrivables = Partial<
   suiviFinancier?: SuiviFinancier;
   situationVersements?: {
     annee: number;
-    montantProgramme: number;
+    partenaire: string;
     montantVerse: number;
     tranches: { montant: number; dateVersement: string | Date }[];
   }[];
@@ -187,13 +197,13 @@ export function versColonnes(corps: ChampsEcrivables): Record<string, unknown> {
   if (corps.situationVersements !== undefined) {
     valeurs.situationVersements = corps.situationVersements.map(ligne => ({
       annee: ligne.annee,
-      montantProgramme: ligne.montantProgramme,
+      partenaire: ligne.partenaire,
       montantVerse: ligne.tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0) / 100,
       tranches: ligne.tranches.map((tranche) => ({
         montant: tranche.montant,
         dateVersement: versJourCalendaire(tranche.dateVersement)!,
       })),
-    })).sort((a, b) => a.annee - b.annee);
+    })).sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr"));
   }
 
   for (const champ of CHAMPS_TEXTE) {

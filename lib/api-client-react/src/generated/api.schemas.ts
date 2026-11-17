@@ -262,19 +262,18 @@ export interface SituationVersementAnnuelle {
      */
   annee: number;
   /**
-     * Montant annuel programmé par la Région Souss-Massa en MAD
-     * @minimum 0
-     * @maximum 9999999999999.99
+     * Partenaire ayant effectué les versements
+     * @minLength 1
      */
-  montantProgramme: number;
+  partenaire: string;
   /**
-     * Montant annuel effectivement versé par la Région Souss-Massa en MAD
+     * Montant annuel effectivement versé par ce partenaire en MAD
      * @minimum 0
      * @maximum 9999999999999.99
      */
   montantVerse: number;
   /**
-     * Tranches effectivement versées pendant l'année. Le total de leurs montants doit égaler montantVerse.
+     * Tranches effectivement versées par ce partenaire pendant l'année. Le total de leurs montants doit égaler montantVerse.
      * @maxItems 100
      */
   tranches: TrancheVersement[];
@@ -287,11 +286,10 @@ export interface SituationVersementAnnuelleInput {
      */
   annee: number;
   /**
-     * Montant annuel programmé par la Région Souss-Massa en MAD
-     * @minimum 0
-     * @maximum 9999999999999.99
+     * Partenaire ayant effectué les versements
+     * @minLength 1
      */
-  montantProgramme: number;
+  partenaire: string;
   /**
      * Total annuel des tranches
      * @minimum 0
@@ -299,7 +297,7 @@ export interface SituationVersementAnnuelleInput {
      */
   montantVerse: number;
   /**
-     * Tranches effectivement versées pendant l'année.
+     * Tranches effectivement versées par ce partenaire pendant l'année.
      * @maxItems 100
      */
   tranches: TrancheVersement[];
@@ -385,7 +383,7 @@ export interface Convention {
   partenaires: string[];
   suiviFinancier?: SuiviFinancier;
   /**
-     * Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.
+     * Situation annuelle des versements par partenaire. Le taux est calculé en rapportant les versements à la contribution de ce partenaire pour la même année ; pour la Région Souss-Massa, la base est la contribution régionale de la convention.
      * @maxItems 301
      */
   situationVersements?: SituationVersementAnnuelle[];
@@ -530,7 +528,7 @@ export const ConventionUpdateTypeSession = {
 export interface ConventionUpdate {
   suiviFinancier?: SuiviFinancier;
   /**
-     * Remplace la situation annuelle de la Région. Une liste vide efface les lignes, une clé absente les préserve.
+     * Remplace la situation annuelle des versements par partenaire. Une liste vide efface les lignes, une clé absente les préserve.
      * @maxItems 301
      */
   situationVersements?: SituationVersementAnnuelleInput[];

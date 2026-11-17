@@ -51,7 +51,7 @@ export interface Convention {
   partenaires: string[];
   suiviFinancier?: SuiviFinancier;
   /**
-     * Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.
+     * Situation annuelle des versements par partenaire. Le taux est calculé en rapportant les versements à la contribution de ce partenaire pour la même année ; pour la Région Souss-Massa, la base est la contribution régionale de la convention.
      * @maxItems 301
      */
   situationVersements?: SituationVersementAnnuelle[];

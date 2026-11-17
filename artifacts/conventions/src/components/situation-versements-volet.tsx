@@ -12,22 +12,23 @@ import { dateCalendaireValide } from "@/components/avancement-physique-volet";
 
 export type VersementBrouillon = {
   annee: number;
-  montantProgramme: string;
+  partenaire: string;
   tranches: { montant: string; dateVersement: string }[];
 };
 
 export type VersementApi = {
   annee: number;
-  montantProgramme: number;
+  partenaire: string;
   montantVerse: number;
   tranches: { montant: number; dateVersement: string | Date }[];
 };
 
 export const VERSEMENTS_MAX_LIGNES = 301;
+export const PARTENAIRE_REGION = "Région Souss-Massa";
 
 export function versBrouillonVersements(values?: VersementApi[] | null): VersementBrouillon[] {
   return [...(values ?? [])]
-    .sort((a, b) => a.annee - b.annee)
+    .sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr"))
     .map((v) => {
       const historique = v as typeof v & { dateDernierVersement?: string | Date | null };
       const tranches = "tranches" in v && Array.isArray(v.tranches)
@@ -45,7 +46,7 @@ export function versBrouillonVersements(values?: VersementApi[] | null): Verseme
           : [];
       return {
         annee: v.annee,
-        montantProgramme: String(v.montantProgramme),
+        partenaire: v.partenaire || PARTENAIRE_REGION,
         tranches,
       };
     });
@@ -53,7 +54,7 @@ export function versBrouillonVersements(values?: VersementApi[] | null): Verseme
 
 /** À n'appeler qu'après validation par erreursVersements. */
 export function versApiVersements(draft: VersementBrouillon[]): VersementApi[] {
-  return [...draft].sort((a, b) => a.annee - b.annee).map((v) => {
+  return [...draft].sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr")).map((v) => {
     const tranches = v.tranches.map((t) => ({
       montant: parseMontant(t.montant) ?? 0,
       dateVersement: t.dateVersement,
@@ -61,7 +62,7 @@ export function versApiVersements(draft: VersementBrouillon[]): VersementApi[] {
     const verse = tranches.reduce((total, t) => total + t.montant, 0);
     return {
       annee: v.annee,
-      montantProgramme: parseMontant(v.montantProgramme) ?? 0,
+      partenaire: v.partenaire,
       montantVerse: verse,
       tranches,
     };
@@ -70,15 +71,15 @@ export function versApiVersements(draft: VersementBrouillon[]): VersementApi[] {
 
 export function erreursVersements(draft: VersementBrouillon[]): string[] {
   const erreurs: string[] = [];
-  if (draft.length > VERSEMENTS_MAX_LIGNES) erreurs.push(`Situation des versements : ${VERSEMENTS_MAX_LIGNES} années au maximum.`);
-  const vues = new Set<number>();
+  if (draft.length > VERSEMENTS_MAX_LIGNES) erreurs.push(`Situation des versements : ${VERSEMENTS_MAX_LIGNES} lignes au maximum.`);
+  const vues = new Set<string>();
   for (const v of draft) {
     const a = v.annee;
     if (!Number.isInteger(a) || a < 1900 || a > 2200) erreurs.push(`Versements : année ${a} hors de l'intervalle 1900–2200.`);
-    if (vues.has(a)) erreurs.push(`Versements : l'année ${a} figure plusieurs fois.`);
-    vues.add(a);
-    if (v.montantProgramme.trim() === "") erreurs.push(`Versements ${a} : montant programmé obligatoire (saisissez 0 si nul).`);
-    else if (parseMontant(v.montantProgramme) === null) erreurs.push(`Versements ${a} : montant programmé invalide (0 à 9 999 999 999 999,99 MAD, 2 décimales max).`);
+    if (!v.partenaire.trim()) erreurs.push(`Versements ${a} : choisissez un partenaire.`);
+    const cle = `${a}\u0000${v.partenaire}`;
+    if (vues.has(cle)) erreurs.push(`Versements : une ligne existe déjà pour ${v.partenaire} en ${a}.`);
+    vues.add(cle);
     if (v.tranches.length > 100) erreurs.push(`Versements ${a} : 100 tranches au maximum.`);
     v.tranches.forEach((t, index) => {
       const tranche = index + 1;
@@ -108,12 +109,26 @@ function totalVerse(v: VersementBrouillon): number {
   return centimes / 100;
 }
 
-function calculTaux(v: VersementBrouillon): Taux {
-  const p = parseMontant(v.montantProgramme);
-  if (p === null) return { indisponible: "Montant programmé non renseigné ou invalide." };
-  if (p === 0) return { indisponible: "Montant programmé nul : division par zéro impossible." };
+function contributionPartenaire(
+  ligne: VersementBrouillon,
+  contributionsPartenaires: { partenaire: string; montants: Record<string, string> }[],
+  contributionRegion?: number | string | null,
+): number | null {
+  if (ligne.partenaire === PARTENAIRE_REGION) {
+    if (typeof contributionRegion === "number") return Number.isFinite(contributionRegion) ? contributionRegion : null;
+    return typeof contributionRegion === "string" ? parseMontant(contributionRegion) : null;
+  }
+  const montant = contributionsPartenaires
+    .find((p) => p.partenaire === ligne.partenaire)
+    ?.montants[String(ligne.annee)];
+  return typeof montant === "string" ? parseMontant(montant) : null;
+}
+
+function calculTaux(total: number, contribution: number | null): Taux {
+  if (contribution === null) return { indisponible: "Contribution du partenaire non renseignée pour cette année." };
+  if (contribution === 0) return { indisponible: "Contribution du partenaire nulle : division par zéro impossible." };
   // Calcul en centimes pour éviter les erreurs d'arrondi flottant.
-  return { valeur: (Math.round(totalVerse(v) * 100) / Math.round(p * 100)) * 100 };
+  return { valeur: (Math.round(total * 100) / Math.round(contribution * 100)) * 100 };
 }
 
 function CelluleMontant({ brut }: { brut: string }) {
@@ -125,42 +140,56 @@ function CelluleMontant({ brut }: { brut: string }) {
 type Props = {
   value: VersementBrouillon[];
   onChange: (value: VersementBrouillon[]) => void;
+  partenaires: string[];
+  contributionsPartenaires: { partenaire: string; montants: Record<string, string> }[];
+  contributionRegion?: number | string | null;
   readOnly: boolean;
   erreurs: string[];
 };
 
-export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }: Props) {
+export function SituationVersementsVolet({
+  value, onChange, partenaires, contributionsPartenaires, contributionRegion, readOnly, erreurs,
+}: Props) {
   const [nouvelleAnnee, setNouvelleAnnee] = useState("");
+  const [nouveauPartenaire, setNouveauPartenaire] = useState("");
   const [erreurAnnee, setErreurAnnee] = useState("");
-  const [confirmation, setConfirmation] = useState<number | null>(null);
-  const lignes = [...value].sort((a, b) => a.annee - b.annee);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+  const lignes = [...value].sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr"));
+  const partenairesDisponibles = [PARTENAIRE_REGION, ...partenaires]
+    .filter((p, i, tous) => tous.indexOf(p) === i);
 
   const ajouter = () => {
     const s = nouvelleAnnee.trim();
     const n = Number(s);
     if (!/^\d{4}$/.test(s) || n < 1900 || n > 2200) return setErreurAnnee("Année entière entre 1900 et 2200.");
-    if (value.some((v) => v.annee === n)) return setErreurAnnee("Cette année existe déjà.");
-    if (value.length >= VERSEMENTS_MAX_LIGNES) return setErreurAnnee(`${VERSEMENTS_MAX_LIGNES} années au maximum.`);
-    onChange([...value, { annee: n, montantProgramme: "", tranches: [] }].sort((a, b) => a.annee - b.annee));
+    if (!nouveauPartenaire) return setErreurAnnee("Choisissez un partenaire.");
+    if (value.some((v) => v.annee === n && v.partenaire === nouveauPartenaire)) {
+      return setErreurAnnee("Une ligne existe déjà pour ce partenaire et cette année.");
+    }
+    if (value.length >= VERSEMENTS_MAX_LIGNES) return setErreurAnnee(`${VERSEMENTS_MAX_LIGNES} lignes au maximum.`);
+    onChange([...value, { annee: n, partenaire: nouveauPartenaire, tranches: [] }]
+      .sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr")));
     setNouvelleAnnee(""); setErreurAnnee("");
   };
 
-  const retirerDirect = (annee: number) => onChange(value.filter((v) => v.annee !== annee));
+  const cleLigne = (v: VersementBrouillon) => `${v.annee}\u0000${v.partenaire}`;
+  const retirerDirect = (cle: string) => onChange(value.filter((v) => cleLigne(v) !== cle));
   const retirer = (v: VersementBrouillon) => {
-    const saisi = v.montantProgramme.trim() !== "" || v.tranches.some((t) => t.montant.trim() !== "" || t.dateVersement.trim() !== "");
-    if (saisi) setConfirmation(v.annee); else retirerDirect(v.annee);
+    const cle = cleLigne(v);
+    const saisi = v.tranches.some((t) => t.montant.trim() !== "" || t.dateVersement.trim() !== "");
+    if (saisi) setConfirmation(cle); else retirerDirect(cle);
   };
 
-  const maj = (annee: number, patch: Partial<VersementBrouillon>) =>
-    onChange(value.map((v) => (v.annee === annee ? { ...v, ...patch } : v)));
-  const ajouterTranche = (annee: number) =>
-    onChange(value.map((v) => v.annee === annee ? { ...v, tranches: [...v.tranches, { montant: "", dateVersement: "" }] } : v));
-  const majTranche = (annee: number, index: number, patch: Partial<VersementBrouillon["tranches"][number]>) =>
-    onChange(value.map((v) => v.annee === annee
+  const maj = (cle: string, patch: Partial<VersementBrouillon>) =>
+    onChange(value.map((v) => (cleLigne(v) === cle ? { ...v, ...patch } : v)));
+  const ajouterTranche = (cle: string) =>
+    onChange(value.map((v) => cleLigne(v) === cle ? { ...v, tranches: [...v.tranches, { montant: "", dateVersement: "" }] } : v));
+  const majTranche = (cle: string, index: number, patch: Partial<VersementBrouillon["tranches"][number]>) =>
+    onChange(value.map((v) => cleLigne(v) === cle
       ? { ...v, tranches: v.tranches.map((t, i) => i === index ? { ...t, ...patch } : t) }
       : v));
-  const retirerTranche = (annee: number, index: number) =>
-    onChange(value.map((v) => v.annee === annee
+  const retirerTranche = (cle: string, index: number) =>
+    onChange(value.map((v) => cleLigne(v) === cle
       ? { ...v, tranches: v.tranches.filter((_, i) => i !== index) }
       : v));
 
@@ -180,17 +209,26 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
         )}
 
         {!readOnly && (
-          <div className="space-y-1">
-            <label htmlFor="nouvelle-annee-versement" className="text-sm font-medium">Ajouter une année</label>
-            <div className="flex gap-2">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <label htmlFor="nouvelle-annee-versement" className="text-sm font-medium">Année du versement</label>
               <Input id="nouvelle-annee-versement" data-testid="input-nouvelle-annee-versement" inputMode="numeric" maxLength={4}
                 className="w-28" placeholder="2025" value={nouvelleAnnee} aria-invalid={!!erreurAnnee}
                 onChange={(e) => { setNouvelleAnnee(e.target.value); setErreurAnnee(""); }}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); ajouter(); } }} />
-              <Button type="button" variant="outline" data-testid="button-ajouter-annee-versement" onClick={ajouter}>
-                <Plus className="w-4 h-4 mr-1" />Année
-              </Button>
             </div>
+            <div className="space-y-1">
+              <label htmlFor="nouveau-partenaire-versement" className="text-sm font-medium">Partenaire</label>
+              <select id="nouveau-partenaire-versement" data-testid="select-nouveau-partenaire-versement"
+                className="h-10 w-64 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
+                value={nouveauPartenaire} onChange={(e) => { setNouveauPartenaire(e.target.value); setErreurAnnee(""); }}>
+                <option value="">Choisir un partenaire</option>
+                {partenairesDisponibles.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+            <Button type="button" variant="outline" data-testid="button-ajouter-annee-versement" onClick={ajouter}>
+              <Plus className="w-4 h-4 mr-1" />Ajouter
+            </Button>
             {erreurAnnee && <p className="text-xs text-destructive" data-testid="text-erreur-annee-versement">{erreurAnnee}</p>}
           </div>
         )}
@@ -200,8 +238,8 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
             <p className="font-medium text-foreground">Aucune situation des versements renseignée.</p>
             <p className="mt-1">
               {readOnly
-                ? "Les montants programmés et versés par la Région n'ont pas encore été saisis pour cette convention."
-                : "Ajoutez une année pour saisir le montant programmé et les tranches de versement de la Région."}
+                ? "Aucun versement de partenaire n'a encore été renseigné pour cette convention."
+                : "Ajoutez une année et un partenaire, puis renseignez les tranches effectivement versées."}
             </p>
           </div>
         ) : (
@@ -210,7 +248,8 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
               <thead className="bg-muted/40">
                 <tr>
                   <th className="text-start font-semibold px-3 py-2 border-b border-border w-20">Année</th>
-                  <th className="text-end font-semibold px-3 py-2 border-b border-s border-border min-w-[170px]">Total programmé (MAD)</th>
+                  <th className="text-start font-semibold px-3 py-2 border-b border-s border-border min-w-[200px]">Partenaire</th>
+                  <th className="text-end font-semibold px-3 py-2 border-b border-s border-border min-w-[180px]">Contribution du partenaire (MAD)</th>
                   <th className="text-start font-semibold px-3 py-2 border-b border-s border-border min-w-[300px]">Tranches de versement</th>
                   <th className="text-end font-semibold px-3 py-2 border-b border-s border-border min-w-[150px]">Total versé (MAD)</th>
                   <th className="text-end font-semibold px-3 py-2 border-b border-s border-border min-w-[140px] bg-accent/60">Taux de versement</th>
@@ -219,20 +258,30 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
               </thead>
               <tbody>
                 {lignes.map((v) => {
-                  const taux = calculTaux(v);
-                  const progInv = v.montantProgramme.trim() !== "" && parseMontant(v.montantProgramme) === null;
                   const verse = totalVerse(v);
+                  const contribution = contributionPartenaire(v, contributionsPartenaires, contributionRegion);
+                  const taux = calculTaux(verse, contribution);
+                  const cle = cleLigne(v);
                   const ko = "border-destructive focus-visible:ring-destructive";
                   return (
-                    <tr key={v.annee} className="hover:bg-muted/20" data-testid={`row-versement-${v.annee}`}>
+                    <tr key={cle} className="hover:bg-muted/20" data-testid={`row-versement-${v.annee}-${encodeURIComponent(v.partenaire)}`}>
                       <td className="px-3 py-2 border-b border-border font-semibold tabular-nums align-top">{v.annee}</td>
-                      <td className="px-3 py-2 border-b border-s border-border text-end tabular-nums align-top">
-                        {readOnly ? <span data-testid={`text-programme-${v.annee}`}><CelluleMontant brut={v.montantProgramme} /></span> : (
-                          <Input value={v.montantProgramme} inputMode="decimal" placeholder="Obligatoire" aria-invalid={progInv}
-                            aria-label={`Montant programmé ${v.annee} (MAD)`} data-testid={`input-programme-${v.annee}`}
-                            className={`text-end tabular-nums ${progInv ? ko : ""}`}
-                            onChange={(e) => maj(v.annee, { montantProgramme: e.target.value })} />
+                      <td className="px-3 py-2 border-b border-s border-border align-top">
+                        {readOnly ? <span dir="auto">{v.partenaire}</span> : (
+                          <select aria-label={`Partenaire des versements en ${v.annee}`} data-testid={`select-partenaire-versement-${v.annee}-${encodeURIComponent(v.partenaire)}`}
+                            className="h-10 w-full min-w-[180px] rounded-md border border-input bg-background px-3 text-sm shadow-sm"
+                            value={v.partenaire} onChange={(e) => maj(cle, { partenaire: e.target.value })}>
+                            {!partenairesDisponibles.includes(v.partenaire) && <option value={v.partenaire}>{v.partenaire} (historique)</option>}
+                            {partenairesDisponibles
+                              .filter((p) => p === v.partenaire || !value.some((autre) => autre.annee === v.annee && autre.partenaire === p))
+                              .map((p) => <option key={p} value={p}>{p}</option>)}
+                          </select>
                         )}
+                      </td>
+                      <td className="px-3 py-2 border-b border-s border-border text-end tabular-nums align-top">
+                        {contribution === null
+                          ? <span className="text-muted-foreground" title="Renseignez la contribution dans le Montage financier.">—</span>
+                          : <span data-testid={`text-contribution-versement-${v.annee}-${encodeURIComponent(v.partenaire)}`}>{fmt.format(contribution)}</span>}
                       </td>
                       <td className="px-3 py-2 border-b border-s border-border align-top">
                         <div className="space-y-2">
@@ -243,7 +292,7 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
                             const invalideMontant = trancheMontant === null || trancheMontant <= 0;
                             const invalideDate = !date || !dateCalendaireValide(date) || Number(date.slice(0, 4)) !== v.annee;
                             return (
-                              <div key={index} className="flex flex-wrap items-center gap-2" data-testid={`row-tranche-${v.annee}-${index + 1}`}>
+                              <div key={index} className="flex flex-wrap items-center gap-2" data-testid={`row-tranche-${v.annee}-${encodeURIComponent(v.partenaire)}-${index + 1}`}>
                                 {readOnly ? (
                                   <>
                                     <span className="tabular-nums">{date ? fmtDate(date) : "—"}</span>
@@ -254,36 +303,36 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
                                   <>
                                     <Input type="date" value={tranche.dateVersement}
                                       aria-label={`Date de versement ${v.annee}, tranche ${index + 1}`}
-                                      data-testid={`input-date-versement-${v.annee}-${index + 1}`}
+                                      data-testid={`input-date-versement-${v.annee}-${encodeURIComponent(v.partenaire)}-${index + 1}`}
                                       aria-invalid={invalideDate} className={`w-40 ${invalideDate && date ? ko : ""}`}
-                                      onChange={(e) => majTranche(v.annee, index, { dateVersement: e.target.value })} />
+                                      onChange={(e) => majTranche(cle, index, { dateVersement: e.target.value })} />
                                     <Input value={tranche.montant} inputMode="decimal" placeholder="Montant (MAD)"
                                       aria-label={`Montant de la tranche ${index + 1} en ${v.annee}`}
-                                      data-testid={`input-montant-tranche-${v.annee}-${index + 1}`}
+                                      data-testid={`input-montant-tranche-${v.annee}-${encodeURIComponent(v.partenaire)}-${index + 1}`}
                                       aria-invalid={invalideMontant} className={`w-36 text-end tabular-nums ${invalideMontant && tranche.montant ? ko : ""}`}
-                                      onChange={(e) => majTranche(v.annee, index, { montant: e.target.value })} />
+                                      onChange={(e) => majTranche(cle, index, { montant: e.target.value })} />
                                     <Button type="button" variant="ghost" size="icon"
                                       aria-label={`Retirer la tranche ${index + 1} de ${v.annee}`}
-                                      data-testid={`button-retirer-tranche-${v.annee}-${index + 1}`}
+                                      data-testid={`button-retirer-tranche-${v.annee}-${encodeURIComponent(v.partenaire)}-${index + 1}`}
                                       className="text-muted-foreground hover:text-destructive"
-                                      onClick={() => retirerTranche(v.annee, index)}><Trash2 className="w-4 h-4" /></Button>
+                                      onClick={() => retirerTranche(cle, index)}><Trash2 className="w-4 h-4" /></Button>
                                   </>
                                 )}
                               </div>
                             );
                           })}
                           {!readOnly && (
-                            <Button type="button" variant="outline" size="sm" data-testid={`button-ajouter-tranche-${v.annee}`}
-                              disabled={v.tranches.length >= 100} onClick={() => ajouterTranche(v.annee)}>
+                            <Button type="button" variant="outline" size="sm" data-testid={`button-ajouter-tranche-${v.annee}-${encodeURIComponent(v.partenaire)}`}
+                              disabled={v.tranches.length >= 100} onClick={() => ajouterTranche(cle)}>
                               <Plus className="w-4 h-4 me-1" />Ajouter une tranche
                             </Button>
                           )}
                         </div>
                       </td>
                       <td className="px-3 py-2 border-b border-s border-border text-end tabular-nums align-top">
-                        <span data-testid={`text-verse-${v.annee}`}>{fmt.format(verse)}</span>
+                        <span data-testid={`text-verse-${v.annee}-${encodeURIComponent(v.partenaire)}`}>{fmt.format(verse)}</span>
                       </td>
-                      <td className="px-3 py-2 border-b border-s border-border text-end tabular-nums bg-accent/30 align-top" data-testid={`text-taux-versement-${v.annee}`}>
+                      <td className="px-3 py-2 border-b border-s border-border text-end tabular-nums bg-accent/30 align-top" data-testid={`text-taux-versement-${v.annee}-${encodeURIComponent(v.partenaire)}`}>
                         {"valeur" in taux ? (
                           <div className="space-y-0.5">
                             <span className={`font-semibold ${taux.valeur > 100 ? "text-destructive" : "text-primary"}`}>
@@ -291,7 +340,7 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
                             </span>
                             {taux.valeur > 100 && (
                               <p className="flex items-center justify-end gap-1 text-xs text-destructive whitespace-nowrap">
-                                <AlertTriangle className="w-3.5 h-3.5" />Versé supérieur au programmé
+                                <AlertTriangle className="w-3.5 h-3.5" />Versé supérieur à la contribution
                               </p>
                             )}
                           </div>
@@ -303,8 +352,8 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
                       </td>
                       {!readOnly && (
                         <td className="px-1 py-2 border-b border-border align-top">
-                          <Button type="button" variant="ghost" size="icon" aria-label={`Retirer l'année ${v.annee}`}
-                            data-testid={`button-retirer-versement-${v.annee}`} className="text-muted-foreground hover:text-destructive"
+                          <Button type="button" variant="ghost" size="icon" aria-label={`Retirer les versements de ${v.partenaire} en ${v.annee}`}
+                            data-testid={`button-retirer-versement-${v.annee}-${encodeURIComponent(v.partenaire)}`} className="text-muted-foreground hover:text-destructive"
                             onClick={() => retirer(v)}><Trash2 className="w-4 h-4" /></Button>
                         </td>
                       )}
@@ -321,7 +370,7 @@ export function SituationVersementsVolet({ value, onChange, readOnly, erreurs }:
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmer le retrait</AlertDialogTitle>
               <AlertDialogDescription>
-                L'année {confirmation} contient des données saisies. Elles seront retirées à l'enregistrement de la fiche.
+                Cette ligne contient des données saisies. Elles seront retirées à l'enregistrement de la fiche.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

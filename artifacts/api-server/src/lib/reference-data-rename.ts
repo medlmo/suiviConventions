@@ -100,6 +100,12 @@ export async function renommerEntreeReferentiel(
               ELSE ligne END ORDER BY position)
             FROM jsonb_array_elements(${conventionsTable.suiviFinancier}->'lignes')
               WITH ORDINALITY AS elements(ligne, position)), '[]'::jsonb))`,
+        situationVersements: sql`COALESCE((SELECT jsonb_agg(
+          CASE WHEN ligne->>'partenaire' = ${current.nom}
+            THEN jsonb_set(ligne, '{partenaire}', to_jsonb(${nom}::text))
+            ELSE ligne END ORDER BY position)
+          FROM jsonb_array_elements(${conventionsTable.situationVersements})
+            WITH ORDINALITY AS elements(ligne, position)), '[]'::jsonb)`,
         provincesPrefectures: sql`CASE WHEN ${conventionsTable.provincesPrefectures} IS NULL THEN NULL ELSE array_replace(${conventionsTable.provincesPrefectures}, ${current.nom}, ${nom}) END`,
         communes: sql`CASE WHEN ${conventionsTable.communes} IS NULL THEN NULL ELSE array_replace(${conventionsTable.communes}, ${current.nom}, ${nom}) END`,
         updatedAt: new Date(),
@@ -111,6 +117,7 @@ export async function renommerEntreeReferentiel(
         OR ${conventionsTable.maitrisesOuvrage} @> ARRAY[${current.nom}]::text[]
         OR ${conventionsTable.maitrisesOuvrageDeleguees} @> ARRAY[${current.nom}]::text[]
         OR ${conventionsTable.partenaires} @> ARRAY[${current.nom}]::text[]
+        OR ${conventionsTable.situationVersements} @> ${JSON.stringify([{ partenaire: current.nom }])}::jsonb
         OR ${conventionsTable.provincesPrefectures} @> ARRAY[${current.nom}]::text[]
         OR ${conventionsTable.communes} @> ARRAY[${current.nom}]::text[]
       `);

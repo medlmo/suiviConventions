@@ -14,7 +14,7 @@ import type { SuiviFinancier } from './suiviFinancier';
 export interface ConventionUpdate {
   suiviFinancier?: SuiviFinancier;
   /**
-     * Remplace la situation annuelle de la Région. Une liste vide efface les lignes, une clé absente les préserve.
+     * Remplace la situation annuelle des versements par partenaire. Une liste vide efface les lignes, une clé absente les préserve.
      * @maxItems 301
      */
   situationVersements?: SituationVersementAnnuelleInput[];

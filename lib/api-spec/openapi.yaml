@@ -971,28 +971,28 @@ components:
 
     SituationVersementAnnuelle:
       type: object
-      required: [annee, montantProgramme, montantVerse, tranches]
+      required: [annee, partenaire, montantVerse, tranches]
       properties:
         annee: { type: integer, minimum: 1900, maximum: 2200 }
-        montantProgramme: { type: number, minimum: 0, maximum: 9999999999999.99, description: Montant annuel programmé par la Région Souss-Massa en MAD, saisi indépendamment du montage financier }
-        montantVerse: { type: number, minimum: 0, maximum: 9999999999999.99, description: Montant annuel effectivement versé par la Région Souss-Massa en MAD }
+        partenaire: { type: string, minLength: 1, description: Partenaire ayant effectué les versements, ou Région Souss-Massa }
+        montantVerse: { type: number, minimum: 0, maximum: 9999999999999.99, description: Montant annuel effectivement versé par ce partenaire en MAD }
         tranches:
           type: array
           maxItems: 100
-          description: Tranches effectivement versées pendant l'année. Le total de leurs montants doit égaler montantVerse.
+          description: Tranches effectivement versées par ce partenaire pendant l'année. Le total de leurs montants doit égaler montantVerse.
           items: { $ref: "#/components/schemas/TrancheVersement" }
 
     SituationVersementAnnuelleInput:
       type: object
-      required: [annee, montantProgramme, montantVerse, tranches]
+      required: [annee, partenaire, montantVerse, tranches]
       properties:
         annee: { type: integer, minimum: 1900, maximum: 2200 }
-        montantProgramme: { type: number, minimum: 0, maximum: 9999999999999.99, description: Montant annuel programmé par la Région Souss-Massa en MAD, saisi indépendamment du montage financier }
+        partenaire: { type: string, minLength: 1, description: Partenaire ayant effectué les versements, ou Région Souss-Massa }
         montantVerse: { type: number, minimum: 0, maximum: 9999999999999.99, description: Total annuel des tranches, calculé par l'interface }
         tranches:
           type: array
           maxItems: 100
-          description: Tranches effectivement versées pendant l'année.
+          description: Tranches effectivement versées par ce partenaire pendant l'année.
           items: { $ref: "#/components/schemas/TrancheVersement" }
 
     AvancementPhysiqueInput:
@@ -1050,7 +1050,7 @@ components:
         situationVersements:
           type: array
           maxItems: 301
-          description: Situation annuelle des versements de la Région Souss-Massa, sans partenaires. Taux calculé à partir des montants, indéfini si le montant programmé est nul.
+          description: Situation annuelle des versements par partenaire. Le taux est calculé en rapportant les versements à la contribution de ce partenaire pour la même année ; pour la Région Souss-Massa, la base est la contribution régionale de la convention.
           items: { $ref: "#/components/schemas/SituationVersementAnnuelle" }
         avancementPhysiqueHistorique:
           type: array
@@ -1158,7 +1158,7 @@ components:
         situationVersements:
           type: array
           maxItems: 301
-          description: Remplace la situation annuelle de la Région. Une liste vide efface les lignes, une clé absente les préserve.
+          description: Remplace la situation annuelle des versements par partenaire. Une liste vide efface les lignes, une clé absente les préserve.
           items: { $ref: "#/components/schemas/SituationVersementAnnuelleInput" }
         avancementPhysiqueAjoute:
           description: Ajoute un constat sans modifier les précédents, uniquement pour les infrastructures et prestations.

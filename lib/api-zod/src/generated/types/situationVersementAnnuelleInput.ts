@@ -14,11 +14,10 @@ export interface SituationVersementAnnuelleInput {
      */
   annee: number;
   /**
-     * Montant annuel programmé par la Région Souss-Massa en MAD
-     * @minimum 0
-     * @maximum 9999999999999.99
+     * Partenaire ayant effectué les versements
+     * @minLength 1
      */
-  montantProgramme: number;
+  partenaire: string;
   /**
      * Total annuel des tranches
      * @minimum 0
@@ -26,7 +25,7 @@ export interface SituationVersementAnnuelleInput {
      */
   montantVerse: number;
   /**
-     * Tranches effectivement versées pendant l'année.
+     * Tranches effectivement versées par ce partenaire pendant l'année.
      * @maxItems 100
      */
   tranches: TrancheVersement[];

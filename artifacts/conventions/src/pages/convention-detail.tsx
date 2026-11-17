@@ -109,7 +109,7 @@ const conventionSchema = z.object({
   }).default({ annees: [], lignes: [] }),
   situationVersements: z.array(z.object({
     annee: z.number(),
-    montantProgramme: z.string(),
+    partenaire: z.string(),
     tranches: z.array(z.object({
       montant: z.string(),
       dateVersement: z.string(),
@@ -985,6 +985,9 @@ export default function ConventionDetail() {
             <SituationVersementsVolet
               value={field.value ?? []}
               onChange={(v) => form.setValue("situationVersements", v, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}
+              partenaires={form.watch("partenaires") ?? []}
+              contributionsPartenaires={form.watch("suiviFinancier")?.lignes ?? []}
+              contributionRegion={form.watch("contributionRegion")}
               readOnly={!canEdit}
               erreurs={[...new Set(collecterMessages(form.formState.errors.situationVersements))]}
             />

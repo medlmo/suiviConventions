@@ -4,7 +4,7 @@ import { erreurSituationVersements } from "./situation-versements.ts";
 
 const ligne = (valeurs = {}) => ({
   annee: 2026,
-  montantProgramme: 100,
+  partenaire: "Région Souss-Massa",
   montantVerse: 0,
   tranches: [],
   ...valeurs,
@@ -50,13 +50,13 @@ test("les dates calendaires impossibles sont refusées", () => {
   );
 });
 
-test("les années dupliquées et les montants invalides sont refusés", () => {
+test("les lignes dupliquées et les montants invalides sont refusés", () => {
   assert.match(
-    erreurSituationVersements([ligne(), ligne()]) ?? "",
-    /années de la situation des versements doivent être uniques/,
+    erreurSituationVersements([ligne(), ligne({ partenaire: "Région Souss-Massa" })]) ?? "",
+    /partenaire ne peut avoir qu'une ligne de versement par année/,
   );
   assert.match(
-    erreurSituationVersements([ligne({ montantProgramme: -1 })]) ?? "",
-    /montants programmés et versés sont requis/,
+    erreurSituationVersements([ligne({ montantVerse: -1 })]) ?? "",
+    /montant versé doit être en MAD/,
   );
 });

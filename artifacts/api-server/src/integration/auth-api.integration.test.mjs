@@ -421,7 +421,7 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       "les auteurs des constats ne sont pas exposés dans la fiche technique",
     );
     assert.ok(contenuFiche.includes("SITUATION DES VERSEMENTS DE LA RÉGION SOUSS MASSA"));
-    assert.ok(contenuFiche.includes("Total programmé"));
+    assert.ok(contenuFiche.includes("Contribution du partenaire"));
     assert.ok(contenuFiche.includes("Date de versement"));
     assert.ok(contenuFiche.includes("Montant des tranches"));
     assert.ok(contenuFiche.includes("Total versé"));

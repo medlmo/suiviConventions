@@ -41,6 +41,12 @@ export type TrancheVersement = {
 
 export type SituationVersementAnnuelle = {
   annee: number;
+  partenaire: string;
+  montantVerse: number;
+  tranches: TrancheVersement[];
+} | {
+  /** Format avec tranches conservé avant l'ajout des versements par partenaire. */
+  annee: number;
   montantProgramme: number;
   montantVerse: number;
   tranches: TrancheVersement[];

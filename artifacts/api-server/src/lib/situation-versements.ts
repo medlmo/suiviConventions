@@ -1,23 +1,26 @@
 /** Contrôle du JSON brut avant les coercitions numériques et calendaires générées. */
 export function erreurSituationVersements(value: unknown): string | null {
   if (!Array.isArray(value) || value.length > 301) {
-    return "La situation des versements doit contenir au maximum 301 années.";
+    return "La situation des versements doit contenir au maximum 301 lignes.";
   }
-  const annees = new Set<number>();
+  const lignes = new Set<string>();
   for (const ligne of value) {
     if (typeof ligne !== "object" || ligne === null || Array.isArray(ligne)) {
-      return "Chaque ligne de versement doit contenir une année et ses montants.";
+      return "Chaque ligne de versement doit contenir une année, un partenaire et ses montants.";
     }
-    const { annee, montantProgramme, montantVerse, tranches } = ligne;
-    if (typeof annee !== "number" || !Number.isInteger(annee) || annee < 1900 || annee > 2200 || annees.has(annee)) {
-      return "Les années de la situation des versements doivent être uniques, entre 1900 et 2200.";
+    const { annee, partenaire, montantVerse, tranches } = ligne;
+    if (typeof annee !== "number" || !Number.isInteger(annee) || annee < 1900 || annee > 2200) {
+      return "Les années de la situation des versements doivent être comprises entre 1900 et 2200.";
     }
-    annees.add(annee);
-    for (const montant of [montantProgramme, montantVerse]) {
-      if (typeof montant !== "number" || !Number.isFinite(montant) || montant < 0 ||
-          montant > 9999999999999.99 || Number(montant.toFixed(2)) !== montant) {
-        return "Les montants programmés et versés sont requis en MAD, positifs ou nuls, avec deux décimales maximum.";
-      }
+    if (typeof partenaire !== "string" || !partenaire.trim() || partenaire !== partenaire.trim()) {
+      return "Chaque ligne de versement doit désigner un partenaire.";
+    }
+    const cle = `${annee}\u0000${partenaire}`;
+    if (lignes.has(cle)) return "Un partenaire ne peut avoir qu'une ligne de versement par année.";
+    lignes.add(cle);
+    if (typeof montantVerse !== "number" || !Number.isFinite(montantVerse) || montantVerse < 0 ||
+        montantVerse > 9999999999999.99 || Number(montantVerse.toFixed(2)) !== montantVerse) {
+      return "Le montant versé doit être en MAD, positif ou nul, avec deux décimales maximum.";
     }
     if (!Array.isArray(tranches) || tranches.length > 100) {
       return "Chaque année peut contenir au maximum 100 tranches de versement.";
