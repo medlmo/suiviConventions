@@ -218,6 +218,9 @@ export function SituationVersementsVolet({
                   className="w-28" placeholder="2025" value={nouvelleAnnee} aria-invalid={!!erreurAnnee}
                   onChange={(e) => { setNouvelleAnnee(e.target.value); setErreurAnnee(""); }}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); ajouter(); } }} />
+                <Button type="button" variant="outline" className="h-10" data-testid="button-ajouter-annee-versement" onClick={ajouter}>
+                  <Plus className="w-4 h-4 mr-1" />Ajouter
+                </Button>
               </div>
             </div>
             <div className="space-y-1">
@@ -231,9 +234,6 @@ export function SituationVersementsVolet({
                 </SelectContent>
               </Select>
             </div>
-            <Button type="button" variant="outline" className="h-10 w-full sm:w-auto" data-testid="button-ajouter-annee-versement" onClick={ajouter}>
-              <Plus className="w-4 h-4 mr-1" />Ajouter
-            </Button>
             {erreurAnnee && <p className="basis-full text-xs text-destructive" data-testid="text-erreur-annee-versement">{erreurAnnee}</p>}
           </div>
         )}
