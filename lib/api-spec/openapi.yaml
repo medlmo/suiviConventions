@@ -4,7 +4,7 @@ info:
   title: Api
   version: 0.1.0
   description: >-
-    Suivi des conventions de partenariat de la Région Souss-Massa.
+    Suivi des conventions de partenariat de la Région Souss Massa.
     Le statut d'alerte n'est jamais stocké : il est recalculé à chaque requête
     par rapport à la date du jour.
 servers:
@@ -974,7 +974,7 @@ components:
       required: [annee, partenaire, montantVerse, tranches]
       properties:
         annee: { type: integer, minimum: 1900, maximum: 2200 }
-        partenaire: { type: string, minLength: 1, description: Partenaire ayant effectué les versements, ou Région Souss-Massa }
+        partenaire: { type: string, minLength: 1, description: Partenaire ayant effectué les versements, ou Région Souss Massa }
         montantVerse: { type: number, minimum: 0, maximum: 9999999999999.99, description: Montant annuel effectivement versé par ce partenaire en MAD }
         tranches:
           type: array
@@ -987,7 +987,7 @@ components:
       required: [annee, partenaire, montantVerse, tranches]
       properties:
         annee: { type: integer, minimum: 1900, maximum: 2200 }
-        partenaire: { type: string, minLength: 1, description: Partenaire ayant effectué les versements, ou Région Souss-Massa }
+        partenaire: { type: string, minLength: 1, description: Partenaire ayant effectué les versements, ou Région Souss Massa }
         montantVerse: { type: number, minimum: 0, maximum: 9999999999999.99, description: Total annuel des tranches, calculé par l'interface }
         tranches:
           type: array
@@ -1050,7 +1050,7 @@ components:
         situationVersements:
           type: array
           maxItems: 301
-          description: Situation annuelle des versements par partenaire. Le taux est calculé en rapportant les versements à la contribution de ce partenaire pour la même année ; pour la Région Souss-Massa, la base est la contribution régionale de la convention.
+          description: Situation annuelle des versements par partenaire. Le taux est calculé en rapportant les versements à la contribution de ce partenaire pour la même année ; pour la Région Souss Massa, la base est la contribution régionale de la convention.
           items: { $ref: "#/components/schemas/SituationVersementAnnuelle" }
         avancementPhysiqueHistorique:
           type: array

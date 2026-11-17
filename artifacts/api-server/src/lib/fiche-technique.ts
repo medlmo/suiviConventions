@@ -6,6 +6,7 @@ import {
 import logo from "./logo-crsm-word.png";
 import type { ConventionApi } from "./conventions-mapper";
 import { natureAvecAvancement } from "./avancement-physique";
+import { estPartenaireRegion } from "./situation-versements";
 
 const NAVY = "17365D";
 const GOLD = "C38B37";
@@ -240,7 +241,7 @@ function tableauSituationVersements(convention: ConventionApi): Table {
         (total, tranche) => total + montantCentimes(tranche.montant),
         0n,
       );
-      const contribution = ligne.partenaire === "Région Souss-Massa"
+      const contribution = estPartenaireRegion(ligne.partenaire)
         ? convention.contributionRegion
         : convention.suiviFinancier?.lignes
           .find((partenaire) => partenaire.partenaire === ligne.partenaire)
@@ -437,7 +438,7 @@ export async function genererFicheTechnique(convention: ConventionApi): Promise<
   const header = new Header({
     children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new ImageRun({
       type: "png", data: Buffer.from(logo, "base64"), transformation: { width: 60, height: 81 },
-      altText: { name: "Logo Région Souss-Massa", title: "Région Souss-Massa", description: "Logo officiel de la Région Souss-Massa" },
+      altText: { name: "Logo Région Souss Massa", title: "Région Souss Massa", description: "Logo officiel de la Région Souss Massa" },
     })] })],
   });
   const footer = new Footer({ children: [new Paragraph({
@@ -476,7 +477,7 @@ export async function genererFicheTechnique(convention: ConventionApi): Promise<
     ligne("Contribution de la Région (MAD)", montant(convention.contributionRegion), true),
   ];
   return Packer.toBuffer(new Document({
-    creator: "Région Souss-Massa", title: `Fiche technique — Convention ${convention.id}`,
+    creator: "Région Souss Massa", title: `Fiche technique — Convention ${convention.id}`,
     description: "Fiche technique de convention de partenariat",
     styles: { default: { document: { run: { font: "Arial", size: 20, color: NAVY, language: { value: "fr-MA", bidirectional: "ar-MA" } } } } },
     sections: [{

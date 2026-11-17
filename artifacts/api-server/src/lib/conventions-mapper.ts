@@ -8,6 +8,7 @@ import {
   niveauAlerteSql,
   type NiveauAlerte,
 } from "./alertes";
+import { nomPartenaireAffiche, PARTENAIRE_REGION } from "./situation-versements";
 
 /** Colonnes de la table + les deux valeurs recalculées à chaque lecture. */
 export const colonnesConvention = {
@@ -38,7 +39,7 @@ function versementsVersApi(lignes: SituationVersementAnnuelle[]) {
       const montantVerse = tranches.length > 0 ? montantVerseCentimes / 100 : ligne.montantVerse;
       return {
         annee: ligne.annee,
-        partenaire: "partenaire" in ligne ? ligne.partenaire : "Région Souss-Massa",
+        partenaire: "partenaire" in ligne ? nomPartenaireAffiche(ligne.partenaire) : PARTENAIRE_REGION,
         montantVerse,
         tranches,
       };
@@ -48,7 +49,7 @@ function versementsVersApi(lignes: SituationVersementAnnuelle[]) {
       : [];
     return {
       annee: ligne.annee,
-      partenaire: "Région Souss-Massa",
+      partenaire: PARTENAIRE_REGION,
       montantVerse: ligne.montantVerse,
       tranches,
     };

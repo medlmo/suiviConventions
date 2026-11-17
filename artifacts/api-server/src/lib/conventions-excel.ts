@@ -118,7 +118,7 @@ export async function genererExcelConventions(
   const completed = finished(output);
   void completed.catch(() => {}); // Observé pendant commit et dans finally.
   try {
-    workbook.creator = "Suivi des conventions — Région Souss-Massa";
+    workbook.creator = "Suivi des conventions — Région Souss Massa";
     workbook.subject = "Export filtré des conventions";
     const sheet = workbook.addWorksheet("Conventions", {
       views: [{ state: "frozen", ySplit: 1, showGridLines: false }],

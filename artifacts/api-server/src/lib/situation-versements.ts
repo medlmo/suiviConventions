@@ -1,4 +1,15 @@
 /** Contrôle du JSON brut avant les coercitions numériques et calendaires générées. */
+export const PARTENAIRE_REGION = "Région Souss Massa";
+const PARTENAIRE_REGION_HISTORIQUE = "Région Souss-Massa";
+
+export function estPartenaireRegion(partenaire: string): boolean {
+  return partenaire === PARTENAIRE_REGION || partenaire === PARTENAIRE_REGION_HISTORIQUE;
+}
+
+export function nomPartenaireAffiche(partenaire: string): string {
+  return estPartenaireRegion(partenaire) ? PARTENAIRE_REGION : partenaire;
+}
+
 export function erreurSituationVersements(value: unknown): string | null {
   if (!Array.isArray(value) || value.length > 301) {
     return "La situation des versements doit contenir au maximum 301 lignes.";

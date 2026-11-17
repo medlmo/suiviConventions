@@ -25,7 +25,7 @@ export type VersementApi = {
 };
 
 export const VERSEMENTS_MAX_LIGNES = 301;
-export const PARTENAIRE_REGION = "Région Souss-Massa";
+export const PARTENAIRE_REGION = "Région Souss Massa";
 
 export function versBrouillonVersements(values?: VersementApi[] | null): VersementBrouillon[] {
   return [...(values ?? [])]
