@@ -226,7 +226,7 @@ export function SituationVersementsVolet({
             <div className="space-y-1">
               <span className="block h-5 truncate whitespace-nowrap text-sm font-medium leading-5">Ajouter un partenaire</span>
               <Select value={nouveauPartenaire} onValueChange={(p) => { setNouveauPartenaire(p); setErreurAnnee(""); }}>
-                <SelectTrigger className="h-10 min-h-10 w-full sm:w-64" data-testid="select-nouveau-partenaire-versement">
+                <SelectTrigger className="h-9 min-h-9 w-full sm:w-64" data-testid="select-nouveau-partenaire-versement">
                   <SelectValue placeholder="Choisir un partenaire" />
                 </SelectTrigger>
                 <SelectContent>
