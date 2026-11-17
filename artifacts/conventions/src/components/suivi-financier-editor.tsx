@@ -141,7 +141,7 @@ export function SuiviFinancierEditor({ value, onChange, partenairesEligibles, re
             <span className="text-sm font-medium block">Ajouter un partenaire</span>
             <Select value="" disabled={disponibles.length === 0}
               onValueChange={(p) => onChange({ ...value, lignes: [...value.lignes, { partenaire: p, montants: {} }] })}>
-              <SelectTrigger className="w-64" data-testid="select-ajouter-partenaire">
+              <SelectTrigger className="h-9 min-h-9 w-64" data-testid="select-ajouter-partenaire">
                 <SelectValue placeholder={partenairesEligibles.length === 0 ? "Aucun partenaire dans la fiche" : disponibles.length === 0 ? "Tous les partenaires sont ajoutés" : "Choisir un partenaire"} />
               </SelectTrigger>
               <SelectContent>
