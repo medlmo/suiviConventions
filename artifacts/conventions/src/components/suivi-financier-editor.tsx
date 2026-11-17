@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { SuiviFinancier } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MontantInput } from "@/components/montant-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -213,11 +214,11 @@ export function SuiviFinancierEditor({ value, onChange, partenairesEligibles, re
                           {readOnly ? (
                             brut.trim() === "" ? <span className="text-muted-foreground">—</span> : (parseMontant(brut) !== null ? fmt.format(parseMontant(brut)!) : brut)
                           ) : (
-                            <Input value={brut} inputMode="decimal" placeholder="Non renseigné" aria-invalid={invalide}
+                            <MontantInput value={brut} placeholder="Non renseigné" aria-invalid={invalide}
                               aria-label={`Contribution de ${ligne.partenaire} en ${a} (MAD)`}
                               data-testid={`input-montant-${i}-${a}`}
                               className={`text-end tabular-nums ${invalide ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                              onChange={(e) => majCellule(i, a, e.target.value)} />
+                              onChange={(montant) => majCellule(i, a, montant)} />
                           )}
                         </td>
                       );

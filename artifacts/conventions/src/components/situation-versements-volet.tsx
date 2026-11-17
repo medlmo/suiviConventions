@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MontantInput } from "@/components/montant-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -318,11 +319,11 @@ export function SituationVersementsVolet({
                                       data-testid={`input-date-versement-${v.annee}-${encodeURIComponent(v.partenaire)}-${index + 1}`}
                                       aria-invalid={invalideDate} className={`w-40 ${invalideDate && date ? ko : ""}`}
                                       onChange={(e) => majTranche(cle, index, { dateVersement: e.target.value })} />
-                                    <Input value={tranche.montant} inputMode="decimal" placeholder="Montant (MAD)"
+                                    <MontantInput value={tranche.montant} placeholder="Montant (MAD)"
                                       aria-label={`Montant de la tranche ${index + 1} en ${v.annee}`}
                                       data-testid={`input-montant-tranche-${v.annee}-${encodeURIComponent(v.partenaire)}-${index + 1}`}
                                       aria-invalid={invalideMontant} className={`w-36 text-end tabular-nums ${invalideMontant && tranche.montant ? ko : ""}`}
-                                      onChange={(e) => majTranche(cle, index, { montant: e.target.value })} />
+                                      onChange={(montant) => majTranche(cle, index, { montant })} />
                                     <Button type="button" variant="ghost" size="icon"
                                       aria-label={`Retirer la tranche ${index + 1} de ${v.annee}`}
                                       data-testid={`button-retirer-tranche-${v.annee}-${encodeURIComponent(v.partenaire)}-${index + 1}`}
