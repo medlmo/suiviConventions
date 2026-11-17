@@ -210,21 +210,21 @@ export function SituationVersementsVolet({
         )}
 
         {!readOnly && (
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="grid grid-cols-2 items-end gap-3 max-[380px]:grid-cols-1 sm:grid-cols-[minmax(14rem,auto)_minmax(16rem,1fr)]">
             <div className="space-y-1">
-              <label htmlFor="nouvelle-annee-versement" className="text-sm font-medium">Ajouter une année</label>
+              <label htmlFor="nouvelle-annee-versement" className="block h-5 whitespace-nowrap text-sm font-medium leading-5">Ajouter une année</label>
               <div className="flex gap-2">
                 <Input id="nouvelle-annee-versement" data-testid="input-nouvelle-annee-versement" type="text" inputMode="numeric" maxLength={4}
-                  className="w-28" placeholder="2025" value={nouvelleAnnee} aria-invalid={!!erreurAnnee}
+                  className="w-20 min-w-0 sm:w-28" placeholder="2025" value={nouvelleAnnee} aria-invalid={!!erreurAnnee}
                   onChange={(e) => { setNouvelleAnnee(e.target.value); setErreurAnnee(""); }}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); ajouter(); } }} />
-                <Button type="button" variant="outline" className="h-10" data-testid="button-ajouter-annee-versement" onClick={ajouter}>
+                <Button type="button" variant="outline" className="h-10 shrink-0 px-2 sm:px-4" data-testid="button-ajouter-annee-versement" onClick={ajouter}>
                   <Plus className="w-4 h-4 mr-1" />Ajouter
                 </Button>
               </div>
             </div>
             <div className="space-y-1">
-              <span className="text-sm font-medium block">Ajouter un partenaire</span>
+              <span className="block h-5 truncate whitespace-nowrap text-sm font-medium leading-5">Ajouter un partenaire</span>
               <Select value={nouveauPartenaire} onValueChange={(p) => { setNouveauPartenaire(p); setErreurAnnee(""); }}>
                 <SelectTrigger className="h-10 w-full sm:w-64" data-testid="select-nouveau-partenaire-versement">
                   <SelectValue placeholder="Choisir un partenaire" />
@@ -234,7 +234,7 @@ export function SituationVersementsVolet({
                 </SelectContent>
               </Select>
             </div>
-            {erreurAnnee && <p className="basis-full text-xs text-destructive" data-testid="text-erreur-annee-versement">{erreurAnnee}</p>}
+            {erreurAnnee && <p className="col-span-full text-xs text-destructive" data-testid="text-erreur-annee-versement">{erreurAnnee}</p>}
           </div>
         )}
 
