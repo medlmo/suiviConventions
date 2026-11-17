@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -209,27 +210,31 @@ export function SituationVersementsVolet({
         )}
 
         {!readOnly && (
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="space-y-1">
-              <label htmlFor="nouvelle-annee-versement" className="text-sm font-medium">Année du versement</label>
-              <Input id="nouvelle-annee-versement" data-testid="input-nouvelle-annee-versement" inputMode="numeric" maxLength={4}
-                className="w-28" placeholder="2025" value={nouvelleAnnee} aria-invalid={!!erreurAnnee}
-                onChange={(e) => { setNouvelleAnnee(e.target.value); setErreurAnnee(""); }}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); ajouter(); } }} />
+              <label htmlFor="nouvelle-annee-versement" className="text-sm font-medium">Ajouter une année</label>
+              <div className="flex gap-2">
+                <Input id="nouvelle-annee-versement" data-testid="input-nouvelle-annee-versement" type="text" inputMode="numeric" maxLength={4}
+                  className="w-28" placeholder="2025" value={nouvelleAnnee} aria-invalid={!!erreurAnnee}
+                  onChange={(e) => { setNouvelleAnnee(e.target.value); setErreurAnnee(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); ajouter(); } }} />
+              </div>
             </div>
             <div className="space-y-1">
-              <label htmlFor="nouveau-partenaire-versement" className="text-sm font-medium">Partenaire</label>
-              <select id="nouveau-partenaire-versement" data-testid="select-nouveau-partenaire-versement"
-                className="h-10 w-64 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
-                value={nouveauPartenaire} onChange={(e) => { setNouveauPartenaire(e.target.value); setErreurAnnee(""); }}>
-                <option value="">Choisir un partenaire</option>
-                {partenairesDisponibles.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              <span className="text-sm font-medium block">Ajouter un partenaire</span>
+              <Select value={nouveauPartenaire} onValueChange={(p) => { setNouveauPartenaire(p); setErreurAnnee(""); }}>
+                <SelectTrigger className="h-10 w-full sm:w-64" data-testid="select-nouveau-partenaire-versement">
+                  <SelectValue placeholder="Choisir un partenaire" />
+                </SelectTrigger>
+                <SelectContent>
+                  {partenairesDisponibles.map((p) => <SelectItem key={p} value={p}><span dir="auto">{p}</span></SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <Button type="button" variant="outline" data-testid="button-ajouter-annee-versement" onClick={ajouter}>
+            <Button type="button" variant="outline" className="h-10 w-full sm:w-auto" data-testid="button-ajouter-annee-versement" onClick={ajouter}>
               <Plus className="w-4 h-4 mr-1" />Ajouter
             </Button>
-            {erreurAnnee && <p className="text-xs text-destructive" data-testid="text-erreur-annee-versement">{erreurAnnee}</p>}
+            {erreurAnnee && <p className="basis-full text-xs text-destructive" data-testid="text-erreur-annee-versement">{erreurAnnee}</p>}
           </div>
         )}
 
@@ -268,14 +273,18 @@ export function SituationVersementsVolet({
                       <td className="px-3 py-2 border-b border-border font-semibold tabular-nums align-top">{v.annee}</td>
                       <td className="px-3 py-2 border-b border-s border-border align-top">
                         {readOnly ? <span dir="auto">{v.partenaire}</span> : (
-                          <select aria-label={`Partenaire des versements en ${v.annee}`} data-testid={`select-partenaire-versement-${v.annee}-${encodeURIComponent(v.partenaire)}`}
-                            className="h-10 w-full min-w-[180px] rounded-md border border-input bg-background px-3 text-sm shadow-sm"
-                            value={v.partenaire} onChange={(e) => maj(cle, { partenaire: e.target.value })}>
-                            {!partenairesDisponibles.includes(v.partenaire) && <option value={v.partenaire}>{v.partenaire} (historique)</option>}
-                            {partenairesDisponibles
-                              .filter((p) => p === v.partenaire || !value.some((autre) => autre.annee === v.annee && autre.partenaire === p))
-                              .map((p) => <option key={p} value={p}>{p}</option>)}
-                          </select>
+                          <Select value={v.partenaire} onValueChange={(p) => maj(cle, { partenaire: p })}>
+                            <SelectTrigger className="h-10 w-full min-w-[180px]" aria-label={`Partenaire des versements en ${v.annee}`}
+                              data-testid={`select-partenaire-versement-${v.annee}-${encodeURIComponent(v.partenaire)}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {!partenairesDisponibles.includes(v.partenaire) && <SelectItem value={v.partenaire}><span dir="auto">{v.partenaire} (historique)</span></SelectItem>}
+                              {partenairesDisponibles
+                                .filter((p) => p === v.partenaire || !value.some((autre) => autre.annee === v.annee && autre.partenaire === p))
+                                .map((p) => <SelectItem key={p} value={p}><span dir="auto">{p}</span></SelectItem>)}
+                            </SelectContent>
+                          </Select>
                         )}
                       </td>
                       <td className="px-3 py-2 border-b border-s border-border text-end tabular-nums align-top">
