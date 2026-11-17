@@ -21,7 +21,7 @@ export type VersementApi = {
   annee: number;
   partenaire: string;
   montantVerse: number;
-  tranches: { montant: number; dateVersement: string | Date }[];
+  tranches: { montant: number; dateVersement?: string | Date }[];
 };
 
 export const VERSEMENTS_MAX_LIGNES = 301;
@@ -37,14 +37,16 @@ export function versBrouillonVersements(values?: VersementApi[] | null): Verseme
       const tranches = "tranches" in v && Array.isArray(v.tranches)
         ? v.tranches.map((t) => ({
             montant: String(t.montant),
-            dateVersement: t.dateVersement instanceof Date ? t.dateVersement.toISOString().slice(0, 10) : t.dateVersement,
+            dateVersement: t.dateVersement instanceof Date
+              ? t.dateVersement.toISOString().slice(0, 10)
+              : t.dateVersement ?? "",
           }))
-        : historique.montantVerse > 0 && historique.dateDernierVersement
+        : historique.montantVerse > 0
           ? [{
               montant: String(historique.montantVerse),
               dateVersement: historique.dateDernierVersement instanceof Date
                 ? historique.dateDernierVersement.toISOString().slice(0, 10)
-                : historique.dateDernierVersement,
+                : historique.dateDernierVersement ?? "",
             }]
           : [];
       return {
@@ -60,7 +62,7 @@ export function versApiVersements(draft: VersementBrouillon[]): VersementApi[] {
   return [...draft].sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr")).map((v) => {
     const tranches = v.tranches.map((t) => ({
       montant: parseMontant(t.montant) ?? 0,
-      dateVersement: t.dateVersement,
+      ...(t.dateVersement.trim() ? { dateVersement: t.dateVersement } : {}),
     }));
     const verse = tranches.reduce((total, t) => total + t.montant, 0);
     return {
@@ -90,9 +92,7 @@ export function erreursVersements(draft: VersementBrouillon[]): string[] {
       if (montant === undefined) erreurs.push(`Versements ${a}, tranche ${tranche} : montant obligatoire.`);
       else if (montant === null || montant <= 0) erreurs.push(`Versements ${a}, tranche ${tranche} : montant invalide ou nul (0 à 9 999 999 999 999,99 MAD, 2 décimales max).`);
       const date = t.dateVersement.trim();
-      if (!date) erreurs.push(`Versements ${a}, tranche ${tranche} : date de versement obligatoire.`);
-      else if (!dateCalendaireValide(date)) erreurs.push(`Versements ${a}, tranche ${tranche} : date de versement invalide (AAAA-MM-JJ).`);
-      else if (Number(date.slice(0, 4)) !== a) erreurs.push(`Versements ${a}, tranche ${tranche} : la date doit appartenir à cette année.`);
+      if (date && !dateCalendaireValide(date)) erreurs.push(`Versements ${a}, tranche ${tranche} : date de versement invalide (AAAA-MM-JJ).`);
     });
     const montantVerse = totalVerse(v);
     if (montantVerse > 9999999999999.99) erreurs.push(`Versements ${a} : le total versé dépasse la limite autorisée.`);
@@ -302,7 +302,7 @@ export function SituationVersementsVolet({
                             const trancheMontant = tranche.montant.trim() === "" ? null : parseMontant(tranche.montant);
                             const date = tranche.dateVersement.trim();
                             const invalideMontant = trancheMontant === null || trancheMontant <= 0;
-                            const invalideDate = !date || !dateCalendaireValide(date) || Number(date.slice(0, 4)) !== v.annee;
+                            const invalideDate = !!date && !dateCalendaireValide(date);
                             return (
                               <div key={index} className="flex flex-wrap items-center gap-2" data-testid={`row-tranche-${v.annee}-${encodeURIComponent(v.partenaire)}-${index + 1}`}>
                                 {readOnly ? (

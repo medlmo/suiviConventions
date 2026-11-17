@@ -39,22 +39,23 @@ export function erreurSituationVersements(value: unknown): string | null {
     let totalCentimes = 0;
     for (const tranche of tranches) {
       if (typeof tranche !== "object" || tranche === null || Array.isArray(tranche)) {
-        return "Chaque tranche doit contenir un montant et une date de versement.";
+        return "Chaque tranche doit contenir un montant.";
       }
       const { montant, dateVersement } = tranche;
       if (typeof montant !== "number" || !Number.isFinite(montant) || montant <= 0 ||
           montant > 9999999999999.99 || Number(montant.toFixed(2)) !== montant) {
         return "Le montant de chaque tranche doit être supérieur à zéro, en MAD, avec deux décimales maximum.";
       }
-      if (typeof dateVersement !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateVersement)) {
-        return "La date de versement doit être une date réelle au format AAAA-MM-JJ.";
+      if (dateVersement !== undefined) {
+        if (typeof dateVersement !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateVersement)) {
+          return "La date de versement doit être une date réelle au format AAAA-MM-JJ.";
+        }
+        const [a, m, j] = dateVersement.split("-").map(Number);
+        const d = new Date(Date.UTC(a!, m! - 1, j!));
+        if (d.getUTCFullYear() !== a || d.getUTCMonth() !== m! - 1 || d.getUTCDate() !== j) {
+          return "La date de versement doit être une date réelle du calendrier.";
+        }
       }
-      const [a, m, j] = dateVersement.split("-").map(Number);
-      const d = new Date(Date.UTC(a!, m! - 1, j!));
-      if (d.getUTCFullYear() !== a || d.getUTCMonth() !== m! - 1 || d.getUTCDate() !== j) {
-        return "La date de versement doit être une date réelle du calendrier.";
-      }
-      if (a !== annee) return "La date de chaque tranche doit appartenir à l'année indiquée.";
       totalCentimes += Math.round(montant * 100);
     }
     if (totalCentimes > 999999999999999 || Number((totalCentimes / 100).toFixed(2)) !== montantVerse) {

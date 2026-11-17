@@ -36,7 +36,7 @@ export type SuiviFinancier = {
 
 export type TrancheVersement = {
   montant: number;
-  dateVersement: string;
+  dateVersement?: string;
 };
 
 export type SituationVersementAnnuelle = {

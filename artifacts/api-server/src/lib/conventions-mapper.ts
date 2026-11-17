@@ -33,7 +33,7 @@ function versementsVersApi(lignes: SituationVersementAnnuelle[]) {
     if ("tranches" in ligne) {
       const tranches = ligne.tranches.map((tranche) => ({
         montant: tranche.montant,
-        dateVersement: tranche.dateVersement,
+        ...(tranche.dateVersement ? { dateVersement: tranche.dateVersement } : {}),
       }));
       const montantVerseCentimes = tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0);
       const montantVerse = tranches.length > 0 ? montantVerseCentimes / 100 : ligne.montantVerse;
@@ -44,8 +44,8 @@ function versementsVersApi(lignes: SituationVersementAnnuelle[]) {
         tranches,
       };
     }
-    const tranches = ligne.montantVerse > 0 && ligne.dateDernierVersement
-      ? [{ montant: ligne.montantVerse, dateVersement: ligne.dateDernierVersement }]
+    const tranches = ligne.montantVerse > 0
+      ? [{ montant: ligne.montantVerse, ...(ligne.dateDernierVersement ? { dateVersement: ligne.dateDernierVersement } : {}) }]
       : [];
     return {
       annee: ligne.annee,
@@ -166,7 +166,7 @@ type ChampsEcrivables = Partial<
     annee: number;
     partenaire: string;
     montantVerse: number;
-    tranches: { montant: number; dateVersement: string | Date }[];
+    tranches: { montant: number; dateVersement?: string | Date }[];
   }[];
 };
 
@@ -200,10 +200,10 @@ export function versColonnes(corps: ChampsEcrivables): Record<string, unknown> {
       annee: ligne.annee,
       partenaire: ligne.partenaire,
       montantVerse: ligne.tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0) / 100,
-      tranches: ligne.tranches.map((tranche) => ({
-        montant: tranche.montant,
-        dateVersement: versJourCalendaire(tranche.dateVersement)!,
-      })),
+      tranches: ligne.tranches.map((tranche) => {
+        const dateVersement = versJourCalendaire(tranche.dateVersement);
+        return { montant: tranche.montant, ...(dateVersement ? { dateVersement } : {}) };
+      }),
     })).sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr"));
   }
 

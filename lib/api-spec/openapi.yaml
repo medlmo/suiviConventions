@@ -964,10 +964,10 @@ components:
 
     TrancheVersement:
       type: object
-      required: [montant, dateVersement]
+      required: [montant]
       properties:
         montant: { type: number, exclusiveMinimum: 0, maximum: 9999999999999.99, description: Montant de cette tranche en MAD }
-        dateVersement: { type: string, format: date, description: Date de versement de cette tranche }
+        dateVersement: { type: string, format: date, description: Date facultative de versement de cette tranche, indépendante de l'année de la ligne }
 
     SituationVersementAnnuelle:
       type: object

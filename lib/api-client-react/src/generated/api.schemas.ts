@@ -251,8 +251,8 @@ export interface TrancheVersement {
      * @exclusiveMinimum 0
      */
   montant: number;
-  /** Date de versement de cette tranche */
-  dateVersement: string;
+  /** Date facultative de versement de cette tranche */
+  dateVersement?: string;
 }
 
 export interface SituationVersementAnnuelle {
