@@ -531,6 +531,41 @@ export const ListAuditResponse = zod.object({
 
 
 /**
+ * Retourne les rappels actuellement éligibles et les 200 derniers rappels enregistrés.
+ * @summary Consulter les rappels par e-mail (administrateur uniquement)
+ */
+export const GetAdminMailReminderLogResponse = zod.object({
+  "generatedAt": zod.coerce.date(),
+  "enabled": zod.boolean(),
+  "historyLimit": zod.int(),
+  "summary": zod.object({
+  "eligible": zod.int(),
+  "pending": zod.int(),
+  "sending": zod.int(),
+  "sent": zod.int(),
+  "failed": zod.int(),
+  "cancelled": zod.int()
+}),
+  "items": zod.array(zod.object({
+  "id": zod.int().nullable(),
+  "recipientUsername": zod.string(),
+  "recipientEmail": zod.email().nullable(),
+  "conventionId": zod.int(),
+  "conventionName": zod.string(),
+  "deadlineDate": zod.coerce.date(),
+  "reminderDays": zod.union([zod.literal(14),zod.literal(30)]),
+  "daysRemaining": zod.int(),
+  "status": zod.enum(['eligible', 'pending', 'sending', 'sent', 'failed', 'cancelled']),
+  "attempts": zod.int(),
+  "lastErrorCode": zod.string().nullable(),
+  "nextAttemptAt": zod.coerce.date().nullable(),
+  "sentAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date().nullable()
+}))
+})
+
+
+/**
  * @summary Liste paginée et filtrée des conventions
  */
 export const listConventionsQueryPageDefault = 1;

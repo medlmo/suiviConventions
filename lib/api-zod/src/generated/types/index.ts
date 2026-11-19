@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminMailReminder';
+export * from './adminMailReminderLog';
+export * from './adminMailReminderLogSummary';
+export * from './adminMailReminderReminderDays';
+export * from './adminMailReminderStatus';
 export * from './adminUser';
 export * from './alerte';
 export * from './alerteCouleur';

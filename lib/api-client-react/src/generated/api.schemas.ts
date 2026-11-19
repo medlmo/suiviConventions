@@ -941,6 +941,66 @@ export interface NotificationReadInput {
   observedAt: string;
 }
 
+export type AdminMailReminderReminderDays = typeof AdminMailReminderReminderDays[keyof typeof AdminMailReminderReminderDays];
+
+
+export const AdminMailReminderReminderDays = {
+  NUMBER_14: 14,
+  NUMBER_30: 30,
+} as const;
+
+export type AdminMailReminderStatus = typeof AdminMailReminderStatus[keyof typeof AdminMailReminderStatus];
+
+
+export const AdminMailReminderStatus = {
+  eligible: 'eligible',
+  pending: 'pending',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface AdminMailReminder {
+  /** @nullable */
+  id: number | null;
+  recipientUsername: string;
+  /** @nullable */
+  recipientEmail: string | null;
+  conventionId: number;
+  conventionName: string;
+  deadlineDate: string;
+  reminderDays: AdminMailReminderReminderDays;
+  daysRemaining: number;
+  status: AdminMailReminderStatus;
+  attempts: number;
+  /** @nullable */
+  lastErrorCode: string | null;
+  /** @nullable */
+  nextAttemptAt: string | null;
+  /** @nullable */
+  sentAt: string | null;
+  /** @nullable */
+  createdAt: string | null;
+}
+
+export type AdminMailReminderLogSummary = {
+  eligible: number;
+  pending: number;
+  sending: number;
+  sent: number;
+  failed: number;
+  cancelled: number;
+};
+
+export interface AdminMailReminderLog {
+  generatedAt: string;
+  enabled: boolean;
+  historyLimit: number;
+  summary: AdminMailReminderLogSummary;
+  items: AdminMailReminder[];
+}
+
 export type ListNotificationsParams = {
 /**
  * @minimum 1

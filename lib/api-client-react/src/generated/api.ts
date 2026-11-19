@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminMailReminderLog,
   AdminUser,
   AntivirusReadiness,
   AuditPage,
@@ -1915,6 +1916,84 @@ export function useListAudit<TData = Awaited<ReturnType<typeof listAudit>>, TErr
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListAuditQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminMailReminderLogUrl = () => {
+
+
+
+
+  return `/api/admin/operations/mail-reminders`
+}
+
+/**
+ * Retourne les rappels actuellement éligibles et les 200 derniers rappels enregistrés.
+ * @summary Consulter les rappels par e-mail (administrateur uniquement)
+ */
+export const getAdminMailReminderLog = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminMailReminderLog> => {
+
+  return customFetch<AdminMailReminderLog>(getGetAdminMailReminderLogUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminMailReminderLogQueryKey = () => {
+    return [
+    `/api/admin/operations/mail-reminders`
+    ] as const;
+    }
+
+
+export const getGetAdminMailReminderLogQueryOptions = <TData = Awaited<ReturnType<typeof getAdminMailReminderLog>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminMailReminderLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminMailReminderLogQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminMailReminderLog>>> = ({ signal }) => getAdminMailReminderLog({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminMailReminderLog>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminMailReminderLogQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminMailReminderLog>>>
+export type GetAdminMailReminderLogQueryError = ErrorType<void>
+
+
+/**
+ * @summary Consulter les rappels par e-mail (administrateur uniquement)
+ */
+
+export function useGetAdminMailReminderLog<TData = Awaited<ReturnType<typeof getAdminMailReminderLog>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminMailReminderLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminMailReminderLogQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

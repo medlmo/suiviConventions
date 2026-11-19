@@ -1,4 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import {
+  getGetAdminMailReminderLogQueryKey,
+  useGetAdminMailReminderLog,
+} from "@workspace/api-client-react";
 import { api } from "@/hooks/use-auth";
 
 export interface ServiceReadiness {
@@ -65,5 +69,17 @@ export function useOperationsSnapshot(enabled = true) {
     refetchInterval: enabled ? 30_000 : false,
     refetchOnWindowFocus: true,
     retry: false,
+  });
+}
+
+export function useAdminMailReminderLog(enabled = true) {
+  return useGetAdminMailReminderLog({
+    query: {
+      queryKey: getGetAdminMailReminderLogQueryKey(),
+      enabled,
+      staleTime: 30_000,
+      refetchOnWindowFocus: true,
+      retry: false,
+    },
   });
 }

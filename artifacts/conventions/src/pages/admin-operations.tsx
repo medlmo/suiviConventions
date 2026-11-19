@@ -4,6 +4,7 @@ import { errorMessage } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CommitteeMailLog } from "@/components/committee-mail-log";
 
 const dateFormatter = new Intl.DateTimeFormat("fr-MA", {
   dateStyle: "medium",
@@ -112,6 +113,8 @@ export default function AdminOperations() {
         <MetricCard title="Requêtes lentes" value={snapshot.requests.slow.toLocaleString("fr-FR")} detail="Durée supérieure ou égale à 2 secondes" icon={Clock3} testId="metric-slow-requests" />
       </div>
     </section>
+
+    <CommitteeMailLog />
 
     <Card>
       <CardHeader>

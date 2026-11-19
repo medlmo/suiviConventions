@@ -507,6 +507,22 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AuditPage" }
+  /admin/operations/mail-reminders:
+    get:
+      operationId: getAdminMailReminderLog
+      tags: [admin]
+      summary: Consulter les rappels par e-mail (administrateur uniquement)
+      description: Retourne les rappels actuellement éligibles et les 200 derniers rappels enregistrés.
+      responses:
+        "200":
+          description: Éligibilité actuelle et historique d'envoi
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminMailReminderLog" }
+        "401":
+          description: Authentification requise
+        "403":
+          description: Administrateur requis
 
   /conventions:
     get:
@@ -1544,3 +1560,41 @@ components:
       required: [observedAt]
       properties:
         observedAt: { type: string, format: date-time }
+    AdminMailReminder:
+      type: object
+      required: [id, recipientUsername, recipientEmail, conventionId, conventionName, deadlineDate, reminderDays, daysRemaining, status, attempts, lastErrorCode, nextAttemptAt, sentAt, createdAt]
+      properties:
+        id: { type: ["integer", "null"] }
+        recipientUsername: { type: string }
+        recipientEmail: { type: ["string", "null"], format: email }
+        conventionId: { type: integer }
+        conventionName: { type: string }
+        deadlineDate: { type: string, format: date }
+        reminderDays: { type: integer, enum: [14, 30] }
+        daysRemaining: { type: integer }
+        status: { type: string, enum: [eligible, pending, sending, sent, failed, cancelled] }
+        attempts: { type: integer }
+        lastErrorCode: { type: ["string", "null"] }
+        nextAttemptAt: { type: ["string", "null"], format: date-time }
+        sentAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: ["string", "null"], format: date-time }
+    AdminMailReminderLog:
+      type: object
+      required: [generatedAt, enabled, historyLimit, summary, items]
+      properties:
+        generatedAt: { type: string, format: date-time }
+        enabled: { type: boolean }
+        historyLimit: { type: integer }
+        summary:
+          type: object
+          required: [eligible, pending, sending, sent, failed, cancelled]
+          properties:
+            eligible: { type: integer }
+            pending: { type: integer }
+            sending: { type: integer }
+            sent: { type: integer }
+            failed: { type: integer }
+            cancelled: { type: integer }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminMailReminder" }

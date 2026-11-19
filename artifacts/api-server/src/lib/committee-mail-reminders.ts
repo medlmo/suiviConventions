@@ -16,9 +16,63 @@ const conventionOuverte = () => or(
 );
 let executionEnCours = false;
 
-function envoiAutomatiqueAutorise(): boolean {
+export function envoiAutomatiqueAutorise(): boolean {
   return (process.env.NODE_ENV === "production" && process.env.MAIL_ENABLED === "true") ||
     (process.env.NODE_ENV === "development" && process.env.MAIL_DEV_ENABLED === "true");
+}
+
+export type RappelComiteEligible = {
+  recipientId: number;
+  recipientUsername: string;
+  recipientEmail: string;
+  conventionId: number;
+  conventionName: string;
+  deadlineDate: string;
+  reminderDays: number;
+  daysRemaining: number;
+};
+
+/** Lecture seule des rappels qui remplissent actuellement les critères d'envoi. */
+export async function listerRappelsComiteEligibles(): Promise<RappelComiteEligible[]> {
+  const reference = await chargerReferentiel();
+  const responsables = await db.select({
+    id: usersTable.id, username: usersTable.username, role: usersTable.role,
+    direction: usersTable.direction, division: usersTable.division,
+    service: usersTable.service, active: usersTable.active, email: usersTable.email,
+  }).from(usersTable).where(and(
+    eq(usersTable.active, true),
+    inArray(usersTable.role, ["chef_service", "chef_division", "directeur", "directeur_general_services"]),
+    isNotNull(usersTable.email),
+  ));
+  const eligibles: RappelComiteEligible[] = [];
+  for (const responsable of responsables) {
+    if (!responsable.email || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(responsable.email)) continue;
+    const upcoming = await db.select({
+      id: conventionsTable.id,
+      conventionName: conventionsTable.nomConvention,
+      deadline: conventionsTable.prochaineEcheance,
+      daysRemaining: joursRestants.mapWith(Number),
+      reminderDays: seuilActuel.mapWith(Number),
+      rattachement: conventionsTable.rattachement,
+      responsableProjet: conventionsTable.responsableProjet,
+    }).from(conventionsTable).where(and(
+      isNull(conventionsTable.deletedAt), filtrePerimetre(responsable, reference),
+      conventionOuverte(), gte(joursRestants, 1), lte(joursRestants, 30),
+    )).then((rows) => rows.filter((row) => estResponsableRappel(responsable, row, reference)));
+    for (const row of upcoming) {
+      eligibles.push({
+        recipientId: responsable.id,
+        recipientUsername: responsable.username,
+        recipientEmail: responsable.email,
+        conventionId: row.id,
+        conventionName: row.conventionName,
+        deadlineDate: row.deadline!,
+        reminderDays: row.reminderDays,
+        daysRemaining: row.daysRemaining,
+      });
+    }
+  }
+  return eligibles;
 }
 
 /** No dependency on a login or on the read state of in-app notifications. */
@@ -32,37 +86,16 @@ export async function envoyerRappelsComite(options: { dryRun?: boolean } = {}) {
   try {
     const config = configurationMail();
     const transport = creerTransportSmtp();
-    const reference = await chargerReferentiel();
-    const responsables = await db.select({
-      id: usersTable.id, username: usersTable.username, role: usersTable.role,
-      direction: usersTable.direction, division: usersTable.division,
-      service: usersTable.service, active: usersTable.active, email: usersTable.email,
-    }).from(usersTable).where(and(
-      eq(usersTable.active, true),
-      inArray(usersTable.role, ["chef_service", "chef_division", "directeur", "directeur_general_services"]),
-      isNotNull(usersTable.email),
-    ));
-    for (const responsable of responsables) {
-      if (!responsable.email || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(responsable.email)) continue;
-      const upcoming = await db.select({
-        id: conventionsTable.id, deadline: conventionsTable.prochaineEcheance,
-        threshold: seuilActuel.mapWith(Number),
-        rattachement: conventionsTable.rattachement,
-        responsableProjet: conventionsTable.responsableProjet,
-      }).from(conventionsTable).where(and(
-        isNull(conventionsTable.deletedAt), filtrePerimetre(responsable, reference),
-        conventionOuverte(), gte(joursRestants, 1), lte(joursRestants, 30),
-      )).then((rows) => rows.filter((row) => estResponsableRappel(responsable, row, reference)));
-      if (!upcoming.length) continue;
-      result.eligible += upcoming.length;
-      if (options.dryRun) continue;
+    const upcoming = await listerRappelsComiteEligibles();
+    result.eligible = upcoming.length;
+    if (options.dryRun) return result;
+    if (upcoming.length > 0) {
       const inserted = await db.insert(mailRemindersTable).values(upcoming.map((row) => ({
-        recipientId: responsable.id, conventionId: row.id, deadlineDate: row.deadline!,
-        reminderDays: row.threshold,
+        recipientId: row.recipientId, conventionId: row.conventionId,
+        deadlineDate: row.deadlineDate, reminderDays: row.reminderDays,
       }))).onConflictDoNothing().returning({ id: mailRemindersTable.id });
       result.queued += inserted.length;
     }
-    if (options.dryRun) return result;
 
     // Bound work per invocation; multiple instances claim different rows atomically.
     for (let count = 0; count < 100; count++) {

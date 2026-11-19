@@ -1,6 +1,9 @@
 import { Router, type IRouter } from "express";
+import { GetAdminMailReminderLogResponse } from "@workspace/api-zod";
 import { adminRequired } from "../lib/auth";
+import { getAdminMailReminderLog } from "../lib/committee-mail-dashboard";
 import { getDocumentAntivirusReadiness } from "../lib/document-antivirus";
+import { valide } from "./conventions/commun";
 import {
   checkDatabaseReadiness,
   getOperationsSnapshot,
@@ -29,6 +32,12 @@ router.get("/admin/operations", adminRequired, async (_req, res): Promise<void> 
   recordAntivirusReadiness(antivirus.result.ready, antivirusLatencyMs);
   res.setHeader("Cache-Control", "no-store");
   res.json(getOperationsSnapshot(antivirusStatus));
+});
+
+router.get("/admin/operations/mail-reminders", adminRequired, async (_req, res): Promise<void> => {
+  const log = await getAdminMailReminderLog();
+  res.setHeader("Cache-Control", "no-store");
+  res.json(valide(GetAdminMailReminderLogResponse, log));
 });
 
 export default router;
