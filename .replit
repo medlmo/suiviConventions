@@ -29,7 +29,6 @@ defaultBucketID = "replit-objstore-5e7456db-566c-4a3b-b6fd-2f825410a3ee"
 [userenv]
 
 [userenv.shared]
-APP_PUBLIC_URL = "https://conventions-rsm.replit.app"
 MAIL_FROM = "conventions@soussmassa.ma"
 SMTP_HOST = "mail.soussmassa.ma"
 SMTP_PORT = "465"
@@ -37,4 +36,10 @@ SMTP_USER = "conventions@soussmassa.ma"
 MAIL_ENABLED = "false"
 
 [userenv.development]
-MAIL_DEV_ENABLED = "false"
+MAIL_DEV_ENABLED = "true"
+APP_PUBLIC_URL = "https://0812b685-7833-4a90-96ff-67728fa70575-00-2rjuse0r0udmv.riker.replit.dev"
+MAIL_DEV_TEST_CONVENTION_ID = "162"
+MAIL_DEV_TEST_RECIPIENT = "m.lmoussaoui@soussmassa.ma"
+
+[userenv.production]
+APP_PUBLIC_URL = "https://conventions-rsm.replit.app"
