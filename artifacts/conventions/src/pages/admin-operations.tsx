@@ -62,10 +62,8 @@ export default function AdminOperations() {
 
   const snapshot = query.data;
   const database = snapshot.database;
-  const antivirus = snapshot.antivirus;
   const dependencyIcon = (status: string) => status === "ready" ? CheckCircle2 : AlertTriangle;
   const DatabaseIcon = dependencyIcon(database.status);
-  const AntivirusIcon = dependencyIcon(antivirus.status);
 
   return <div className="space-y-6 pb-12">
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -79,7 +77,7 @@ export default function AdminOperations() {
       </Button>
     </div>
 
-    <section aria-label="Disponibilité des dépendances" className="grid gap-4 sm:grid-cols-2">
+    <section aria-label="Disponibilité de la base de données" className="grid gap-4">
       <Card data-testid="status-database">
         <CardContent className="flex items-center gap-4 p-5">
           <DatabaseIcon className={`h-6 w-6 ${database.status === "ready" ? "text-emerald-600" : "text-destructive"}`} aria-hidden="true" />
@@ -87,17 +85,6 @@ export default function AdminOperations() {
             <p className="font-semibold">Base de données : {formatStatus(database.status)}</p>
             <p className="text-sm text-muted-foreground">
               {database.latencyMs === null ? "Temps de réponse indisponible" : `Réponse en ${duree(database.latencyMs)}`}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-      <Card data-testid="status-antivirus">
-        <CardContent className="flex items-center gap-4 p-5">
-          <AntivirusIcon className={`h-6 w-6 ${antivirus.status === "ready" ? "text-emerald-600" : "text-destructive"}`} aria-hidden="true" />
-          <div className="min-w-0">
-            <p className="font-semibold">Antivirus : {formatStatus(antivirus.status)}</p>
-            <p className="text-sm text-muted-foreground">
-              {antivirus.latencyMs === null ? "Temps de réponse indisponible" : `Vérifié en ${duree(antivirus.latencyMs)}`}
             </p>
           </div>
         </CardContent>
@@ -136,7 +123,7 @@ export default function AdminOperations() {
             <p className="mt-1 text-sm text-muted-foreground">{alert.description}</p>
           </article>)}
         <p className="border-t pt-3 text-xs text-muted-foreground">
-          Alertes calculées à partir des seuils d’erreurs (5 % après 20 requêtes), de latence p95 (2 s après 20 requêtes) et de disponibilité des dépendances.
+          Alertes calculées à partir des seuils d’erreurs (5 % après 20 requêtes), de latence p95 (2 s après 20 requêtes) et de disponibilité de la base.
         </p>
       </CardContent>
     </Card>

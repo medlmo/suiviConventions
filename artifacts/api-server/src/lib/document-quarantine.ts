@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { pool } from "@workspace/db";
 import {
   InvalidDocumentError,
@@ -6,7 +5,6 @@ import {
   validateUploadBytes,
   type VerifiedDocument,
 } from "./objectStorage";
-import { getDocumentAntivirusReadiness } from "./document-antivirus";
 import { DocumentSecurityError } from "./document-security-errors";
 import { logger } from "./logger";
 import { safeErrorFields } from "./error-logging";
@@ -15,17 +13,9 @@ const RETENTION_MS = 24 * 60 * 60 * 1000;
 const RETRY_MS = 60 * 1000;
 const LEASE_MS = 4 * 60 * 1000;
 const WORKER_INTERVAL_MS = 15 * 1000;
-const MAX_QUEUED_UPLOADS = 20;
-const MAX_QUEUED_PER_USER = 2;
 const objectStorage = new ObjectStorageService();
 
 export type QuarantineState = "pending" | "scanning" | "ready" | "rejected";
-export class QuarantineQueueFullError extends Error {
-  constructor() {
-    super("La file d’analyse est pleine. Réessayez plus tard.");
-    this.name = "QuarantineQueueFullError";
-  }
-}
 
 type QuarantineRow = {
   id: string;
@@ -38,60 +28,6 @@ type QuarantineRow = {
   document_object_path: string | null;
   document_generation: string | null;
 };
-
-export async function mettreEnQuarantaine(
-  ownerId: number,
-  name: string,
-  contentType: string,
-  bytes: Buffer,
-): Promise<{ uploadId: string; expiresAt: string }> {
-  const id = randomUUID();
-  const expiresAt = new Date(Date.now() + RETENTION_MS);
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    await client.query("SELECT pg_advisory_xact_lock(781245903)");
-    const { rows: counts } = await client.query<{ total: string; owner_total: string }>(
-      `SELECT
-        count(*) FILTER (WHERE state IN ('storing', 'pending', 'scanning'))::text AS total,
-        count(*) FILTER (WHERE owner_id = $1 AND state IN ('storing', 'pending', 'scanning'))::text AS owner_total
-       FROM quarantined_document_uploads
-       WHERE expires_at > now()`,
-      [ownerId],
-    );
-    if (Number(counts[0]?.total ?? 0) >= MAX_QUEUED_UPLOADS ||
-      Number(counts[0]?.owner_total ?? 0) >= MAX_QUEUED_PER_USER) {
-      throw new QuarantineQueueFullError();
-    }
-    await client.query(
-      `INSERT INTO quarantined_document_uploads
-        (id, owner_id, name, content_type, size, state, expires_at)
-       VALUES ($1, $2, $3, $4, $5, 'storing', $6)`,
-      [id, ownerId, name, contentType, bytes.length, expiresAt],
-    );
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
-
-  try {
-    await objectStorage.storeQuarantinedUpload(id, bytes, name, contentType);
-    await pool.query(
-      `UPDATE quarantined_document_uploads
-       SET state = 'pending', updated_at = now()
-       WHERE id = $1 AND state = 'storing'`,
-      [id],
-    );
-  } catch (error) {
-    await objectStorage.deleteQuarantinedUpload(id).catch(() => undefined);
-    await pool.query("DELETE FROM quarantined_document_uploads WHERE id = $1", [id]).catch(() => undefined);
-    throw error;
-  }
-  return { uploadId: id, expiresAt: expiresAt.toISOString() };
-}
 
 export async function getQuarantineStatus(
   uploadId: string,
@@ -169,7 +105,7 @@ async function setRetry(id: string, error: unknown): Promise<void> {
     operation: "document.quarantine",
     errorCode: code,
     ...safeErrorFields(error),
-  }, "Quarantined upload will be retried");
+  }, "Pending document validation will be retried");
 }
 
 async function marquerRejete(row: QuarantineRow): Promise<void> {
@@ -212,19 +148,19 @@ async function traiterUneDemande(): Promise<void> {
       }, "Clean quarantined file could not be removed immediately");
     });
     logger.info({
-      event: "document.quarantine.scan.completed",
+      event: "document.quarantine.structure.completed",
       operation: "document.quarantine",
       uploadId: row.id,
-    }, "Quarantined upload passed document checks");
+    }, "Pending document passed structure validation");
   } catch (error) {
     if ((error instanceof DocumentSecurityError && error.code === "DOCUMENT_REJECTED") ||
       error instanceof InvalidDocumentError) {
       await marquerRejete(row);
       logger.warn({
-        event: "document.quarantine.scan.rejected",
+        event: "document.quarantine.structure.rejected",
         operation: "document.quarantine",
         uploadId: row.id,
-      }, "Quarantined upload did not pass document checks");
+      }, "Pending document failed structure validation");
       return;
     }
     await setRetry(row.id, error);
@@ -282,8 +218,7 @@ async function tick(): Promise<void> {
       await nettoyerExpires();
       lastCleanupAt = Date.now();
     }
-    const readiness = await getDocumentAntivirusReadiness();
-    if (readiness.ready) await traiterUneDemande();
+    await traiterUneDemande();
   } catch (error) {
     logger.error({
       event: "document.quarantine.worker.failed",

@@ -5,8 +5,7 @@ import { DocumentSecurityError } from "./document-security-errors.ts";
 export function runDocumentTool(command: string, args: string[], timeout = 20_000, maxBuffer = 512 * 1024):
 Promise<{ code: number; stdout: Buffer; stderr: Buffer }> {
   return new Promise((resolve, reject) => {
-    const memoryLimit = ["clamscan", "freshclam"].includes(command) ? 1536 * 1024 * 1024 : 256 * 1024 * 1024;
-    execFile("prlimit", ["--as=" + memoryLimit, "--cpu=" + Math.ceil(timeout / 1000 + 2), "--", command, ...args],
+    execFile("prlimit", ["--as=" + 256 * 1024 * 1024, "--cpu=" + Math.ceil(timeout / 1000 + 2), "--", command, ...args],
       { timeout, killSignal: "SIGKILL", maxBuffer, encoding: "buffer" },
       (error, stdout, stderr) => {
         if (!error) return resolve({ code: 0, stdout, stderr });
@@ -14,8 +13,8 @@ Promise<{ code: number; stdout: Buffer; stderr: Buffer }> {
           return resolve({ code: error.code, stdout, stderr });
         }
         reject(new DocumentSecurityError(
-          "Document en quarantaine : un outil de contrôle est indisponible ou a dépassé ses limites. Réessayez ultérieurement.",
-          "ANALYSIS_UNAVAILABLE",
+          "Le contrôle de structure est temporairement indisponible. Réessayez ultérieurement.",
+          "DOCUMENT_CHECK_UNAVAILABLE",
         ));
       });
   });

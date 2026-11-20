@@ -1,10 +1,10 @@
 export class DocumentSecurityError extends Error {
-  readonly code: "DOCUMENT_REJECTED" | "ANALYSIS_UNAVAILABLE" | "ANALYSIS_BUSY";
+  readonly code: "DOCUMENT_REJECTED" | "DOCUMENT_CHECK_UNAVAILABLE";
   readonly status: number;
 
   constructor(
     message: string,
-    code: "DOCUMENT_REJECTED" | "ANALYSIS_UNAVAILABLE" | "ANALYSIS_BUSY",
+    code: "DOCUMENT_REJECTED" | "DOCUMENT_CHECK_UNAVAILABLE",
     status = code === "DOCUMENT_REJECTED" ? 423 : 503,
   ) {
     super(message);
@@ -12,21 +12,14 @@ export class DocumentSecurityError extends Error {
     this.status = status;
     this.name = "DocumentSecurityError";
   }
-  get securityStatus(): "rejected" | "quarantined" {
-    return this.code === "DOCUMENT_REJECTED" ? "rejected" : "quarantined";
+  get securityStatus(): "rejected" | null {
+    return this.code === "DOCUMENT_REJECTED" ? "rejected" : null;
   }
-}
-
-export function documentAnalysisBusy(): DocumentSecurityError {
-  return new DocumentSecurityError(
-    "Document en quarantaine : une autre analyse est en cours. Réessayez dans quelques instants.",
-    "ANALYSIS_BUSY",
-  );
 }
 
 export function documentRejected(): DocumentSecurityError {
   return new DocumentSecurityError(
-    "Document refusé : structure invalide, contenu dangereux, macros ou protection empêchant son analyse. Le fichier n'est pas disponible.",
+    "Le fichier n’a pas passé les contrôles de structure autorisés.",
     "DOCUMENT_REJECTED",
   );
 }

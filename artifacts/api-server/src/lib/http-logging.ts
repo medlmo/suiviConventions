@@ -15,7 +15,7 @@ type Operation =
   | "document.upload.prepare" | "document.upload.complete";
 type ErrorCode =
   | "INTERNAL_ERROR" | "REQUEST_REJECTED" | "SCHEMA_VALIDATION_FAILED"
-  | "DOCUMENT_REJECTED" | "ANALYSIS_UNAVAILABLE" | "ANALYSIS_BUSY";
+  | "DOCUMENT_REJECTED" | "DOCUMENT_CHECK_UNAVAILABLE";
 
 interface RequestOutcome {
   event: RequestEvent;
@@ -42,7 +42,7 @@ export function recordRequestFailure(
 }
 
 function isHealthCheck(req: Request): boolean {
-  return req.method === "GET" && ["/api/healthz", "/api/readyz", "/api/healthz/antivirus"].includes(
+  return req.method === "GET" && ["/api/healthz", "/api/readyz"].includes(
     (req.originalUrl ?? "").split("?")[0],
   );
 }

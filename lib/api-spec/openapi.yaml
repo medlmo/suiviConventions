@@ -105,25 +105,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  /healthz/antivirus:
-    get:
-      operationId: antivirusReadiness
-      tags: [health]
-      summary: Vérifier la disponibilité de l'antivirus documentaire
-      description: Indique si les nouveaux dépôts peuvent être analysés.
-      security: []
-      responses:
-        "200":
-          description: Base antimalware disponible
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/AntivirusReadiness" }
-        "503":
-          description: Base antimalware absente, périmée ou en cours de préparation
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/AntivirusReadiness" }
-
   /storage/uploads/request-url:
     post:
       operationId: requestUploadUrl
@@ -162,9 +143,8 @@ paths:
         Session authentifiée du propriétaire requise. Usage unique et délai
         de réception de 60 secondes. Contrôle effectif de la taille (10 Mio),
         du type MIME et de la signature PDF/Word, même sans Content-Length.
-        Conservation temporaire bornée en mémoire. Si l’antivirus est
-        indisponible, le document est placé en quarantaine privée pour 24 heures,
-        puis rendu disponible uniquement après validation complète.
+        Les octets sont conservés temporairement en mémoire jusqu'à la
+        finalisation, qui vérifie la structure du document avant stockage.
       parameters:
         - in: path
           name: token
@@ -191,7 +171,7 @@ paths:
     get:
       operationId: getUploadStatus
       tags: [storage]
-      summary: Consulter l’état d’analyse d’un dépôt mis en quarantaine
+      summary: Consulter l’état d’un dépôt antérieur encore en validation
       parameters:
         - in: path
           name: token
@@ -210,7 +190,7 @@ paths:
     post:
       operationId: completeUpload
       tags: [storage]
-      summary: Finaliser un document ou le mettre en quarantaine temporaire
+      summary: Finaliser un document après contrôle de structure
       requestBody:
         required: true
         content:
@@ -235,18 +215,18 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
         "409": { description: Réception inachevée ou finalisation déjà en cours }
-        "429":
-          description: Quarantaine temporairement saturée
+        "423":
+          description: Document refusé après contrôle de structure
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
-        "423":
-          description: Document refusé après contrôle ; objet de quarantaine supprimé
+        "500":
+          description: Impossible de finaliser le document
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
         "503":
-          description: Impossible de conserver le document en quarantaine pour le moment
+          description: Outil de contrôle de structure temporairement indisponible
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
@@ -254,7 +234,7 @@ paths:
     get:
       operationId: downloadConventionDocument
       tags: [conventions]
-      summary: Télécharger un document privé après contrôle de sécurité, y compris les documents historiques
+      summary: Télécharger un document privé après contrôle de structure, y compris les documents historiques
       parameters:
         - name: id
           in: path
@@ -284,12 +264,12 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
         "423":
-          description: Document refusé après contrôle ; conservé mais inaccessible
+          description: Document précédemment refusé ; conservé mais inaccessible
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
-        "503":
-          description: Analyse indisponible ou occupée ; document en quarantaine
+        "500":
+          description: Erreur lors de l'accès au fichier privé
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Erreur" }
@@ -814,12 +794,6 @@ components:
           type: string
       required:
         - status
-    AntivirusReadiness:
-      type: object
-      required: [ready]
-      properties:
-        ready: { type: boolean }
-
     Erreur:
       type: object
       required: [error]
@@ -827,10 +801,10 @@ components:
         error: { type: string }
         code:
           type: string
-          enum: [DOCUMENT_REJECTED, ANALYSIS_UNAVAILABLE, ANALYSIS_BUSY]
+          enum: [DOCUMENT_REJECTED, DOCUMENT_CHECK_UNAVAILABLE]
         securityStatus:
           type: string
-          enum: [quarantined, rejected]
+          enum: [rejected]
 
     UploadUrlInput:
       type: object

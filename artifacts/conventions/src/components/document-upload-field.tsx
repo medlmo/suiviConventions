@@ -83,7 +83,7 @@ export function DocumentUploadField({
   const [uploadedName, setUploadedName] = useState("");
   const [pendingCompletion, setPendingCompletion] = useState<PendingCompletion | null>(null);
   const [retryCompletion, setRetryCompletion] = useState<(UploadContext & { objectPath: string }) | null>(null);
-  const [scanStatus, setScanStatus] = useState<"pending" | "scanning">("pending");
+  const [validationStatus, setValidationStatus] = useState<"pending" | "scanning">("pending");
   const mounted = useRef(true);
   const uploadActive = useRef(false);
   const onChangeRef = useRef(onChange);
@@ -203,7 +203,7 @@ export function DocumentUploadField({
         if (mounted.current) {
           setRetryCompletion(null);
           setPendingCompletion(pending);
-          setScanStatus("pending");
+          setValidationStatus("pending");
           setError("");
         }
         return;
@@ -212,11 +212,8 @@ export function DocumentUploadField({
       accepterDocument(result, completion);
     } catch (cause) {
       if (!mounted.current) return;
-      if (cause instanceof ApiError &&
-        (cause.code === "ANALYSIS_UNAVAILABLE" || cause.code === "ANALYSIS_BUSY")) {
-        setError(cause.code === "ANALYSIS_UNAVAILABLE"
-          ? "L’antivirus est indisponible et la mise en quarantaine n’a pas abouti. Réessayez le téléversement."
-          : "Une autre analyse est en cours. Réessayez le téléversement dans quelques instants.");
+      if (cause instanceof ApiError && cause.code === "DOCUMENT_CHECK_UNAVAILABLE") {
+        setError("Le contrôle de structure est temporairement indisponible. Réessayez la validation du document.");
         return;
       }
       setRetryCompletion(null);
@@ -257,18 +254,18 @@ export function DocumentUploadField({
         } else if (result.status === "rejected") {
           clearPendingUpload(pendingStorageKey);
           setPendingCompletion(null);
-          setError("L’antivirus a refusé le document. Le fichier n’est pas disponible.");
+          setError("Le fichier n’a pas passé les contrôles de structure. Il n’est pas disponible.");
         } else {
-          setScanStatus(result.status === "scanning" ? "scanning" : "pending");
+          setValidationStatus(result.status === "scanning" ? "scanning" : "pending");
         }
       } catch (cause) {
         if (!active) return;
         if (cause instanceof ApiError && cause.status === 404) {
           clearPendingUpload(pendingStorageKey);
           setPendingCompletion(null);
-          setError("L’attente d’analyse a expiré. Sélectionnez à nouveau le fichier.");
+          setError("Le délai de validation du dépôt a expiré. Sélectionnez à nouveau le fichier.");
         } else {
-          setError("La vérification est temporairement indisponible; le fichier reste en quarantaine.");
+          setError("La vérification est temporairement indisponible; le fichier reste en attente.");
         }
       } finally {
         checking = false;
@@ -302,13 +299,13 @@ export function DocumentUploadField({
       <p className="text-xs text-muted-foreground">PDF ou Word (.doc, .docx) — 10 Mo maximum.</p>
       {isUploading && <p className="text-sm text-muted-foreground" role="status">
         {pendingCompletion
-          ? "Finalisation et analyse antimalware… Le fichier reste en quarantaine jusqu’à validation."
-          : "Téléversement, contrôle du document et analyse antimalware… Le fichier reste en quarantaine jusqu’à validation."}
+          ? "Finalisation et contrôle de structure…"
+          : "Téléversement et contrôle de la structure du document…"}
       </p>}
       {pendingCompletion && <p className="text-sm text-amber-700" role="status">
-        {scanStatus === "scanning"
-          ? "Fichier conservé en quarantaine; analyse de sécurité en cours."
-          : "Fichier reçu et conservé en quarantaine. Il sera ajouté après validation antivirus (durée maximale : 24 h). Vous pouvez continuer à remplir la fiche."}
+        {validationStatus === "scanning"
+          ? "Contrôle de structure en cours pour un dépôt déjà engagé."
+          : "Dépôt antérieur en attente de contrôle de structure; durée maximale restante : 24 h."}
       </p>}
       {!isUploading && isStoredFile && uploadedName && (
         <p className="text-sm text-muted-foreground">Fichier chargé : {uploadedName}</p>
@@ -329,7 +326,7 @@ export function DocumentUploadField({
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
       {retryCompletion && !isUploading && (
         <Button type="button" variant="outline" size="sm" onClick={() => void retryFinalisation()}>
-          Réessayer la mise en quarantaine
+          Réessayer la validation du document
         </Button>
       )}
     </div>

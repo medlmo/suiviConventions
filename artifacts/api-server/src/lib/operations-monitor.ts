@@ -31,7 +31,6 @@ interface AlertCandidate {
 const buckets = new Map<number, RequestBucket>();
 const activeAlerts = new Map<string, { since: string; candidate: AlertCandidate }>();
 let databaseHealth: DependencyHealth = { status: "unknown", checkedAt: null, latencyMs: null };
-let antivirusHealth: DependencyHealth = { status: "unknown", checkedAt: null, latencyMs: null };
 let databaseProbe: Promise<DependencyHealth> | undefined;
 
 function emptyBucket(startedAt: number): RequestBucket {
@@ -53,7 +52,7 @@ export function recordHttpRequest(input: {
   status: number;
   durationMs: number;
 }): void {
-  if (["/healthz", "/readyz", "/healthz/antivirus", "/admin/operations"].includes(input.route)) return;
+  if (["/healthz", "/readyz", "/admin/operations"].includes(input.route)) return;
   const now = Date.now();
   const startedAt = Math.floor(now / BUCKET_MS) * BUCKET_MS;
   const bucket = buckets.get(startedAt) ?? emptyBucket(startedAt);
@@ -66,15 +65,6 @@ export function recordHttpRequest(input: {
   bucket.latencies[index < 0 ? BUCKETS.length : index]++;
   pruneBuckets(now);
   refreshServiceAlerts(now);
-}
-
-export function recordAntivirusReadiness(ready: boolean, latencyMs: number): void {
-  antivirusHealth = {
-    status: ready ? "ready" : "unavailable",
-    checkedAt: new Date().toISOString(),
-    latencyMs: Math.round(latencyMs),
-  };
-  refreshServiceAlerts(Date.now());
 }
 
 /** Liveness remains separate; this short cached probe checks DB reachability. */
@@ -184,14 +174,6 @@ function currentAlertCandidates(metrics: ReturnType<typeof aggregateRequests>): 
       signal: "readiness probe",
     });
   }
-  if (antivirusHealth.status === "unavailable") {
-    candidates.push({
-      code: "antivirus_unavailable", severity: "critical",
-      title: "Analyse antivirus indisponible",
-      description: "Les nouveaux documents ne peuvent pas être validés tant que l’analyse antivirus est indisponible.",
-      signal: "antivirus readiness",
-    });
-  }
   if (metrics.requests >= 20 && metrics.errorRatePercent >= 5) {
     candidates.push({
       code: "http_error_rate", severity: "critical",
@@ -215,9 +197,8 @@ function refreshServiceAlerts(now: number): void {
   refreshAlerts(currentAlertCandidates(aggregateRequests(now)), new Date(now).toISOString());
 }
 
-export function getOperationsSnapshot(antivirus: DependencyHealth) {
+export function getOperationsSnapshot() {
   const now = Date.now();
-  antivirusHealth = antivirus;
   const metrics = aggregateRequests(now);
   const generatedAt = new Date(now).toISOString();
   return {
@@ -226,7 +207,6 @@ export function getOperationsSnapshot(antivirus: DependencyHealth) {
     scope: "instance" as const,
     windowMinutes: 5 as const,
     database: databaseHealth,
-    antivirus: antivirusHealth,
     requests: {
       total: metrics.requests,
       serverErrors: metrics.serverErrors,

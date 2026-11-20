@@ -23,7 +23,6 @@ export interface OperationsSnapshot {
   scope: "instance";
   windowMinutes: 5;
   database: { status: "unknown" | "ready" | "unavailable"; checkedAt: string | null; latencyMs: number | null };
-  antivirus: { status: "unknown" | "ready" | "unavailable"; checkedAt: string | null; latencyMs: number | null };
   requests: {
     total: number;
     serverErrors: number;

@@ -796,13 +796,13 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       assert.equal(deleteRenameAccount.status, 204, "le compte de test est nettoyé");
     });
 
-    await t.test("le tableau d’exploitation est réservé à l’administration et ne révèle pas les détails du scanner", async () => {
+    await t.test("le tableau d’exploitation est réservé à l’administration", async () => {
       const response = await apiRequest(baseUrl, "/admin/operations", { cookie });
       assert.equal(response.status, 200);
       assert.equal(response.headers.get("cache-control"), "no-store");
       const snapshot = await response.json();
       assert.equal(snapshot.database.status, "ready");
-      assert.ok(["ready", "unavailable"].includes(snapshot.antivirus.status));
+      assert.equal("antivirus" in snapshot, false);
       assert.ok(Number.isInteger(snapshot.requests.total));
       assert.equal(snapshot.scope, "instance");
       assert.equal(JSON.stringify(snapshot).includes("clamscan"), false);

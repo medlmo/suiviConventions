@@ -10,6 +10,5 @@ export type ErreurSecurityStatus = typeof ErreurSecurityStatus[keyof typeof Erre
 
 
 export const ErreurSecurityStatus = {
-  quarantined: 'quarantined',
   rejected: 'rejected',
 } as const;

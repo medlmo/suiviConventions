@@ -11,6 +11,5 @@ export type ErreurCode = typeof ErreurCode[keyof typeof ErreurCode];
 
 export const ErreurCode = {
   DOCUMENT_REJECTED: 'DOCUMENT_REJECTED',
-  ANALYSIS_UNAVAILABLE: 'ANALYSIS_UNAVAILABLE',
-  ANALYSIS_BUSY: 'ANALYSIS_BUSY',
+  DOCUMENT_CHECK_UNAVAILABLE: 'DOCUMENT_CHECK_UNAVAILABLE',
 } as const;

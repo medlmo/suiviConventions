@@ -23,7 +23,7 @@ import {
   reserveUpload,
 } from "../lib/upload-staging";
 import { DocumentSecurityError } from "../lib/document-security-errors";
-import { getQuarantineStatus, mettreEnQuarantaine, QuarantineQueueFullError } from "../lib/document-quarantine";
+import { getQuarantineStatus } from "../lib/document-quarantine";
 import { recordRequestFailure } from "../lib/http-logging";
 
 const router: IRouter = Router();
@@ -202,7 +202,7 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     return;
   }
   if (upload.state !== "ready" || !upload.bytes) {
-    res.status(409).json({ error: "Le fichier n'est pas prêt ou son analyse est déjà en cours." });
+    res.status(409).json({ error: "Le fichier n’est pas prêt ou son contrôle de structure est en cours." });
     return;
   }
   try {
@@ -213,48 +213,17 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     res.json(CompleteUploadResponse.parse(document));
   } catch (error) {
     if (error instanceof DocumentSecurityError) {
-      if ((error.code === "ANALYSIS_UNAVAILABLE" || error.code === "ANALYSIS_BUSY") && upload.bytes) {
-        try {
-          const pending = await mettreEnQuarantaine(
-            req.user.id,
-            upload.name,
-            upload.contentType,
-            upload.bytes,
-          );
-          upload.quarantineUploadId = pending.uploadId;
-          upload.bytes = undefined;
-          upload.state = "completed";
-          upload.expiresAt = Date.now() + 10 * 60 * 1000;
-          res.json(CompleteUploadResponse.parse({ status: "pending", ...pending }));
-          return;
-        } catch (queueError) {
-          if (queueError instanceof QuarantineQueueFullError) {
-            res.setHeader("Retry-After", "60");
-            res.status(429).json({ error: queueError.message });
-            return;
-          }
-          recordRequestFailure(res, queueError, {
-            event: "document.upload.complete.failed",
-            operation: "document.upload.complete",
-            status: 503,
-            errorCode: "INTERNAL_ERROR",
-          });
-          res.setHeader("Retry-After", "60");
-          res.status(503).json({
-            error: "La quarantaine est temporairement indisponible. Le fichier n’a pas été validé; réessayez.",
-            code: "ANALYSIS_UNAVAILABLE",
-            securityStatus: "quarantined",
-          });
-          return;
-        }
-      }
       if (error.code === "DOCUMENT_REJECTED") discardUpload(parsed.data.objectPath);
       recordRequestFailure(res, error, {
         event: "document.security.blocked", operation: "document.upload.complete",
         status: error.status, errorCode: error.code,
       });
-      res.setHeader("Retry-After", error.code === "ANALYSIS_UNAVAILABLE" ? "60" : "5");
-      res.status(error.status).json({ error: error.message, code: error.code, securityStatus: error.securityStatus });
+      if (error.code === "DOCUMENT_CHECK_UNAVAILABLE") res.setHeader("Retry-After", "60");
+      res.status(error.status).json({
+        error: error.message,
+        code: error.code,
+        ...(error.securityStatus ? { securityStatus: error.securityStatus } : {}),
+      });
       return;
     }
     if (error instanceof InvalidDocumentError) {

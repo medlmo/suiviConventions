@@ -1,7 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { bootstrapAdmin, nettoyerSessionsExpirees } from "./lib/auth";
-import { prepareDocumentAntivirus } from "./lib/document-antivirus";
 import { safeErrorFields } from "./lib/error-logging";
 import { purgerConventionsSupprimees } from "./lib/convention-purge";
 import { startQuarantinedUploadWorker } from "./lib/document-quarantine";
@@ -27,10 +26,8 @@ async function start(): Promise<void> {
     }
 
     logger.info({ event: "server.started", operation: "server.listen", port }, "Server listening");
-    void prepareDocumentAntivirus();
+    // Continue any uploads that were in the old quarantine flow across deployment.
     startQuarantinedUploadWorker();
-    const antivirusTimer = setInterval(() => void prepareDocumentAntivirus(), 12 * 60 * 60 * 1000);
-    antivirusTimer.unref();
 
     const nettoyer = async (): Promise<void> => {
       try {

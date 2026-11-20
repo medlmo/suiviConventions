@@ -82,15 +82,6 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * Indique si les nouveaux dépôts peuvent être analysés.
- * @summary Vérifier la disponibilité de l'antivirus documentaire
- */
-export const AntivirusReadinessResponse = zod.object({
-  "ready": zod.boolean()
-})
-
-
-/**
  * @summary Réserver un envoi contrôlé par le serveur (10 minutes, lié à la session)
  */
 export const requestUploadUrlBodyNameMax = 255;
@@ -115,9 +106,8 @@ export const RequestUploadUrlResponse = zod.object({
  * Session authentifiée du propriétaire requise. Usage unique et délai
  * de réception de 60 secondes. Contrôle effectif de la taille (10 Mio),
  * du type MIME et de la signature PDF/Word, même sans Content-Length.
- * Conservation temporaire bornée en mémoire. Si l’antivirus est
- * indisponible, le document est placé en quarantaine privée pour 24 heures,
- * puis rendu disponible uniquement après validation complète.
+ * Les octets sont conservés temporairement en mémoire jusqu'à la
+ * finalisation, qui vérifie la structure du document avant stockage.
  * @summary Recevoir les octets sans stockage persistant avant validation
  */
 export const UploadDocumentBytesParams = zod.object({
@@ -128,7 +118,7 @@ export const UploadDocumentBytesResponse = zod.void()
 
 
 /**
- * @summary Consulter l’état d’analyse d’un dépôt mis en quarantaine
+ * @summary Consulter l’état d’un dépôt antérieur encore en validation
  */
 export const GetUploadStatusParams = zod.object({
   "token": zod.uuid()
@@ -152,7 +142,7 @@ export const GetUploadStatusResponse = zod.object({
 
 
 /**
- * @summary Finaliser un document ou le mettre en quarantaine temporaire
+ * @summary Finaliser un document après contrôle de structure
  */
 
 export const completeUploadBodyNameMax = 255;
@@ -182,7 +172,7 @@ export const CompleteUploadResponse = zod.union([zod.object({
 
 
 /**
- * @summary Télécharger un document privé après contrôle de sécurité, y compris les documents historiques
+ * @summary Télécharger un document privé après contrôle de structure, y compris les documents historiques
  */
 
 

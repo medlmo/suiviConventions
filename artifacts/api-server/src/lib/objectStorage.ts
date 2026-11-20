@@ -7,6 +7,7 @@ import { objectStorageClient } from "./object-storage-client";
 export { objectStorageClient } from "./object-storage-client";
 
 export const DOCUMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+const LEGACY_SCANNED_POLICY = "structure-antimalware-v1";
 
 const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   ".pdf": "application/pdf",
@@ -98,27 +99,6 @@ export class ObjectStorageService {
     await objectStorageClient.bucket(bucketName).file(objectName).delete({ ignoreNotFound: true });
   }
 
-  async storeQuarantinedUpload(
-    id: string,
-    bytes: Buffer,
-    name: string,
-    contentType: string,
-  ): Promise<void> {
-    if (!UUID_PATTERN.test(id) || bytes.length < 1 || bytes.length > DOCUMENT_MAX_SIZE_BYTES ||
-      typeDocumentPourNom(name) !== contentType) {
-      throw new InvalidDocumentError();
-    }
-    const { bucketName, objectName } = parseObjectPath(`${this.getPrivateObjectDir()}/quarantine/${id}`);
-    await objectStorageClient.bucket(bucketName).file(objectName).save(bytes, {
-      resumable: false,
-      preconditionOpts: { ifGenerationMatch: 0 },
-      metadata: {
-        contentType,
-        metadata: { originalName: name, securityStatus: "quarantined", documentVerified: "false" },
-      },
-    });
-  }
-
   async readQuarantinedUpload(id: string): Promise<Buffer> {
     if (!UUID_PATTERN.test(id)) throw new ObjectNotFoundError();
     const { bucketName, objectName } = parseObjectPath(`${this.getPrivateObjectDir()}/quarantine/${id}`);
@@ -139,7 +119,7 @@ export class ObjectStorageService {
     const expectedContentType = typeDocumentPourNom(name);
     if (!expectedContentType) throw new InvalidDocumentError();
     validateUploadBytes(name, bytes);
-    // Aucun objet n'est créé avant les contrôles de structure et l'antivirus.
+    // Aucun objet n'est créé avant les contrôles de format et de structure.
     const security = await inspectDocument(name, async () => bytes);
     const size = bytes.length;
     if (stableId !== undefined && !UUID_PATTERN.test(stableId)) throw new InvalidDocumentError();
@@ -166,7 +146,7 @@ export class ObjectStorageService {
         preconditionOpts: { ifGenerationMatch: 0 },
         metadata: {
           contentType: expectedContentType,
-          metadata: { ...security, originalName: name, documentVerified: "false", securityStatus: "clean" },
+          metadata: { ...security, originalName: name, documentVerified: "false", securityStatus: "structure_validated" },
         },
       });
       const [metadata] = await destination.getMetadata();
@@ -176,7 +156,10 @@ export class ObjectStorageService {
       }
       const finalFile = objectStorageClient.bucket(bucketName).file(objectName, { generation });
       await finalFile.setMetadata({
-        metadata: { ...security, documentVerified: "true", securityStatus: "clean", securityGeneration: generation, originalName: name },
+        metadata: {
+          ...security, documentVerified: "true", securityStatus: "structure_validated",
+          securityGeneration: generation, originalName: name,
+        },
       });
     } catch (error) {
       // Ne pas laisser de copie incomplète après un échec de stockage.
@@ -219,11 +202,17 @@ export class ObjectStorageService {
     const generation = String(metadata.generation);
     const flags = metadata.metadata ?? {};
     if (flags.securityStatus === "rejected") throw documentRejected();
+    const hashIsValid = typeof flags.securityHash === "string" &&
+      /^[0-9a-f]{64}$/u.test(flags.securityHash);
     if (flags.securityStatus === "clean" && (
+      flags.securityPolicy !== LEGACY_SCANNED_POLICY ||
+      flags.securityGeneration !== generation ||
+      !hashIsValid
+    )) return null;
+    if (flags.securityStatus === "structure_validated" && (
       flags.securityPolicy !== DOCUMENT_SECURITY_POLICY ||
       flags.securityGeneration !== generation ||
-      typeof flags.securityHash !== "string" ||
-      !/^[0-9a-f]{64}$/u.test(flags.securityHash)
+      !hashIsValid
     )) return null;
     return { objectPath, name, contentType, size, generation };
   }

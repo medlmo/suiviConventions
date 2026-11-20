@@ -22,7 +22,6 @@ import type {
 import type {
   AdminMailReminderLog,
   AdminUser,
-  AntivirusReadiness,
   AuditPage,
   AuthUser,
   CompleteUploadInput,
@@ -425,84 +424,6 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
-export const getAntivirusReadinessUrl = () => {
-
-
-
-
-  return `/api/healthz/antivirus`
-}
-
-/**
- * Indique si les nouveaux dépôts peuvent être analysés.
- * @summary Vérifier la disponibilité de l'antivirus documentaire
- */
-export const antivirusReadiness = async ( options?: Parameters<typeof customFetch>[1]): Promise<AntivirusReadiness> => {
-
-  return customFetch<AntivirusReadiness>(getAntivirusReadinessUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getAntivirusReadinessQueryKey = () => {
-    return [
-    `/api/healthz/antivirus`
-    ] as const;
-    }
-
-
-export const getAntivirusReadinessQueryOptions = <TData = Awaited<ReturnType<typeof antivirusReadiness>>, TError = ErrorType<AntivirusReadiness>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof antivirusReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getAntivirusReadinessQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof antivirusReadiness>>> = ({ signal }) => antivirusReadiness({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof antivirusReadiness>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type AntivirusReadinessQueryResult = NonNullable<Awaited<ReturnType<typeof antivirusReadiness>>>
-export type AntivirusReadinessQueryError = ErrorType<AntivirusReadiness>
-
-
-/**
- * @summary Vérifier la disponibilité de l'antivirus documentaire
- */
-
-export function useAntivirusReadiness<TData = Awaited<ReturnType<typeof antivirusReadiness>>, TError = ErrorType<AntivirusReadiness>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof antivirusReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getAntivirusReadinessQueryOptions(options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-
 export const getRequestUploadUrlUrl = () => {
 
 
@@ -603,9 +524,8 @@ export const getUploadDocumentBytesUrl = (token: string,) => {
  * Session authentifiée du propriétaire requise. Usage unique et délai
  * de réception de 60 secondes. Contrôle effectif de la taille (10 Mio),
  * du type MIME et de la signature PDF/Word, même sans Content-Length.
- * Conservation temporaire bornée en mémoire. Si l’antivirus est
- * indisponible, le document est placé en quarantaine privée pour 24 heures,
- * puis rendu disponible uniquement après validation complète.
+ * Les octets sont conservés temporairement en mémoire jusqu'à la
+ * finalisation, qui vérifie la structure du document avant stockage.
  * @summary Recevoir les octets sans stockage persistant avant validation
  */
 export const uploadDocumentBytes = async (token: string,
@@ -681,7 +601,7 @@ export const getGetUploadStatusUrl = (token: string,) => {
 }
 
 /**
- * @summary Consulter l’état d’analyse d’un dépôt mis en quarantaine
+ * @summary Consulter l’état d’un dépôt antérieur encore en validation
  */
 export const getUploadStatus = async (token: string, options?: Parameters<typeof customFetch>[1]): Promise<UploadStatus> => {
 
@@ -728,7 +648,7 @@ export type GetUploadStatusQueryError = ErrorType<void>
 
 
 /**
- * @summary Consulter l’état d’analyse d’un dépôt mis en quarantaine
+ * @summary Consulter l’état d’un dépôt antérieur encore en validation
  */
 
 export function useGetUploadStatus<TData = Awaited<ReturnType<typeof getUploadStatus>>, TError = ErrorType<void>>(
@@ -758,7 +678,7 @@ export const getCompleteUploadUrl = () => {
 }
 
 /**
- * @summary Finaliser un document ou le mettre en quarantaine temporaire
+ * @summary Finaliser un document après contrôle de structure
  */
 export const completeUpload = async (completeUploadInput: CompleteUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<CompleteUploadResult> => {
 
@@ -824,7 +744,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CompleteUploadMutationVariables = {data: BodyType<CompleteUploadInput>}
 
     /**
- * @summary Finaliser un document ou le mettre en quarantaine temporaire
+ * @summary Finaliser un document après contrôle de structure
  */
 export const useCompleteUpload = <TError = ErrorType<Erreur | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeUpload>>, TError,CompleteUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -855,7 +775,7 @@ export const getDownloadConventionDocumentUrl = (id: number,
 }
 
 /**
- * @summary Télécharger un document privé après contrôle de sécurité, y compris les documents historiques
+ * @summary Télécharger un document privé après contrôle de structure, y compris les documents historiques
  */
 export const downloadConventionDocument = async (id: number,
     field: 'documentConvention' | 'pv',
@@ -908,7 +828,7 @@ export type DownloadConventionDocumentQueryError = ErrorType<void | Erreur>
 
 
 /**
- * @summary Télécharger un document privé après contrôle de sécurité, y compris les documents historiques
+ * @summary Télécharger un document privé après contrôle de structure, y compris les documents historiques
  */
 
 export function useDownloadConventionDocument<TData = Awaited<ReturnType<typeof downloadConventionDocument>>, TError = ErrorType<void | Erreur>>(
