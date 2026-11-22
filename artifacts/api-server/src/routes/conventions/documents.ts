@@ -6,7 +6,7 @@ import { conditionsVisibles } from "../../lib/convention-access";
 import { colonnesConvention, documentsConvention, versApi } from "../../lib/conventions-mapper";
 import { genererFicheTechnique } from "../../lib/fiche-technique";
 import { recordRequestFailure } from "../../lib/http-logging";
-import { chargerReferentiel } from "../../lib/reference-data";
+import { loadReferenceData } from "../../lib/reference-data";
 import { documentVerifie, objectStorageService } from "./commun";
 
 export const ficheTechniqueRouter: IRouter = Router();
@@ -18,7 +18,7 @@ ficheTechniqueRouter.get("/conventions/:id/fiche-technique", async (req, res): P
     res.status(404).json({ error: "Convention introuvable." });
     return;
   }
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
   const [ligne] = await db.select(colonnesConvention).from(conventionsTable).where(and(
     eq(conventionsTable.id, params.data.id),
     isNull(conventionsTable.deletedAt),
@@ -55,7 +55,7 @@ documentsRouter.get("/conventions/:id/documents/:field", async (req, res): Promi
     return;
   }
 
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
   const [ligne] = await db.select().from(conventionsTable).where(and(
     eq(conventionsTable.id, params.data.id),
     isNull(conventionsTable.deletedAt),

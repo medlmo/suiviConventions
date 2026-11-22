@@ -11,7 +11,7 @@ import { conditionsVisibles } from "../../lib/convention-access";
 import { colonnesConvention, versApi } from "../../lib/conventions-mapper";
 import { EXPORT_MAX_ROWS, ExportExcelError, genererExcelConventions } from "../../lib/conventions-excel";
 import { recordRequestFailure } from "../../lib/http-logging";
-import { chargerReferentiel } from "../../lib/reference-data";
+import { loadReferenceData } from "../../lib/reference-data";
 import { construireFiltres, construireTri } from "./requetes";
 
 const router: IRouter = Router();
@@ -53,7 +53,7 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
   let directory: string | undefined;
   try {
     const { tri = "urgence", ordre = "asc", ...filtres } = query.data;
-    const reference = await chargerReferentiel();
+    const reference = await loadReferenceData();
     const where = conditionsVisibles(req.user!, reference, construireFiltres(filtres));
     directory = await mkdtemp(join(tmpdir(), "conventions-export-"));
     const path = join(directory, "conventions.xlsx");

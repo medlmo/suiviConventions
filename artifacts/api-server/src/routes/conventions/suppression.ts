@@ -2,14 +2,14 @@ import { Router, type IRouter } from "express";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
 import { DeleteConventionParams } from "@workspace/api-zod";
-import { accessible, peutEcrire } from "../../lib/convention-access";
-import { chargerReferentiel, chargerReferentielDepuis } from "../../lib/reference-data";
+import { isConventionAccessible, canEditConventions } from "../../lib/convention-access";
+import { loadReferenceData, loadReferenceDataFrom } from "../../lib/reference-data";
 import { snapshot } from "./commun";
 
 const router: IRouter = Router();
 
 router.delete("/conventions/:id", async (req, res): Promise<void> => {
-  if (!peutEcrire(req.user!)) {
+  if (!canEditConventions(req.user!)) {
     res.status(403).json({ error: "Ce rôle ne peut pas supprimer les conventions." });
     return;
   }
@@ -24,14 +24,14 @@ router.delete("/conventions/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Le paramètre version est obligatoire." });
     return;
   }
-  await chargerReferentiel();
+  await loadReferenceData();
   const result = await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
-    const reference = await chargerReferentielDepuis(tx);
+    const reference = await loadReferenceDataFrom(tx);
     const [current] = await tx.select().from(conventionsTable)
       .where(and(eq(conventionsTable.id, params.data.id), isNull(conventionsTable.deletedAt)))
       .for("update");
-    if (!current || !accessible(current, req.user!, reference)) return "missing" as const;
+    if (!current || !isConventionAccessible(current, req.user!, reference)) return "missing" as const;
     if (current.version !== version) return "stale" as const;
     const [removed] = await tx.update(conventionsTable).set({
       deletedAt: new Date(),

@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-export function creerTransportSmtp() {
+export function createSmtpTransport() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT);
   const user = process.env.SMTP_USER;
@@ -25,14 +25,14 @@ export function creerTransportSmtp() {
 }
 
 /** Do not log SMTP messages: they can contain credentials or recipient addresses. */
-export function codeErreurSmtp(error: unknown): string {
+export function getSmtpErrorCode(error: unknown): string {
   const code = typeof error === "object" && error !== null && "code" in error ? error.code : null;
   return typeof code === "string" &&
     ["EAUTH", "ECONNECTION", "ECONNREFUSED", "ETIMEDOUT", "ESOCKET", "ETLS", "EENVELOPE", "EMESSAGE", "EDNS"].includes(code)
     ? code : "SMTP_FAILED";
 }
 
-export function configurationMail() {
+export function getMailConfiguration() {
   const from = process.env.MAIL_FROM;
   const publicUrl = process.env.APP_PUBLIC_URL;
   if (!from || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(from) || !publicUrl) {

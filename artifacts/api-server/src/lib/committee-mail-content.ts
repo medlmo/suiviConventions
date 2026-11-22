@@ -1,7 +1,7 @@
 const echapperHtml = (value: string) => value.replace(/[&<>"']/g, (char) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 
-export function contenuRappelComite(
+export function buildCommitteeReminderContent(
   titre: string,
   echeance: string,
   seuil: number,

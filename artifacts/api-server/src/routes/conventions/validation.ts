@@ -1,6 +1,6 @@
 import { erreurSuiviFinancier } from "../../lib/suivi-financier";
 import { erreurAvancementPhysique } from "../../lib/avancement-physique";
-import { erreurSituationVersements } from "../../lib/situation-versements";
+import { getPaymentSituationValidationError } from "../../lib/situation-versements";
 import { normaliserDatePv } from "../../lib/pv-date";
 import { maitriseOuvrageConnue, type ReferenceData } from "../../lib/reference-data";
 
@@ -42,8 +42,8 @@ export function normaliserCorps(corps: unknown): { ok: true; valeur: Record<stri
 
   const valeur: Record<string, unknown> = { ...(corps as Record<string, unknown>) };
   if ("situationVersements" in valeur) {
-    const erreur = erreurSituationVersements(valeur.situationVersements);
-    if (erreur) return { ok: false, erreur };
+    const error = getPaymentSituationValidationError(valeur.situationVersements);
+    if (error) return { ok: false, erreur: error };
   }
   if ("avancementPhysiqueHistorique" in valeur) {
     return { ok: false, erreur: "L'historique de l'avancement physique ne peut pas être remplacé. Ajoutez un nouveau constat." };

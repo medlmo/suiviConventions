@@ -8,7 +8,7 @@ export interface ReferenceData {
   servicesDgs: { id: number; nom: string }[];
 }
 
-export type LignesReferentiel = {
+export type ReferenceDataRows = {
   directions: { id: number; nom: string }[];
   divisions: { id: number; directionId: number; nom: string }[];
   services: { id: number; divisionId: number; nom: string }[];
@@ -16,8 +16,8 @@ export type LignesReferentiel = {
   maitrisesOuvrage: { id: number; nom: string }[];
 };
 
-export function construireReferentiel(lignes: LignesReferentiel): ReferenceData {
-  const { directions, divisions, services, servicesDgs, maitrisesOuvrage } = lignes;
+export function buildReferenceData(rows: ReferenceDataRows): ReferenceData {
+  const { directions, divisions, services, servicesDgs, maitrisesOuvrage } = rows;
   return {
     organisation: directions.map((direction) => ({
       id: direction.id,
@@ -34,10 +34,10 @@ export function construireReferentiel(lignes: LignesReferentiel): ReferenceData 
   };
 }
 
-export function directionConnue(data: ReferenceData, direction: string): boolean {
+export function isKnownDirectorate(data: ReferenceData, direction: string): boolean {
   return data.organisation.some((entry) => entry.direction === direction);
 }
 
-export function maitriseOuvrageConnue(data: ReferenceData, nom: string): boolean {
-  return data.maitrisesOuvrage.some((entry) => entry.nom === nom);
+export function isKnownProjectOwner(data: ReferenceData, name: string): boolean {
+  return data.maitrisesOuvrage.some((entry) => entry.nom === name);
 }

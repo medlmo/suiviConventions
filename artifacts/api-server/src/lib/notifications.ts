@@ -2,8 +2,8 @@ import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import { db, notificationsTable, usersTable, type Convention } from "@workspace/db";
 import type { SessionUser } from "./auth";
 import type { ReferenceData } from "./reference-data";
-import { changementsNotification, estDestinataire } from "./notifications-domain";
-export { changementsNotification, estDestinataire, resumeNotification } from "./notifications-domain";
+import { getNotificationChanges, isNotificationRecipient } from "./notifications-domain";
+export { getNotificationChanges, isNotificationRecipient, buildNotificationSummary } from "./notifications-domain";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const GROUP_WINDOW_MS = 10 * 60 * 1000;
@@ -12,13 +12,13 @@ const GROUP_WINDOW_MS = 10 * 60 * 1000;
 export async function notifierChangementConvention(
   tx: Transaction, actor: SessionUser, before: Convention | null, after: Convention, reference: ReferenceData,
 ): Promise<void> {
-  const change = changementsNotification(before, after);
+  const change = getNotificationChanges(before, after);
   if (before && change.changedFields.length === 0) return;
   const users = await tx.select({
     id: usersTable.id, username: usersTable.username, active: usersTable.active, role: usersTable.role,
     direction: usersTable.direction, division: usersTable.division, service: usersTable.service,
   }).from(usersTable).where(eq(usersTable.active, true));
-  const recipients = users.filter((user) => estDestinataire(user, actor, after, reference))
+  const recipients = users.filter((user) => isNotificationRecipient(user, actor, after, reference))
     .sort((a, b) => a.id - b.id);
   for (const recipient of recipients) {
     // Also used by read operations: concurrent corrections cannot be merged into a read item.

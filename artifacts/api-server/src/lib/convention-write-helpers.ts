@@ -1,5 +1,5 @@
 import type { Convention } from "@workspace/db";
-import { calculerEcheance } from "./echeances";
+import { calculateDeadline } from "./echeances";
 
 type ChampsEcheanceConvention = Pick<
   Convention,
@@ -29,8 +29,8 @@ export function appliquerEcheanceModification(
 ): void {
   const valeurFinale = (champ: "nature" | "dateVisa" | "dernierComite" | "frequenceReunions") =>
     Object.hasOwn(valeurs, champ) ? valeurs[champ] as string | null : current[champ];
-  const echeanceAvant = calculerEcheance(current);
-  const echeance = calculerEcheance({
+  const previousDeadline = calculateDeadline(current);
+  const deadline = calculateDeadline({
     nature: valeurFinale("nature"),
     dateVisa: valeurFinale("dateVisa"),
     dernierComite: valeurFinale("dernierComite"),
@@ -43,15 +43,15 @@ export function appliquerEcheanceModification(
     .some((champ) => Object.hasOwn(valeurs, champ) && valeurs[champ] !== current[champ]);
 
   if (
-    echeance &&
-    (sourcesChangees || !current.prochaineEcheance || current.prochaineEcheance === echeance.date)
+    deadline &&
+    (sourcesChangees || !current.prochaineEcheance || current.prochaineEcheance === deadline.date)
   ) {
     // Une ancienne date manuelle différente du calcul est conservée tant que
     // ni la date de base, ni la fréquence, ni la nature n'ont changé.
-    valeurs.prochaineEcheance = echeance.date;
+    valeurs.prochaineEcheance = deadline.date;
   } else if (
-    echeanceAvant &&
-    current.prochaineEcheance === echeanceAvant.date &&
+    previousDeadline &&
+    current.prochaineEcheance === previousDeadline.date &&
     !Object.hasOwn(valeurs, "prochaineEcheance") &&
     sourcesChangees
   ) {

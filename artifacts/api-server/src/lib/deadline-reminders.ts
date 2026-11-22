@@ -1,12 +1,12 @@
 import { and, eq, gte, isNull, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { conventionsTable, db, notificationsTable } from "@workspace/db";
 import type { SessionUser } from "./auth";
-import { filtrePerimetre } from "./convention-access";
+import { buildScopeSqlFilter } from "./convention-access";
 import type { ReferenceData } from "./reference-data";
 
 const CLOSED_STATUSES = ["Arrivée à terme", "Résiliée"];
 
-function conventionOuverte() {
+function isConventionOpen() {
   return or(
     isNull(conventionsTable.statutConvention),
     notInArray(conventionsTable.statutConvention, CLOSED_STATUSES),
@@ -14,14 +14,14 @@ function conventionOuverte() {
 }
 
 /** The database connection uses Casablanca time; keep date arithmetic calendar-only. */
-const joursRestants = sql<number>`(${conventionsTable.prochaineEcheance} - CURRENT_DATE)::int`;
+const daysRemainingSql = sql<number>`(${conventionsTable.prochaineEcheance} - CURRENT_DATE)::int`;
 
 /**
  * Materialize reminders when the signed-in chief's notification feed is refreshed.
  * No in-memory timer: this also works after an Autoscale sleep or on multiple instances.
  * Catch up only the current window (J-30 to J-15, then J-14 to J-1), not both at once.
  */
-export async function genererRappelsEcheance(user: SessionUser, reference: ReferenceData): Promise<void> {
+export async function createDeadlineReminders(user: SessionUser, reference: ReferenceData): Promise<void> {
   if (user.role !== "chef_service") return;
 
   await db.transaction(async (tx) => {
@@ -30,13 +30,13 @@ export async function genererRappelsEcheance(user: SessionUser, reference: Refer
     const upcoming = await tx.select({
       id: conventionsTable.id,
       deadlineDate: conventionsTable.prochaineEcheance,
-      daysLeft: joursRestants.mapWith(Number),
+      daysLeft: daysRemainingSql.mapWith(Number),
     }).from(conventionsTable).where(and(
       isNull(conventionsTable.deletedAt),
-      filtrePerimetre(user, reference),
-      conventionOuverte(),
-      gte(joursRestants, 1),
-      lte(joursRestants, 30),
+      buildScopeSqlFilter(user, reference),
+      isConventionOpen(),
+      gte(daysRemainingSql, 1),
+      lte(daysRemainingSql, 30),
     ));
     if (upcoming.length === 0) return;
 
@@ -62,16 +62,16 @@ export async function genererRappelsEcheance(user: SessionUser, reference: Refer
 }
 
 /** Do not show obsolete dates or reminders for a convention that has since closed. */
-export function rappelEcheanceVisible(user: SessionUser) {
+export function isDeadlineReminderVisible(user: SessionUser) {
   return user.role === "chef_service"
     ? or(ne(notificationsTable.kind, "deadline"), and(
         eq(notificationsTable.deadlineDate, conventionsTable.prochaineEcheance),
-        conventionOuverte(),
+        isConventionOpen(),
       ))
     : ne(notificationsTable.kind, "deadline");
 }
 
-export function resumeRappelEcheance(deadlineDate: string | null, reminderDays: number | null): string {
+export function buildDeadlineReminderSummary(deadlineDate: string | null, reminderDays: number | null): string {
   if (!deadlineDate || !/^\d{4}-\d{2}-\d{2}$/.test(deadlineDate) ||
       (reminderDays !== 7 && reminderDays !== 14 && reminderDays !== 30)) {
     throw new Error("Invalid deadline reminder metadata");

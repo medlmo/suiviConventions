@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { HistoriqueAvancementPhysique } from "@workspace/db";
 
-export function natureAvecAvancement(nature: unknown): boolean {
+export function supportsPhysicalProgress(nature: unknown): boolean {
   return typeof nature === "string" &&
     ["infrastructure", "prestation", "prestations"].includes(nature.trim().toLowerCase());
 }
@@ -31,7 +31,7 @@ export function erreurAvancementPhysique(value: unknown): string | null {
   return null;
 }
 
-export function creerConstatAvancement(
+export function createPhysicalProgressRecord(
   ajout: { dateConstat: string | Date; taux: number; commentaire?: string | null },
   auteur: string,
 ): HistoriqueAvancementPhysique {

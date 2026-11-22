@@ -1,8 +1,8 @@
 import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { conventionsTable, db, mailRemindersTable, usersTable } from "@workspace/db";
 import {
-  envoiAutomatiqueAutorise,
-  listerRappelsComiteEligibles,
+  isAutomaticMailSendingEnabled,
+  listEligibleCommitteeReminders,
 } from "./committee-mail-reminders";
 
 const HISTORY_LIMIT = 200;
@@ -18,7 +18,7 @@ function cleRappel(value: {
 
 export async function getAdminMailReminderLog() {
   const [eligible, history] = await Promise.all([
-    listerRappelsComiteEligibles(),
+    listEligibleCommitteeReminders(),
     db.select({
       id: mailRemindersTable.id,
       recipientId: mailRemindersTable.recipientId,
@@ -111,7 +111,7 @@ export async function getAdminMailReminderLog() {
 
   return {
     generatedAt: new Date().toISOString(),
-    enabled: envoiAutomatiqueAutorise(),
+    enabled: isAutomaticMailSendingEnabled(),
     historyLimit: HISTORY_LIMIT,
     summary,
     items,

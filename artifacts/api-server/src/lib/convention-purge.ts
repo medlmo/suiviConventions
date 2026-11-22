@@ -25,7 +25,7 @@ let purgeInProgress = false;
  * Les instantanés d'audit sont conservés; les notifications sont supprimées
  * par la contrainte ON DELETE CASCADE.
  */
-export async function purgerConventionsSupprimees(): Promise<ConventionPurgeResult> {
+export async function purgeDeletedConventions(): Promise<ConventionPurgeResult> {
   const result: ConventionPurgeResult = {
     conventionsDeleted: 0,
     documentObjectsProcessed: 0,

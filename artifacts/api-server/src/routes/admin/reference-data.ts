@@ -9,9 +9,9 @@ import {
   servicesTable,
 } from "@workspace/db";
 import { adminRequired } from "../../lib/auth";
-import { chargerReferentiel } from "../../lib/reference-data";
+import { loadReferenceData } from "../../lib/reference-data";
 import { postgresErrorCode } from "../../lib/database-errors";
-import { isReferenceDataKind, renommerEntreeReferentiel } from "../../lib/reference-data-rename";
+import { isReferenceDataKind, renameReferenceDataEntry } from "../../lib/reference-data-rename";
 import {
   CreateReferenceDataEntryBody,
   CreateReferenceDataEntryResponse,
@@ -23,7 +23,7 @@ import {
 const router: IRouter = Router();
 
 router.get("/reference-data", async (_req, res): Promise<void> => {
-  res.json(GetReferenceDataResponse.parse(await chargerReferentiel()));
+  res.json(GetReferenceDataResponse.parse(await loadReferenceData()));
 });
 
 router.post("/admin/reference-data/:kind", adminRequired, async (req, res): Promise<void> => {
@@ -51,7 +51,7 @@ router.post("/admin/reference-data/:kind", adminRequired, async (req, res): Prom
     return;
   }
 
-  await chargerReferentiel();
+  await loadReferenceData();
   try {
     const result = await db.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
@@ -78,7 +78,7 @@ router.post("/admin/reference-data/:kind", adminRequired, async (req, res): Prom
       res.status(400).json({ error: "Parent introuvable ou de type incompatible." });
       return;
     }
-    res.json(CreateReferenceDataEntryResponse.parse(await chargerReferentiel()));
+    res.json(CreateReferenceDataEntryResponse.parse(await loadReferenceData()));
   } catch (error) {
     if (postgresErrorCode(error) === "23505") {
       res.status(409).json({ error: "Une entrée portant ce nom existe déjà dans cette catégorie." });
@@ -108,14 +108,14 @@ router.patch("/admin/reference-data/:kind/:id", adminRequired, async (req, res):
     return;
   }
 
-  await chargerReferentiel();
+  await loadReferenceData();
   try {
-    const outcome = await renommerEntreeReferentiel(kind, id, nom);
+    const outcome = await renameReferenceDataEntry(kind, id, nom);
     if (!outcome) {
       res.status(404).json({ error: "Entrée de référentiel introuvable." });
       return;
     }
-    res.json(RenameReferenceDataEntryResponse.parse(await chargerReferentiel()));
+    res.json(RenameReferenceDataEntryResponse.parse(await loadReferenceData()));
   } catch (error) {
     if (postgresErrorCode(error) === "23505") {
       res.status(409).json({ error: "Une entrée portant ce nom existe déjà dans cette catégorie." });

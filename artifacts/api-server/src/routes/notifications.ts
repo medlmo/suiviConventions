@@ -2,11 +2,11 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { and, count, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db, conventionsTable, notificationsTable } from "@workspace/db";
 import { ListNotificationsQueryParams, ReadAllNotificationsBody, ReadNotificationBody, ReadNotificationParams } from "@workspace/api-zod";
-import { filtrePerimetre } from "../lib/convention-access";
-import { chargerReferentiel } from "../lib/reference-data";
-import { resumeNotification } from "../lib/notifications";
-import { genererRappelsEcheance, rappelEcheanceVisible, resumeRappelEcheance } from "../lib/deadline-reminders";
-import { verifierRappelsMail } from "../lib/committee-mail-reminders";
+import { buildScopeSqlFilter } from "../lib/convention-access";
+import { loadReferenceData } from "../lib/reference-data";
+import { buildNotificationSummary } from "../lib/notifications";
+import { createDeadlineReminders, isDeadlineReminderVisible, buildDeadlineReminderSummary } from "../lib/deadline-reminders";
+import { checkMailReminders } from "../lib/committee-mail-reminders";
 
 const router: IRouter = Router();
 
@@ -20,16 +20,16 @@ router.get("/notifications", async (req, res) => {
     res.status(400).json({ error: "Paramètres de notifications invalides." });
     return;
   }
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
   const user = req.user!;
-  await genererRappelsEcheance(user, reference);
-  await verifierRappelsMail();
+  await createDeadlineReminders(user, reference);
+  await checkMailReminders();
   const asOf = new Date();
   const visible = and(
     eq(notificationsTable.recipientId, user.id),
     isNull(conventionsTable.deletedAt),
-    filtrePerimetre(user, reference),
-    rappelEcheanceVisible(user),
+    buildScopeSqlFilter(user, reference),
+    isDeadlineReminderVisible(user),
   );
   const filter = and(visible, parsed.data.unreadOnly === 1 ? isNull(notificationsTable.readAt) : undefined);
   const [items, [total], [unread]] = await Promise.all([
@@ -49,8 +49,8 @@ router.get("/notifications", async (req, res) => {
       actorUsername: item.actorUsername, kind: item.kind,
       changedFields: item.changedFields, eventCount: item.eventCount,
       summary: item.kind === "deadline"
-        ? resumeRappelEcheance(item.deadlineDate, item.reminderDays)
-        : resumeNotification(item.kind, item.changedFields, item.eventCount),
+        ? buildDeadlineReminderSummary(item.deadlineDate, item.reminderDays)
+        : buildNotificationSummary(item.kind, item.changedFields, item.eventCount),
       createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString(),
       readAt: item.readAt?.toISOString() ?? null,
     })),
@@ -77,11 +77,11 @@ async function marquerLecture(req: Request, res: Response, all: boolean): Promis
     res.status(400).json({ error: "Date de lecture invalide." });
     return;
   }
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
   const user = req.user!;
   const id = params?.success ? params.data.id : undefined;
   const visible = db.select({ id: conventionsTable.id }).from(conventionsTable).where(and(
-    isNull(conventionsTable.deletedAt), filtrePerimetre(user, reference),
+    isNull(conventionsTable.deletedAt), buildScopeSqlFilter(user, reference),
   ));
   const owned = and(
     eq(notificationsTable.recipientId, user.id),

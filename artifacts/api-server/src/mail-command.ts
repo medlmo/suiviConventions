@@ -1,6 +1,6 @@
 import { pool } from "@workspace/db";
-import { configurationMail, creerTransportSmtp, codeErreurSmtp } from "./lib/smtp-mail";
-import { envoyerRappelsComite } from "./lib/committee-mail-reminders";
+import { getMailConfiguration, createSmtpTransport, getSmtpErrorCode } from "./lib/smtp-mail";
+import { sendCommitteeReminders } from "./lib/committee-mail-reminders";
 import { logger } from "./lib/logger";
 
 try {
@@ -12,8 +12,8 @@ try {
     if (!recipient || recipient.length > 254 || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(recipient)) {
       throw new Error("TEST_RECIPIENT_INVALID");
     }
-    const config = configurationMail();
-    const result = await creerTransportSmtp().sendMail({
+    const config = getMailConfiguration();
+    const result = await createSmtpTransport().sendMail({
       from: { name: "Suivi des conventions — Région Souss Massa", address: config.from },
       to: recipient,
       subject: "Test e-mail — Suivi des conventions",
@@ -27,14 +27,14 @@ try {
     if (process.env.NODE_ENV !== "development" || process.env.MAIL_DEV_ENABLED !== "true") {
       logger.info({ event: "mail.dev_test.skipped", operation: "mail.reminders", reason: "dev_test_disabled" }, "Development reminder test is not enabled");
     } else {
-      const result = await envoyerRappelsComite();
+      const result = await sendCommitteeReminders();
       if (result.failed > 0) process.exitCode = 1;
     }
   } else if (process.argv.includes("--verify")) {
-    await creerTransportSmtp().verify();
+    await createSmtpTransport().verify();
     logger.info({ event: "smtp.verify.success", operation: "smtp.verify" }, "SMTP TLS and authentication verified; no email sent");
   } else if (process.argv.includes("--preview")) {
-    const result = await envoyerRappelsComite({ dryRun: true });
+    const result = await sendCommitteeReminders({ dryRun: true });
     logger.info({ event: "mail.reminders.preview", operation: "mail.reminders.preview", ...result }, "Read-only reminder preview; no email sent and no delivery record written");
   } else {
     if (process.env.NODE_ENV !== "production") {
@@ -42,12 +42,12 @@ try {
     } else if (process.env.MAIL_ENABLED !== "true") {
       logger.info({ event: "mail.reminders.skipped", operation: "mail.reminders", reason: "mail_disabled" }, "Committee email reminders are not enabled");
     } else {
-      const result = await envoyerRappelsComite();
+      const result = await sendCommitteeReminders();
       if (result.failed > 0) process.exitCode = 1;
     }
   }
 } catch (error) {
-  logger.error({ event: "smtp.command.failed", operation: "smtp.command", errorCode: codeErreurSmtp(error) }, "SMTP command failed; no sensitive details logged");
+  logger.error({ event: "smtp.command.failed", operation: "smtp.command", errorCode: getSmtpErrorCode(error) }, "SMTP command failed; no sensitive details logged");
   process.exitCode = 1;
 } finally {
   await pool.end();

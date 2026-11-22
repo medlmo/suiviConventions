@@ -2,13 +2,13 @@ import { Router, type IRouter } from "express";
 import { eq, sql } from "drizzle-orm";
 import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
 import { CreateConventionBody, CreateConventionResponse } from "@workspace/api-zod";
-import { affectationsValides, peutEcrire } from "../../lib/convention-access";
+import { areAssignmentsValid, canEditConventions } from "../../lib/convention-access";
 import { notifierChangementConvention } from "../../lib/notifications";
 import { colonnesConvention, versApi, versColonnes } from "../../lib/conventions-mapper";
-import { calculerEcheance } from "../../lib/echeances";
+import { calculateDeadline } from "../../lib/echeances";
 import { preparerHistoriqueDocuments } from "../../lib/document-history";
 import { recordRequestFailure } from "../../lib/http-logging";
-import { chargerReferentiel, chargerReferentielDepuis, perimetreChefService } from "../../lib/reference-data";
+import { loadReferenceData, loadReferenceDataFrom, perimetreChefService } from "../../lib/reference-data";
 import { documentVerifie, snapshot, valide } from "./commun";
 import {
   contributionDepasseEnveloppe,
@@ -22,7 +22,7 @@ import { appliquerColonnesDocumentsAjoutes } from "../../lib/convention-write-he
 const router: IRouter = Router();
 
 router.post("/conventions", async (req, res): Promise<void> => {
-  if (!peutEcrire(req.user!)) {
+  if (!canEditConventions(req.user!)) {
     res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
     return;
   }
@@ -52,14 +52,14 @@ router.post("/conventions", async (req, res): Promise<void> => {
   }
 
   const user = req.user!;
-  await chargerReferentiel();
+  await loadReferenceData();
   const result = await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
-    const reference = await chargerReferentielDepuis(tx);
+    const reference = await loadReferenceDataFrom(tx);
     const valeurs = versColonnes(parsed.data);
     valeurs.documents = documents;
     appliquerColonnesDocumentsAjoutes(valeurs, parsed.data.documentsAjoutes);
-    const echeance = calculerEcheance({
+    const echeance = calculateDeadline({
       nature: valeurs.nature as string | null | undefined,
       dateVisa: valeurs.dateVisa as string | null | undefined,
       dernierComite: valeurs.dernierComite as string | null | undefined,
@@ -98,7 +98,7 @@ router.post("/conventions", async (req, res): Promise<void> => {
     ) {
       return { status: 400 as const, error: "Le rattachement et le responsable du projet sont obligatoires." };
     }
-    if (!affectationsValides(rattachement, responsable, user, reference)) {
+    if (!areAssignmentsValid(rattachement, responsable, user, reference)) {
       return { status: 400 as const, error: "Le rattachement et le service doivent correspondre à l'organigramme officiel." };
     }
     const [created] = await tx.insert(conventionsTable)

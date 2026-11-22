@@ -30,7 +30,7 @@ export function isReferenceDataKind(kind: string): kind is ReferenceDataKind {
  * Le verrou sérialise cette opération avec les modifications de conventions et
  * les mutations du référentiel.
  */
-export async function renommerEntreeReferentiel(
+export async function renameReferenceDataEntry(
   kind: ReferenceDataKind,
   id: number,
   nom: string,

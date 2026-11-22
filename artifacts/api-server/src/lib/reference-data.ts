@@ -10,21 +10,21 @@ import {
 } from "@workspace/db";
 import { organisation as organisationHistorique } from "@workspace/organisation";
 import {
-  construireReferentiel, directionConnue, maitriseOuvrageConnue, type ReferenceData,
+  buildReferenceData, isKnownDirectorate, isKnownProjectOwner, type ReferenceData,
 } from "./reference-data-domain";
 
 export {
-  divisionDeDirection, perimetreChefService, serviceDansDivision, serviceDansRattachement, servicesDeDivision,
+  divisionBelongsToDirectorate, getServiceScope, serviceBelongsToDivision, serviceBelongsToScope, listDivisionServices,
 } from "./organisation-access";
-export { construireReferentiel, directionConnue, maitriseOuvrageConnue } from "./reference-data-domain";
+export { buildReferenceData, isKnownDirectorate, isKnownProjectOwner } from "./reference-data-domain";
 export type { ReferenceData } from "./reference-data-domain";
 
 type ReferenceExecutor = Pick<typeof db, "select">;
 
-let initialisationFaite = false;
+let referenceDataInitialized = false;
 
-async function initialiserReferentiel(): Promise<void> {
-  if (initialisationFaite) return;
+async function initializeReferenceData(): Promise<void> {
+  if (referenceDataInitialized) return;
   await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
     const [serviceDgsExistant] = await tx.select({ id: servicesDgsTable.id }).from(servicesDgsTable).limit(1);
@@ -94,19 +94,19 @@ async function initialiserReferentiel(): Promise<void> {
         .onConflictDoNothing({ target: maitrisesOuvrageTable.nom });
     }
   });
-  initialisationFaite = true;
+  referenceDataInitialized = true;
 }
 
-export async function chargerReferentiel(): Promise<ReferenceData> {
-  await initialiserReferentiel();
-  return chargerReferentielDepuis(db);
+export async function loadReferenceData(): Promise<ReferenceData> {
+  await initializeReferenceData();
+  return loadReferenceDataFrom(db);
 }
 
-export async function chargerReferentielDepuis(executor: ReferenceExecutor): Promise<ReferenceData> {
+export async function loadReferenceDataFrom(executor: ReferenceExecutor): Promise<ReferenceData> {
   const directions = await executor.select().from(directionsTable).orderBy(asc(directionsTable.id));
   const divisions = await executor.select().from(divisionsTable).orderBy(asc(divisionsTable.id));
   const services = await executor.select().from(servicesTable).orderBy(asc(servicesTable.id));
   const servicesDgs = await executor.select().from(servicesDgsTable).orderBy(asc(servicesDgsTable.id));
   const maitrisesOuvrage = await executor.select().from(maitrisesOuvrageTable).orderBy(asc(maitrisesOuvrageTable.id));
-  return construireReferentiel({ directions, divisions, services, servicesDgs, maitrisesOuvrage });
+  return buildReferenceData({ directions, divisions, services, servicesDgs, maitrisesOuvrage });
 }

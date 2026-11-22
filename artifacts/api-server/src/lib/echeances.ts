@@ -1,58 +1,58 @@
-type DonneesEcheance = {
+type DeadlineInput = {
   nature?: string | null;
   dateVisa?: string | null;
   dernierComite?: string | null;
   frequenceReunions?: string | null;
 };
 
-export type EcheanceCalculee = {
+export type CalculatedDeadline = {
   date: string;
   source: "visa" | "dernier-comite";
   mois: number;
 };
 
-function ajouterMois(date: string | null | undefined, moisAAjouter: number): string | null {
+function addMonths(date: string | null | undefined, monthsToAdd: number): string | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date ?? "");
   if (!match) return null;
   const [, anneeBrute, moisBrut, jourBrut] = match;
-  const annee = Number(anneeBrute);
-  const mois = Number(moisBrut);
-  const jour = Number(jourBrut);
-  const origine = new Date(Date.UTC(annee, mois - 1, jour));
+  const year = Number(anneeBrute);
+  const month = Number(moisBrut);
+  const day = Number(jourBrut);
+  const origin = new Date(Date.UTC(year, month - 1, day));
   if (
-    annee < 100 ||
-    origine.getUTCFullYear() !== annee ||
-    origine.getUTCMonth() !== mois - 1 ||
-    origine.getUTCDate() !== jour
+    year < 100 ||
+    origin.getUTCFullYear() !== year ||
+    origin.getUTCMonth() !== month - 1 ||
+    origin.getUTCDate() !== day
   ) return null;
 
   // Un mois calendaire conserve le jour quand il existe, sinon le dernier jour
   // du mois cible (31 janvier + 3 mois = 30 avril).
-  const cible = new Date(Date.UTC(annee, mois - 1 + moisAAjouter, 1));
-  if (Number.isNaN(cible.getTime()) || cible.getUTCFullYear() > 9999) return null;
-  const dernierJour = new Date(Date.UTC(cible.getUTCFullYear(), cible.getUTCMonth() + 1, 0)).getUTCDate();
-  cible.setUTCDate(Math.min(jour, dernierJour));
-  return cible.toISOString().slice(0, 10);
+  const target = new Date(Date.UTC(year, month - 1 + monthsToAdd, 1));
+  if (Number.isNaN(target.getTime()) || target.getUTCFullYear() > 9999) return null;
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(day, lastDay));
+  return target.toISOString().slice(0, 10);
 }
 
-function frequenceEnMois(valeur: string | null | undefined): number | null {
-  const match = /^(\d+)(?:\s*mois)?$/i.exec(valeur?.trim() ?? "");
-  const mois = match ? Number(match[1]) : NaN;
-  return Number.isSafeInteger(mois) && mois > 0 ? mois : null;
+function frequencyInMonths(value: string | null | undefined): number | null {
+  const match = /^(\d+)(?:\s*mois)?$/i.exec(value?.trim() ?? "");
+  const months = match ? Number(match[1]) : NaN;
+  return Number.isSafeInteger(months) && months > 0 ? months : null;
 }
 
 /** Une échéance dépassée ne décale jamais la base de calcul vers aujourd'hui. */
-export function calculerEcheance(donnees: DonneesEcheance): EcheanceCalculee | null {
-  if (donnees.dernierComite) {
-    const mois = frequenceEnMois(donnees.frequenceReunions);
-    const date = mois === null ? null : ajouterMois(donnees.dernierComite, mois);
-    return date && mois !== null ? { date, source: "dernier-comite", mois } : null;
+export function calculateDeadline(input: DeadlineInput): CalculatedDeadline | null {
+  if (input.dernierComite) {
+    const months = frequencyInMonths(input.frequenceReunions);
+    const date = months === null ? null : addMonths(input.dernierComite, months);
+    return date && months !== null ? { date, source: "dernier-comite", mois: months } : null;
   }
 
-  const nature = donnees.nature?.trim().toLocaleLowerCase("fr");
-  const mois = nature === "infrastructure" ? 3
+  const nature = input.nature?.trim().toLocaleLowerCase("fr");
+  const months = nature === "infrastructure" ? 3
     : ["subvention", "subventions", "prestation", "prestations"].includes(nature ?? "") ? 3
     : null;
-  const date = mois === null ? null : ajouterMois(donnees.dateVisa, mois);
-  return date && mois !== null ? { date, source: "visa", mois } : null;
+  const date = months === null ? null : addMonths(input.dateVisa, months);
+  return date && months !== null ? { date, source: "visa", mois: months } : null;
 }

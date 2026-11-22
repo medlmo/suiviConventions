@@ -11,7 +11,7 @@ import {
 } from "@workspace/api-zod";
 import { conditionsVisibles } from "../../lib/convention-access";
 import { colonnesConvention, versApi } from "../../lib/conventions-mapper";
-import { chargerReferentiel } from "../../lib/reference-data";
+import { loadReferenceData } from "../../lib/reference-data";
 import { valide } from "./commun";
 import { construireFiltres, construireTri } from "./requetes";
 
@@ -32,7 +32,7 @@ listeRouter.get("/conventions", async (req, res): Promise<void> => {
   }
 
   const { page = 1, pageSize = 25, tri = "urgence", ordre = "asc", ...filtres } = query.data;
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
   const where = conditionsVisibles(req.user!, reference, construireFiltres(filtres));
 
   const [lignes, [total]] = await Promise.all([
@@ -60,7 +60,7 @@ listeRouter.get("/conventions", async (req, res): Promise<void> => {
 });
 
 optionsFiltresRouter.get("/conventions/options-filtres", async (req, res): Promise<void> => {
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
   async function valeursDistinctes(colonne: AnyPgColumn) {
     const lignes = await db
       .selectDistinct({ valeur: colonne })
@@ -107,7 +107,7 @@ detailRouter.get("/conventions/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
   const [ligne] = await db
     .select(colonnesConvention)
     .from(conventionsTable)

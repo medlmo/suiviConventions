@@ -2,15 +2,15 @@ import { Router, type IRouter } from "express";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
 import { UpdateConventionBody, UpdateConventionParams, UpdateConventionResponse } from "@workspace/api-zod";
-import { accessible, affectationsValides, peutEcrire } from "../../lib/convention-access";
+import { isConventionAccessible, areAssignmentsValid, canEditConventions } from "../../lib/convention-access";
 import { notifierChangementConvention } from "../../lib/notifications";
 import { colonnesConvention, versApi, versColonnes } from "../../lib/conventions-mapper";
 import { appliquerColonnesDocumentsAjoutes, appliquerEcheanceModification } from "../../lib/convention-write-helpers";
 import { preparerHistoriqueDocuments } from "../../lib/document-history";
 import { erreurPartenairesFinanciers } from "../../lib/suivi-financier";
-import { creerConstatAvancement, natureAvecAvancement } from "../../lib/avancement-physique";
+import { createPhysicalProgressRecord, supportsPhysicalProgress } from "../../lib/avancement-physique";
 import { recordRequestFailure } from "../../lib/http-logging";
-import { chargerReferentiel, chargerReferentielDepuis } from "../../lib/reference-data";
+import { loadReferenceData, loadReferenceDataFrom } from "../../lib/reference-data";
 import { documentVerifie, snapshot, valide } from "./commun";
 import {
   contributionDepasseEnveloppe,
@@ -22,7 +22,7 @@ import {
 const router: IRouter = Router();
 
 router.patch("/conventions/:id", async (req, res): Promise<void> => {
-  if (!peutEcrire(req.user!)) {
+  if (!canEditConventions(req.user!)) {
     res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
     return;
   }
@@ -55,14 +55,14 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
   }
 
   const user = req.user!;
-  await chargerReferentiel();
+  await loadReferenceData();
   const result = await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
-    const reference = await chargerReferentielDepuis(tx);
+    const reference = await loadReferenceDataFrom(tx);
     const [current] = await tx.select().from(conventionsTable)
       .where(and(eq(conventionsTable.id, params.data.id), isNull(conventionsTable.deletedAt)))
       .for("update");
-    if (!current || !accessible(current, user, reference)) return { status: 404 as const };
+    if (!current || !isConventionAccessible(current, user, reference)) return { status: 404 as const };
     if (current.version !== parsed.data.version) return { status: 409 as const };
     const sessionFinale = Object.hasOwn(valeurs, "session") ? valeurs.session : current.session;
     if (typeof sessionFinale !== "string" || !sessionFinale) {
@@ -70,12 +70,12 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     }
     if (parsed.data.avancementPhysiqueAjoute) {
       const natureFinale = Object.hasOwn(valeurs, "nature") ? valeurs.nature : current.nature;
-      if (!natureAvecAvancement(natureFinale)) {
+      if (!supportsPhysicalProgress(natureFinale)) {
         return { status: 400 as const, error: "L'avancement physique est réservé aux projets de nature Infrastructure ou Prestations." };
       }
       valeurs.avancementPhysiqueHistorique = [
         ...(current.avancementPhysiqueHistorique ?? []),
-        creerConstatAvancement(parsed.data.avancementPhysiqueAjoute, user.username),
+        createPhysicalProgressRecord(parsed.data.avancementPhysiqueAjoute, user.username),
       ];
     }
 
@@ -130,8 +130,8 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     ) as string | null;
     if (
       (user.role === "admin" && ("rattachement" in valeurs || "responsableProjet" in valeurs) &&
-        !affectationsValides(rattachementFinal, responsableFinal, user, reference)) ||
-      (user.role !== "admin" && !affectationsValides(rattachementFinal, responsableFinal, user, reference))
+        !areAssignmentsValid(rattachementFinal, responsableFinal, user, reference)) ||
+      (user.role !== "admin" && !areAssignmentsValid(rattachementFinal, responsableFinal, user, reference))
     ) {
       return { status: 403 as const };
     }

@@ -2,35 +2,35 @@ import { and, eq, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 import { conventionsTable } from "@workspace/db";
 import type { SessionUser } from "./auth";
 import type { ReferenceData } from "./reference-data";
-import { filtrePerimetre as determinerFiltrePerimetre } from "./convention-access-domain";
+import { getConventionScopeFilter } from "./convention-access-domain";
 
-export { accessible, affectationsValides } from "./convention-access-domain";
+export { isConventionAccessible, areAssignmentsValid } from "./convention-access-domain";
 
-export function peutEcrire(user: SessionUser): boolean {
+export function canEditConventions(user: SessionUser): boolean {
   return user.role === "admin" || user.role === "chef_division" || user.role === "chef_service";
 }
 
 /** Toutes les consultations excluent les suppressions et respectent le périmètre. */
-export function conditionsVisibles(user: SessionUser, reference: ReferenceData, filtre?: SQL): SQL {
-  return and(isNull(conventionsTable.deletedAt), filtrePerimetre(user, reference), filtre)!;
+export function buildVisibleConventionConditions(user: SessionUser, reference: ReferenceData, filter?: SQL): SQL {
+  return and(isNull(conventionsTable.deletedAt), buildScopeSqlFilter(user, reference), filter)!;
 }
 
 /** Shared with lists and notifications, including after account/organisation changes. */
-export function filtrePerimetre(user: SessionUser, reference: ReferenceData): SQL | undefined {
-  const filtre = determinerFiltrePerimetre(user, reference);
-  if (filtre.type === "global") return undefined;
-  if (filtre.type === "division") {
+export function buildScopeSqlFilter(user: SessionUser, reference: ReferenceData): SQL | undefined {
+  const scopeFilter = getConventionScopeFilter(user, reference);
+  if (scopeFilter.type === "global") return undefined;
+  if (scopeFilter.type === "division") {
     return and(
-      eq(conventionsTable.rattachement, filtre.rattachement),
-      filtre.services.length === 0 ? isNull(conventionsTable.responsableProjet) : or(
+      eq(conventionsTable.rattachement, scopeFilter.rattachement),
+      scopeFilter.services.length === 0 ? isNull(conventionsTable.responsableProjet) : or(
         isNull(conventionsTable.responsableProjet),
-        inArray(conventionsTable.responsableProjet, filtre.services),
+        inArray(conventionsTable.responsableProjet, scopeFilter.services),
       ),
     );
   }
-  if (filtre.type === "service") return and(
-    eq(conventionsTable.rattachement, filtre.rattachement),
-    eq(conventionsTable.responsableProjet, filtre.service),
+  if (scopeFilter.type === "service") return and(
+    eq(conventionsTable.rattachement, scopeFilter.rattachement),
+    eq(conventionsTable.responsableProjet, scopeFilter.service),
   );
   return sql`FALSE`;
 }

@@ -14,12 +14,12 @@ type ReferenceData = {
   servicesDgs: { nom: string }[];
 };
 
-function divisionDansDirection(reference: ReferenceData, direction: string, division: string): boolean {
+function divisionBelongsToDirection(reference: ReferenceData, direction: string, division: string): boolean {
   return reference.organisation.some((entry) =>
     entry.direction === direction && entry.divisions.some((item) => item.nom === division));
 }
 
-function serviceDansDivision(reference: ReferenceData, division: string, service: string): boolean {
+function serviceBelongsToDivision(reference: ReferenceData, division: string, service: string): boolean {
   return reference.organisation.some((entry) =>
     entry.divisions.some((item) =>
       item.nom === division && item.services.some((candidate) => candidate.nom === service)));
@@ -56,7 +56,7 @@ const MULTI_FIELDS = new Set<keyof Convention>([
   "provincesPrefectures", "communes", "maitrisesOuvrage", "maitrisesOuvrageDeleguees", "partenaires",
 ]);
 
-export function changementsNotification(before: Convention | null, after: Convention) {
+export function getNotificationChanges(before: Convention | null, after: Convention) {
   if (!before) return { kind: "creation" as const, changedFields: [] as string[] };
   const keys = (Object.keys(FIELD_LABELS) as (keyof Convention)[]).filter((key) => {
     const normaliser = (value: unknown) => MULTI_FIELDS.has(key)
@@ -70,7 +70,7 @@ export function changementsNotification(before: Convention | null, after: Conven
   };
 }
 
-export function estDestinataire(
+export function isNotificationRecipient(
   user: SessionUser, actor: SessionUser, convention: Convention, reference: ReferenceData,
 ): boolean {
   if (!user.active || user.id === actor.id) return false;
@@ -87,15 +87,15 @@ export function estDestinataire(
     : !user.direction && !user.division
       ? reference.servicesDgs.some((item) => item.nom === user.service) ? DIRECTION_GENERALE_SERVICES : null
       : user.direction && user.division &&
-        divisionDansDirection(reference, user.direction, user.division) &&
-        serviceDansDivision(reference, user.division, user.service) ? user.division : null;
+        divisionBelongsToDirection(reference, user.direction, user.division) &&
+        serviceBelongsToDivision(reference, user.division, user.service) ? user.division : null;
   const responsibleService = user.role === "chef_service" &&
     !!user.service && !!convention.rattachement &&
     user.service === convention.responsableProjet &&
     scope === convention.rattachement;
   const responsibleDivision = user.role === "chef_division" && !!division &&
     user.division === division.nom && user.direction === division.direction &&
-    divisionDansDirection(reference, user.direction, user.division);
+    divisionBelongsToDirection(reference, user.direction, user.division);
 
   if (actor.role === "chef_service") {
     return directDgs ? user.role === "directeur_general_services" : responsibleDivision;
@@ -111,7 +111,7 @@ export function estDestinataire(
 }
 
 /** Rappel d'échéance aux responsables hiérarchiques de la convention. */
-export function estResponsableRappel(
+export function isReminderRecipient(
   user: SessionUser,
   convention: Pick<Convention, "rattachement" | "responsableProjet">,
   reference: ReferenceData,
@@ -127,26 +127,26 @@ export function estResponsableRappel(
     : !user.direction && !user.division
       ? reference.servicesDgs.some((item) => item.nom === user.service) ? DIRECTION_GENERALE_SERVICES : null
       : user.direction && user.division &&
-        divisionDansDirection(reference, user.direction, user.division) &&
-        serviceDansDivision(reference, user.division, user.service) ? user.division : null;
-  const responsableService = user.role === "chef_service" &&
+        divisionBelongsToDirection(reference, user.direction, user.division) &&
+        serviceBelongsToDivision(reference, user.division, user.service) ? user.division : null;
+  const isResponsibleService = user.role === "chef_service" &&
     !!user.service && !!convention.rattachement &&
     user.service === convention.responsableProjet &&
     scope === convention.rattachement;
-  const responsableDivision = user.role === "chef_division" && !!division &&
+  const isResponsibleDivision = user.role === "chef_division" && !!division &&
     user.division === division.nom && user.direction === division.direction &&
-    divisionDansDirection(reference, user.direction, user.division);
-  const responsableDirection = user.role === "directeur" && (
+    divisionBelongsToDirection(reference, user.direction, user.division);
+  const isResponsibleDirector = user.role === "directeur" && (
     (!!division && user.direction === division.direction) ||
     reference.organisation.some((direction) =>
       direction.direction === convention.rattachement && direction.direction === user.direction)
   );
-  const responsableDgs = user.role === "directeur_general_services" && directDgs;
+  const isResponsibleServicesDirector = user.role === "directeur_general_services" && directDgs;
 
-  return responsableService || responsableDivision || responsableDirection || responsableDgs;
+  return isResponsibleService || isResponsibleDivision || isResponsibleDirector || isResponsibleServicesDirector;
 }
 
-export function resumeNotification(kind: string, fields: string[], eventCount: number): string {
+export function buildNotificationSummary(kind: string, fields: string[], eventCount: number): string {
   if (kind === "creation") return "Nouvelle convention créée.";
   const detail = fields.slice(0, 6).join(", ") +
     (fields.length > 6 ? ` et ${fields.length - 6} autre(s) champ(s)` : "");

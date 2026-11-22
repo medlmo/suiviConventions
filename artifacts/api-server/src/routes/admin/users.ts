@@ -6,11 +6,11 @@ import {
   hashPassword,
   validateNewPassword,
   type Role,
-  versUtilisateur,
+  toSessionUser,
 } from "../../lib/auth";
 import {
-  chargerReferentiel,
-  chargerReferentielDepuis,
+  loadReferenceData,
+  loadReferenceDataFrom,
   directionConnue,
   divisionDeDirection,
   serviceDansDivision,
@@ -44,7 +44,7 @@ function idFrom(raw: string | string[] | undefined): number | undefined {
 
 function publicUser(user: typeof usersTable.$inferSelect) {
   return {
-    ...versUtilisateur(user),
+    ...toSessionUser(user),
     email: user.email,
     createdAt: user.createdAt.toISOString(),
     lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
@@ -112,12 +112,12 @@ router.post("/admin/users", adminRequired, async (req, res): Promise<void> => {
     division: typeof body.division === "string" ? body.division : null,
     service: typeof body.service === "string" ? body.service : null,
   };
-  await chargerReferentiel();
+  await loadReferenceData();
   try {
     const passwordHash = await hashPassword(body.password);
     const outcome = await db.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
-      const reference = await chargerReferentielDepuis(tx);
+      const reference = await loadReferenceDataFrom(tx);
       await tx.execute(sql`SELECT pg_advisory_xact_lock(741023, 1)`);
       if (!profileIsValid(profile, reference)) return { kind: "invalid-profile" as const };
       const [user] = await tx.insert(usersTable).values({
@@ -189,10 +189,10 @@ router.patch("/admin/users/:id", adminRequired, async (req, res): Promise<void> 
     return;
   }
   try {
-    await chargerReferentiel();
+    await loadReferenceData();
     const outcome = await db.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
-      const reference = await chargerReferentielDepuis(tx);
+      const reference = await loadReferenceDataFrom(tx);
       // Serialize account changes so parallel admin requests cannot each
       // believe they are leaving another active administrator behind.
       await tx.execute(sql`SELECT pg_advisory_xact_lock(741023, 1)`);

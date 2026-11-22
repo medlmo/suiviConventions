@@ -17,7 +17,7 @@ import {
   type NiveauAlerte,
 } from "../../lib/alertes";
 import { colonnesConvention, versApi } from "../../lib/conventions-mapper";
-import { chargerReferentiel } from "../../lib/reference-data";
+import { loadReferenceData } from "../../lib/reference-data";
 import { valide } from "./commun";
 
 const router: IRouter = Router();
@@ -30,7 +30,7 @@ const periodeVisaSql = sql<string>`CASE
 END`;
 
 router.get("/conventions/resume", async (req, res): Promise<void> => {
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
   const visible = conditionsVisibles(req.user!, reference);
   const [repartition, [prochaine], jourCourant, synthesesParStatut, synthesesParVisa] = await Promise.all([
     db
@@ -165,7 +165,7 @@ router.get("/conventions/alertes", async (req, res): Promise<void> => {
   }
 
   const { horizonJours = 60, limit = 50 } = query.data;
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
 
   const lignes = await db
     .select(colonnesConvention)
@@ -196,7 +196,7 @@ router.get("/conventions/agenda", async (req, res): Promise<void> => {
   }
 
   const { mois = 6 } = query.data;
-  const reference = await chargerReferentiel();
+  const reference = await loadReferenceData();
 
   const lignes = await db
     .select(colonnesConvention)

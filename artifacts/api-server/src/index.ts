@@ -1,8 +1,8 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { bootstrapAdmin, nettoyerSessionsExpirees } from "./lib/auth";
+import { bootstrapAdmin, cleanExpiredSessions } from "./lib/auth";
 import { safeErrorFields } from "./lib/error-logging";
-import { purgerConventionsSupprimees } from "./lib/convention-purge";
+import { purgeDeletedConventions } from "./lib/convention-purge";
 import { startQuarantinedUploadWorker } from "./lib/document-quarantine";
 
 const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
@@ -29,9 +29,9 @@ async function start(): Promise<void> {
     // Continue any uploads that were in the old quarantine flow across deployment.
     startQuarantinedUploadWorker();
 
-    const nettoyer = async (): Promise<void> => {
+    const cleanupSessions = async (): Promise<void> => {
       try {
-        const count = await nettoyerSessionsExpirees();
+        const count = await cleanExpiredSessions();
         if (count > 0) {
           logger.info({ event: "sessions.cleanup.completed", operation: "sessions.cleanup", count }, "Expired sessions cleaned");
         }
@@ -43,13 +43,13 @@ async function start(): Promise<void> {
       }
     };
 
-    void nettoyer();
-    const cleanupTimer = setInterval(() => void nettoyer(), SESSION_CLEANUP_INTERVAL_MS);
+    void cleanupSessions();
+    const cleanupTimer = setInterval(() => void cleanupSessions(), SESSION_CLEANUP_INTERVAL_MS);
     cleanupTimer.unref();
 
-    const purger = async (): Promise<void> => {
+    const purgeConventions = async (): Promise<void> => {
       try {
-        const result = await purgerConventionsSupprimees();
+        const result = await purgeDeletedConventions();
         if (
           result.conventionsDeleted > 0 ||
           result.sharedObjectsRetained > 0 ||
@@ -72,8 +72,8 @@ async function start(): Promise<void> {
       }
     };
 
-    void purger();
-    const purgeTimer = setInterval(() => void purger(), CONVENTION_PURGE_INTERVAL_MS);
+    void purgeConventions();
+    const purgeTimer = setInterval(() => void purgeConventions(), CONVENTION_PURGE_INTERVAL_MS);
     purgeTimer.unref();
   });
 }

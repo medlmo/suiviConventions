@@ -5,8 +5,8 @@ import {
 } from "docx";
 import logo from "./logo-crsm-word.png";
 import type { ConventionApi } from "./conventions-mapper";
-import { natureAvecAvancement } from "./avancement-physique";
-import { estPartenaireRegion } from "./situation-versements";
+import { supportsPhysicalProgress } from "./avancement-physique";
+import { isRegionalPartner } from "./situation-versements";
 
 const NAVY = "17365D";
 const GOLD = "C38B37";
@@ -241,7 +241,7 @@ function tableauSituationVersements(convention: ConventionApi): Table {
         (total, tranche) => total + montantCentimes(tranche.montant),
         0n,
       );
-      const contribution = estPartenaireRegion(ligne.partenaire)
+      const contribution = isRegionalPartner(ligne.partenaire)
         ? convention.contributionRegion
         : convention.suiviFinancier?.lignes
           .find((partenaire) => partenaire.partenaire === ligne.partenaire)
@@ -298,7 +298,7 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
     a.dateConstat !== b.dateConstat
       ? (a.dateConstat < b.dateConstat ? 1 : -1)
       : (Date.parse(b.enregistreLe) || 0) - (Date.parse(a.enregistreLe) || 0));
-  const applicable = natureAvecAvancement(convention.nature);
+  const applicable = supportsPhysicalProgress(convention.nature);
 
   // Keep archived observations visible after a nature change, while not adding
   // an irrelevant empty section to conventions that never used this tracking.

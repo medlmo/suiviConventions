@@ -27,11 +27,11 @@ declare global {
   }
 }
 
-export function estRole(role: string): role is Role {
+export function isRole(role: string): role is Role {
   return ["admin", "directeur", "directeur_general_services", "chef_division", "chef_service"].includes(role);
 }
 
-export function versUtilisateur(user: AppUser): SessionUser {
+export function toSessionUser(user: AppUser): SessionUser {
   return {
     id: user.id,
     username: user.username,
@@ -92,7 +92,7 @@ export async function bootstrapAdmin(): Promise<void> {
   }).onConflictDoNothing();
 }
 
-export async function creerSession(userId: number, req: Request, res: Response): Promise<void> {
+export async function createSession(userId: number, req: Request, res: Response): Promise<void> {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_HOURS * 60 * 60 * 1000);
   await db.transaction(async (tx) => {
@@ -115,20 +115,20 @@ export async function creerSession(userId: number, req: Request, res: Response):
   });
 }
 
-export async function nettoyerSessionsExpirees(): Promise<number> {
-  const supprimees = await db
+export async function cleanExpiredSessions(): Promise<number> {
+  const deletedSessions = await db
     .delete(sessionsTable)
     .where(lte(sessionsTable.expiresAt, new Date()))
     .returning({ id: sessionsTable.id });
-  return supprimees.length;
+  return deletedSessions.length;
 }
 
-export function supprimerCookie(req: Request, res: Response): void {
+export function clearSessionCookie(req: Request, res: Response): void {
   const secure = req.secure || req.get("x-forwarded-proto")?.split(",")[0]?.trim() === "https";
   res.clearCookie(COOKIE_NAME, { httpOnly: true, sameSite: "strict", secure, path: "/api" });
 }
 
-function cookieDu(req: Request): string | undefined {
+function getSessionCookie(req: Request): string | undefined {
   const cookies = req.headers.cookie?.split(";") ?? [];
   for (const cookie of cookies) {
     const separator = cookie.indexOf("=");
@@ -143,7 +143,7 @@ function cookieDu(req: Request): string | undefined {
 }
 
 export async function sessionMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const token = cookieDu(req);
+  const token = getSessionCookie(req);
   if (!token) {
     res.status(401).json({ error: "Authentification requise." });
     return;
@@ -154,11 +154,11 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id))
     .where(and(eq(sessionsTable.tokenHash, hashToken(token)), gt(sessionsTable.expiresAt, new Date())))
     .limit(1);
-  if (!session || !session.user.active || !estRole(session.user.role)) {
+  if (!session || !session.user.active || !isRole(session.user.role)) {
     res.status(401).json({ error: "Session invalide ou expirée." });
     return;
   }
-  req.user = versUtilisateur(session.user);
+  req.user = toSessionUser(session.user);
   req.sessionId = session.sessionId;
   next();
 }

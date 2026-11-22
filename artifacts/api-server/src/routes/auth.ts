@@ -3,12 +3,12 @@ import { eq, sql } from "drizzle-orm";
 import { db, sessionsTable, usersTable } from "@workspace/db";
 import { LoginBody } from "@workspace/api-zod";
 import {
-  creerSession,
-  estRole,
+  createSession,
+  isRole,
   sessionMiddleware,
-  supprimerCookie,
+  clearSessionCookie,
   verifyPassword,
-  versUtilisateur,
+  toSessionUser,
 } from "../lib/auth";
 import {
   reserveLoginAttempt, reserveLoginVerification, resetLoginAttempts,
@@ -41,13 +41,13 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       .where(sql`lower(${usersTable.username}) = lower(${username})`)
       .limit(1);
     const valide = await verifyPassword(parsed.data.password, user?.passwordHash);
-    if (!user || !user.active || !valide || !estRole(user.role)) {
+    if (!user || !user.active || !valide || !isRole(user.role)) {
       res.status(401).json({ error: "Identifiant ou mot de passe invalide." });
       return;
     }
-    await creerSession(user.id, req, res);
+    await createSession(user.id, req, res);
     resetLoginAttempts(username, ip);
-    res.json(versUtilisateur(user));
+    res.json(toSessionUser(user));
   } finally {
     releaseVerification();
   }
@@ -61,7 +61,7 @@ router.post("/auth/logout", sessionMiddleware, async (req, res): Promise<void> =
   if (req.sessionId !== undefined) {
     await db.delete(sessionsTable).where(eq(sessionsTable.id, req.sessionId));
   }
-  supprimerCookie(req, res);
+  clearSessionCookie(req, res);
   res.sendStatus(204);
 });
 
