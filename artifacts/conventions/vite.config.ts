@@ -69,6 +69,16 @@ export default defineConfig({
     strictPort: true,
     host: '0.0.0.0',
     allowedHosts: true,
+    ...(process.env.E2E_API_PROXY_TARGET
+      ? {
+          proxy: {
+            '/api': {
+              target: process.env.E2E_API_PROXY_TARGET,
+              changeOrigin: false,
+            },
+          },
+        }
+      : {}),
     fs: {
       strict: true,
     },
