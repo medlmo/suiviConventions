@@ -8,6 +8,8 @@ pnpm --filter @workspace/conventions run test:e2e
 
 La commande crée une base PostgreSQL temporaire, démarre l’API et l’interface en local, puis détruit la base et arrête les processus. Elle n’utilise pas la base de développement ou de production et n’envoie pas de courriel.
 
+Les parcours couvrent la connexion, la création et la modification d’une convention, la consultation mobile, les limites d’un chef de service et les droits de lecture seule d’un directeur. Ils vérifient également que les exports Excel respectent le périmètre du compte connecté et contiennent des classeurs lisibles.
+
 Sur une machine locale ou en CI, installer une fois Chromium pour Playwright :
 
 ```sh
