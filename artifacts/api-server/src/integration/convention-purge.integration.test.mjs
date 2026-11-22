@@ -165,7 +165,7 @@ test("la purge respecte la rétention, supprime les documents et conserve l’au
   insertAudit(expiredId, "delete");
 
   globalThis.__purgedDocumentPaths = [];
-  const { purgeDeletedConventions: purgerConventionsSupprimees, pool } = await import(
+  const { purgerConventionsSupprimees, pool } = await import(
     `${pathToFileURL(purgeBundlePath).href}?integration=${Date.now()}`
   );
   databasePool = pool;

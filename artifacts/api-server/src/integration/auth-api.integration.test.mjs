@@ -137,11 +137,12 @@ function insertConventionForFiche() {
   ]);
   const query = `
     INSERT INTO conventions (
-      nom_convention, nature, suivi_financier, avancement_physique_historique, situation_versements
+      nom_convention, nature, contribution_region, suivi_financier, avancement_physique_historique, situation_versements
     )
     VALUES (
       ${literal(nomConvention)},
       'Infrastructure',
+      '8000',
       ${literal(suiviFinancier)}::jsonb,
       ${literal(avancement)}::jsonb,
       ${literal(situationVersements)}::jsonb
@@ -420,7 +421,7 @@ test("les sessions et les périmètres de conventions sont vérifiés en base", 
       false,
       "les auteurs des constats ne sont pas exposés dans la fiche technique",
     );
-    assert.ok(contenuFiche.includes("SITUATION DES VERSEMENTS DE LA RÉGION SOUSS MASSA"));
+    assert.ok(contenuFiche.includes("SITUATION DES VERSEMENTS DES PARTENAIRES"));
     assert.ok(contenuFiche.includes("Contribution du partenaire"));
     assert.ok(contenuFiche.includes("Date de versement"));
     assert.ok(contenuFiche.includes("Montant des tranches"));
