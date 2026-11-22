@@ -169,6 +169,7 @@ try {
     cwd: packageDir,
     env: environment({
       E2E_BASE_URL: webUrl,
+      E2E_OUTPUT_DIR: join(temporaryDirectory, "playwright-results"),
       E2E_ADMIN_PASSWORD: testPassword,
       ...(systemChromium ? { E2E_CHROMIUM_EXECUTABLE: systemChromium } : {}),
     }),

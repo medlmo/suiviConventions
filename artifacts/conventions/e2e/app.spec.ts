@@ -25,7 +25,8 @@ test("une page protégée affiche une erreur de connexion puis refuse les mauvai
 });
 
 test("un administrateur crée une convention, la retrouve et se déconnecte", async ({ page }) => {
-  const title = `اختبار آلي ${Date.now()}`;
+  const initialTitle = `اختبار آلي ${Date.now()}`;
+  const updatedTitle = `${initialTitle} — modifiée`;
 
   await page.goto("/");
   await signIn(page);
@@ -34,7 +35,7 @@ test("un administrateur crée une convention, la retrouve et se déconnecte", as
   await page.getByRole("link", { name: "Nouvelle Convention", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Nouvelle Convention", exact: true })).toBeVisible();
 
-  await page.locator('textarea[name="nomConvention"]').fill(title);
+  await page.locator('textarea[name="nomConvention"]').fill(initialTitle);
   await page.getByTestId("select-rattachement").click();
   await page.getByRole("option", { name: "Direction Générale des Services" }).click();
   await page.getByTestId("select-responsable-projet").click();
@@ -44,10 +45,15 @@ test("un administrateur crée une convention, la retrouve et se déconnecte", as
   await page.getByRole("button", { name: "Créer la convention" }).click();
   await expect(page).toHaveURL(/\/conventions\/\d+$/);
   await expect(page.getByRole("heading", { name: "Fiche Convention" })).toBeVisible();
-  await expect(page.locator('textarea[name="nomConvention"]')).toHaveValue(title);
+  await expect(page.locator('textarea[name="nomConvention"]')).toHaveValue(initialTitle);
+
+  await page.locator('textarea[name="nomConvention"]').fill(updatedTitle);
+  await page.locator("form").getByRole("button", { name: "Enregistrer", exact: true }).click();
+  await expect(page.getByText("Convention mise à jour", { exact: true })).toBeVisible();
+  await expect(page.locator('textarea[name="nomConvention"]')).toHaveValue(updatedTitle);
 
   await page.getByRole("link", { name: "Toutes les conventions" }).click();
-  await expect(page.getByText(title)).toBeVisible();
+  await expect(page.getByTitle(updatedTitle)).toBeVisible();
 
   await page.getByRole("button", { name: "Se déconnecter" }).click();
   await expect(page.getByRole("heading", { name: "Bienvenue." })).toBeVisible();
@@ -66,5 +72,6 @@ test("le tableau de bord et la liste restent consultables sur mobile", async ({ 
 
   await page.locator("header").getByRole("button").first().click();
   await page.getByRole("link", { name: "Toutes les conventions" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: /^Conventions \(/ })).toBeVisible();
 });

@@ -16,6 +16,7 @@ import { useOperationsSnapshot, useServiceReadiness } from "@/hooks/use-operatio
 import { cn } from "@/lib/utils";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetTrigger,
   SheetTitle,
@@ -151,24 +152,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     {allItems.map((item) => {
                       const isActive = estNavigationActive(location, item.href);
                       return (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
-                            isActive
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                          )}
-                        >
-                          <item.icon
+                        <SheetClose asChild key={item.name}>
+                          <Link
+                            href={item.href}
                             className={cn(
-                              "w-5 h-5",
-                              isActive ? "text-sidebar-primary" : "opacity-70",
+                              "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
+                              isActive
+                                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                             )}
-                          />
-                          {item.name}
-                        </Link>
+                          >
+                            <item.icon
+                              className={cn(
+                                "w-5 h-5",
+                                isActive ? "text-sidebar-primary" : "opacity-70",
+                              )}
+                            />
+                            {item.name}
+                          </Link>
+                        </SheetClose>
                       );
                     })}
                   </nav>
