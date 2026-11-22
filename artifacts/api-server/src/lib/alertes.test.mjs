@@ -6,7 +6,7 @@ import { join } from "node:path";
 import test, { after, before } from "node:test";
 import { PgDialect } from "drizzle-orm/pg-core";
 import {
-  construireAlerte,
+  buildAlert as construireAlerte,
   META_ALERTES,
   NIVEAUX_ALERTE,
   niveauAlerteSql,

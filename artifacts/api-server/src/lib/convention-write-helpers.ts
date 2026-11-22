@@ -12,7 +12,7 @@ type DocumentAjoute = {
 };
 
 /** Maintient les anciennes colonnes scalaires à jour pour les clients et exports existants. */
-export function appliquerColonnesDocumentsAjoutes(
+export function applyAddedDocumentColumns(
   valeurs: Record<string, unknown>,
   documents: readonly DocumentAjoute[] | undefined,
 ): void {
@@ -23,7 +23,7 @@ export function appliquerColonnesDocumentsAjoutes(
 }
 
 /** Recalcule l'échéance seulement selon les mêmes règles que la route PATCH historique. */
-export function appliquerEcheanceModification(
+export function applyDeadlineOnUpdate(
   current: ChampsEcheanceConvention,
   valeurs: Record<string, unknown>,
 ): void {

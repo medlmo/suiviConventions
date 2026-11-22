@@ -3,20 +3,20 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
 import { UpdateConventionBody, UpdateConventionParams, UpdateConventionResponse } from "@workspace/api-zod";
 import { isConventionAccessible, areAssignmentsValid, canEditConventions } from "../../lib/convention-access";
-import { notifierChangementConvention } from "../../lib/notifications";
-import { colonnesConvention, versApi, versColonnes } from "../../lib/conventions-mapper";
-import { appliquerColonnesDocumentsAjoutes, appliquerEcheanceModification } from "../../lib/convention-write-helpers";
-import { preparerHistoriqueDocuments } from "../../lib/document-history";
-import { erreurPartenairesFinanciers } from "../../lib/suivi-financier";
+import { notifyConventionChange } from "../../lib/notifications";
+import { conventionColumns, toApiConvention, toConventionColumns } from "../../lib/conventions-mapper";
+import { applyAddedDocumentColumns, applyDeadlineOnUpdate } from "../../lib/convention-write-helpers";
+import { prepareDocumentHistory } from "../../lib/document-history";
+import { getFinancialPartnerValidationError } from "../../lib/suivi-financier";
 import { createPhysicalProgressRecord, supportsPhysicalProgress } from "../../lib/avancement-physique";
 import { recordRequestFailure } from "../../lib/http-logging";
 import { loadReferenceData, loadReferenceDataFrom } from "../../lib/reference-data";
-import { documentVerifie, snapshot, valide } from "./commun";
+import { verifyStoredDocument, createConventionSnapshot, assertValidApiResponse } from "./commun";
 import {
-  contributionDepasseEnveloppe,
+  doesContributionExceedBudget,
   ERREUR_CONTRIBUTION,
-  normaliserCorps,
-  referencesConventionValides,
+  normalizeConventionPayload,
+  areConventionReferencesValid,
 } from "./validation";
 
 const router: IRouter = Router();
@@ -32,13 +32,13 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const nettoye = normaliserCorps(req.body);
-  if (!nettoye.ok) {
-    res.status(400).json({ error: nettoye.erreur });
+  const normalizedPayload = normalizeConventionPayload(req.body);
+  if (!normalizedPayload.ok) {
+    res.status(400).json({ error: normalizedPayload.error });
     return;
   }
 
-  const parsed = UpdateConventionBody.safeParse(nettoye.valeur);
+  const parsed = UpdateConventionBody.safeParse(normalizedPayload.value);
   if (!parsed.success) {
     recordRequestFailure(res, undefined, {
       event: "convention.update.rejected", operation: "convention.update",
@@ -48,7 +48,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const valeurs = versColonnes(parsed.data);
+  const valeurs = toConventionColumns(parsed.data);
   if ("nomConvention" in valeurs && !valeurs.nomConvention) {
     res.status(400).json({ error: "Le nom de la convention est obligatoire." });
     return;
@@ -83,14 +83,14 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     const anciennesMoDeleguees = current.maitrisesOuvrageDeleguees ??
       (current.maitriseOuvrageDeleguee ? [current.maitriseOuvrageDeleguee] : []);
     const anciensPartenaires = current.partenaires ?? [];
-    const erreurFinanciere = erreurPartenairesFinanciers(
+    const erreurFinanciere = getFinancialPartnerValidationError(
       parsed.data.suiviFinancier ?? current.suiviFinancier,
       (valeurs.partenaires as string[] | undefined) ?? anciensPartenaires,
     );
     if (erreurFinanciere) return { status: 400 as const, error: erreurFinanciere };
     const anciennesProvincesPrefectures = current.provincesPrefectures ?? [];
     const anciennesCommunes = current.communes ?? [];
-    if (!referencesConventionValides(parsed.data, reference, {
+    if (!areConventionReferencesValid(parsed.data, reference, {
       maitriseOuvrage: anciennesMo,
       maitriseOuvrageDeleguee: anciennesMoDeleguees,
       partenaires: anciensPartenaires,
@@ -101,11 +101,11 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       return { status: 400 as const, error: "Le porteur, les maîtrises d'ouvrage, les partenaires et les territoires doivent appartenir au référentiel adapté." };
     }
 
-    const documents = await preparerHistoriqueDocuments(current, parsed.data, documentVerifie);
+    const documents = await prepareDocumentHistory(current, parsed.data, verifyStoredDocument);
     if (!documents) return { status: 400 as const, error: "Ajout ou retrait de document invalide. Seuls les documents de cette fiche peuvent être retirés et les nouveaux fichiers doivent être vérifiés." };
     valeurs.documents = documents;
     // Garder les anciens champs compatibles avec les exports et anciens clients.
-    appliquerColonnesDocumentsAjoutes(valeurs, parsed.data.documentsAjoutes);
+    applyAddedDocumentColumns(valeurs, parsed.data.documentsAjoutes);
     // Ne pas ressusciter un document retiré via les anciennes colonnes scalaires.
     for (const [champ, type] of [["documentConvention", "convention"], ["pv", "pv"]] as const) {
       const cheminFinal = Object.hasOwn(valeurs, champ) ? valeurs[champ] : current[champ];
@@ -118,7 +118,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       ? parsed.data.enveloppeBudgetaire : current.enveloppeBudgetaire;
     const contributionFinale = Object.hasOwn(parsed.data, "contributionRegion")
       ? parsed.data.contributionRegion : current.contributionRegion;
-    if (contributionDepasseEnveloppe(enveloppeFinale, contributionFinale)) {
+    if (doesContributionExceedBudget(enveloppeFinale, contributionFinale)) {
       return { status: 400 as const };
     }
 
@@ -135,7 +135,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     ) {
       return { status: 403 as const };
     }
-    appliquerEcheanceModification(current, valeurs);
+    applyDeadlineOnUpdate(current, valeurs);
     const [updated] = await tx.update(conventionsTable)
       .set({ ...valeurs, version: current.version + 1, updatedAt: new Date() })
       .where(and(
@@ -149,11 +149,11 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
       conventionId: updated.id,
       action: "update",
       actorUsername: user.username,
-      before: snapshot(current),
-      after: snapshot(updated),
+      before: createConventionSnapshot(current),
+      after: createConventionSnapshot(updated),
     });
-    await notifierChangementConvention(tx, user, current, updated, reference);
-    const [line] = await tx.select(colonnesConvention).from(conventionsTable)
+    await notifyConventionChange(tx, user, current, updated, reference);
+    const [line] = await tx.select(conventionColumns).from(conventionsTable)
       .where(eq(conventionsTable.id, updated.id));
     return line ? { status: 200 as const, line } : { status: 404 as const };
   });
@@ -173,7 +173,7 @@ router.patch("/conventions/:id", async (req, res): Promise<void> => {
     res.status(409).json({ error: "La convention a été modifiée entre-temps. Rechargez-la avant de réessayer." });
     return;
   }
-  res.json(valide(UpdateConventionResponse, versApi(result.line)));
+  res.json(assertValidApiResponse(UpdateConventionResponse, toApiConvention(result.line)));
 });
 
 export default router;

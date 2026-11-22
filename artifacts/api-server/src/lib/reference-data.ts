@@ -27,15 +27,15 @@ async function initializeReferenceData(): Promise<void> {
   if (referenceDataInitialized) return;
   await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
-    const [serviceDgsExistant] = await tx.select({ id: servicesDgsTable.id }).from(servicesDgsTable).limit(1);
-    if (!serviceDgsExistant) {
+    const [existingDgsService] = await tx.select({ id: servicesDgsTable.id }).from(servicesDgsTable).limit(1);
+    if (!existingDgsService) {
       await tx.insert(servicesDgsTable).values([
         { nom: "Service Coopération" },
         { nom: "Service Juridique" },
       ]);
     }
-    const [dejaInitialise] = await tx.select({ id: directionsTable.id }).from(directionsTable).limit(1);
-    if (dejaInitialise) return;
+    const [alreadyInitialized] = await tx.select({ id: directionsTable.id }).from(directionsTable).limit(1);
+    if (alreadyInitialized) return;
 
     for (const direction of organisationHistorique) {
       const [parent] = await tx.insert(directionsTable)
@@ -75,7 +75,7 @@ async function initializeReferenceData(): Promise<void> {
       moDeleguees: conventionsTable.maitrisesOuvrageDeleguees,
       partenaires: conventionsTable.partenaires,
     }).from(conventionsTable);
-    const valeurs = new Set<string>();
+    const values = new Set<string>();
     for (const convention of conventions) {
       for (const candidate of [
         convention.legacyMo,
@@ -84,13 +84,13 @@ async function initializeReferenceData(): Promise<void> {
         ...(convention.moDeleguees ?? []),
         ...(convention.partenaires ?? []),
       ]) {
-        const nom = candidate?.trim();
-        if (nom) valeurs.add(nom);
+        const name = candidate?.trim();
+        if (name) values.add(name);
       }
     }
-    for (const nom of valeurs) {
+    for (const name of values) {
       await tx.insert(maitrisesOuvrageTable)
-        .values({ nom })
+        .values({ nom: name })
         .onConflictDoNothing({ target: maitrisesOuvrageTable.nom });
     }
   });

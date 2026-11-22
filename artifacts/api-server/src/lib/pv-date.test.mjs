@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normaliserDatePv } from "./pv-date.ts";
+import { normalizeCommitteeMinutesDate as normaliserDatePv } from "./pv-date.ts";
 
 test("une date de PV absente ou vide est acceptée comme null", () => {
   for (const valeur of [undefined, null, ""]) {

@@ -7,7 +7,7 @@ export function supportsPhysicalProgress(nature: unknown): boolean {
 }
 
 /** Validate raw input before generated date/number coercions. */
-export function erreurAvancementPhysique(value: unknown): string | null {
+export function getPhysicalProgressValidationError(value: unknown): string | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return "L'actualisation de l'avancement physique doit contenir une date et un taux estimé.";
   }

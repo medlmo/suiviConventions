@@ -108,7 +108,7 @@ async function setRetry(id: string, error: unknown): Promise<void> {
   }, "Pending document validation will be retried");
 }
 
-async function marquerRejete(row: QuarantineRow): Promise<void> {
+async function markQuarantinedUploadRejected(row: QuarantineRow): Promise<void> {
   await pool.query(
     `UPDATE quarantined_document_uploads
      SET state = 'rejected', lease_expires_at = NULL, updated_at = now()
@@ -125,7 +125,7 @@ async function marquerRejete(row: QuarantineRow): Promise<void> {
   });
 }
 
-async function traiterUneDemande(): Promise<void> {
+async function processOneQuarantinedUpload(): Promise<void> {
   const row = await claimNext();
   if (!row) return;
   try {
@@ -155,7 +155,7 @@ async function traiterUneDemande(): Promise<void> {
   } catch (error) {
     if ((error instanceof DocumentSecurityError && error.code === "DOCUMENT_REJECTED") ||
       error instanceof InvalidDocumentError) {
-      await marquerRejete(row);
+      await markQuarantinedUploadRejected(row);
       logger.warn({
         event: "document.quarantine.structure.rejected",
         operation: "document.quarantine",
@@ -167,7 +167,7 @@ async function traiterUneDemande(): Promise<void> {
   }
 }
 
-async function nettoyerExpires(): Promise<void> {
+async function cleanupExpiredQuarantinedUploads(): Promise<void> {
   const { rows } = await pool.query<{
     id: string;
     state: QuarantineState | "storing";
@@ -215,10 +215,10 @@ async function tick(): Promise<void> {
   workerRunning = true;
   try {
     if (Date.now() - lastCleanupAt >= 60 * 60 * 1000) {
-      await nettoyerExpires();
+      await cleanupExpiredQuarantinedUploads();
       lastCleanupAt = Date.now();
     }
-    await traiterUneDemande();
+    await processOneQuarantinedUpload();
   } catch (error) {
     logger.error({
       event: "document.quarantine.worker.failed",

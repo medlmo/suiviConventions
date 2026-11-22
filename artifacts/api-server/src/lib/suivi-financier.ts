@@ -1,24 +1,24 @@
 import type { SuiviFinancier } from "@workspace/db";
 
-const objet = (value: unknown): value is Record<string, unknown> =>
+const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
-const anneeValide = (value: unknown): value is number =>
+const isValidYear = (value: unknown): value is number =>
   typeof value === "number" && Number.isInteger(value) && value >= 1900 && value <= 2200;
 
 /** Validate raw JSON before generated numeric coercions can turn blank amounts into zero. */
-export function erreurSuiviFinancier(value: unknown): string | null {
-  if (!objet(value) || !Array.isArray(value.annees) || !Array.isArray(value.lignes)) {
+export function getFinancialTrackingValidationError(value: unknown): string | null {
+  if (!isRecord(value) || !Array.isArray(value.annees) || !Array.isArray(value.lignes)) {
     return "Le montage financier doit contenir une liste d'années et de partenaires.";
   }
   const { annees, lignes } = value;
-  if (annees.length > 301 || annees.some(annee => !anneeValide(annee)) ||
+  if (annees.length > 301 || annees.some(year => !isValidYear(year)) ||
       new Set(annees).size !== annees.length) {
     return "Les années du montage financier doivent être uniques, entre 1900 et 2200.";
   }
   if (lignes.length > 500) return "Le montage financier ne peut pas dépasser 500 partenaires.";
   const partenaires = new Set<string>();
   for (const ligne of lignes) {
-    if (!objet(ligne) || typeof ligne.partenaire !== "string" || !ligne.partenaire.trim() ||
+    if (!isRecord(ligne) || typeof ligne.partenaire !== "string" || !ligne.partenaire.trim() ||
         ligne.partenaire !== ligne.partenaire.trim() || !Array.isArray(ligne.contributions)) {
       return "Chaque ligne financière doit désigner un partenaire et ses contributions.";
     }
@@ -27,7 +27,7 @@ export function erreurSuiviFinancier(value: unknown): string | null {
     if (ligne.contributions.length > 301) return "Trop de contributions pour un partenaire.";
     const presentes = new Set<number>();
     for (const contribution of ligne.contributions) {
-      if (!objet(contribution) || !anneeValide(contribution.annee) ||
+      if (!isRecord(contribution) || !isValidYear(contribution.annee) ||
           !annees.includes(contribution.annee) || presentes.has(contribution.annee)) {
         return "Chaque contribution doit correspondre à une année du tableau, sans doublon.";
       }
@@ -42,8 +42,8 @@ export function erreurSuiviFinancier(value: unknown): string | null {
   return null;
 }
 
-export function erreurPartenairesFinanciers(suivi: SuiviFinancier, partenaires: string[]): string | null {
-  return suivi.lignes.some(ligne => !partenaires.includes(ligne.partenaire))
+export function getFinancialPartnerValidationError(tracking: SuiviFinancier, partners: string[]): string | null {
+  return tracking.lignes.some(line => !partners.includes(line.partenaire))
     ? "Un partenaire du montage financier ne figure plus dans la convention. Rétablissez-le ou retirez explicitement sa ligne financière avant d'enregistrer."
     : null;
 }

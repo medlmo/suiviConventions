@@ -7,7 +7,7 @@ import {
 
 const HISTORY_LIMIT = 200;
 
-function cleRappel(value: {
+function buildReminderKey(value: {
   recipientId: number;
   conventionId: number;
   deadlineDate: string;
@@ -57,11 +57,11 @@ export async function getAdminMailReminderLog() {
       gte(mailRemindersTable.deadlineDate, sql`CURRENT_DATE + 1`),
       lte(mailRemindersTable.deadlineDate, sql`CURRENT_DATE + 30`),
     ));
-    for (const item of existing) existingKeys.add(cleRappel(item));
+    for (const item of existing) existingKeys.add(buildReminderKey(item));
   }
 
   const eligibleItems = eligible
-    .filter((item) => !existingKeys.has(cleRappel({
+    .filter((item) => !existingKeys.has(buildReminderKey({
       recipientId: item.recipientId,
       conventionId: item.conventionId,
       deadlineDate: item.deadlineDate,

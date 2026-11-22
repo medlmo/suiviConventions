@@ -8,7 +8,7 @@ import {
   ListAlertesQueryParams,
   ListAlertesResponse,
 } from "@workspace/api-zod";
-import { conditionsVisibles } from "../../lib/convention-access";
+import { buildVisibleConventionConditions } from "../../lib/convention-access";
 import {
   META_ALERTES,
   NIVEAUX_COMPTEURS,
@@ -16,9 +16,9 @@ import {
   rangUrgenceSql,
   type NiveauAlerte,
 } from "../../lib/alertes";
-import { colonnesConvention, versApi } from "../../lib/conventions-mapper";
+import { conventionColumns, toApiConvention } from "../../lib/conventions-mapper";
 import { loadReferenceData } from "../../lib/reference-data";
-import { valide } from "./commun";
+import { assertValidApiResponse } from "./commun";
 
 const router: IRouter = Router();
 
@@ -31,7 +31,7 @@ END`;
 
 router.get("/conventions/resume", async (req, res): Promise<void> => {
   const reference = await loadReferenceData();
-  const visible = conditionsVisibles(req.user!, reference);
+  const visible = buildVisibleConventionConditions(req.user!, reference);
   const [repartition, [prochaine], jourCourant, synthesesParStatut, synthesesParVisa] = await Promise.all([
     db
       .select({ niveau: niveauAlerteSql, nombre: count() })
@@ -140,7 +140,7 @@ router.get("/conventions/resume", async (req, res): Promise<void> => {
     (parNiveau.get("A_SURVEILLER") ?? 0) + (parNiveau.get("A_QUALIFIER") ?? 0);
 
   res.json(
-    valide(GetResumeAlertesResponse, {
+    assertValidApiResponse(GetResumeAlertesResponse, {
       total,
       montantGlobal: Number(montants.montantGlobal),
       contributionRegionTotale: Number(montants.contributionRegionTotale),
@@ -168,11 +168,11 @@ router.get("/conventions/alertes", async (req, res): Promise<void> => {
   const reference = await loadReferenceData();
 
   const lignes = await db
-    .select(colonnesConvention)
+    .select(conventionColumns)
     .from(conventionsTable)
     .where(
       and(
-        conditionsVisibles(req.user!, reference),
+        buildVisibleConventionConditions(req.user!, reference),
         isNotNull(conventionsTable.prochaineEcheance),
         lte(
           conventionsTable.prochaineEcheance,
@@ -185,7 +185,7 @@ router.get("/conventions/alertes", async (req, res): Promise<void> => {
     .orderBy(asc(rangUrgenceSql), asc(conventionsTable.prochaineEcheance))
     .limit(limit);
 
-  res.json(valide(ListAlertesResponse, lignes.map(versApi)));
+  res.json(assertValidApiResponse(ListAlertesResponse, lignes.map(toApiConvention)));
 });
 
 router.get("/conventions/agenda", async (req, res): Promise<void> => {
@@ -199,11 +199,11 @@ router.get("/conventions/agenda", async (req, res): Promise<void> => {
   const reference = await loadReferenceData();
 
   const lignes = await db
-    .select(colonnesConvention)
+    .select(conventionColumns)
     .from(conventionsTable)
     .where(
       and(
-        conditionsVisibles(req.user!, reference),
+        buildVisibleConventionConditions(req.user!, reference),
         gte(conventionsTable.prochaineEcheance, sql`CURRENT_DATE`),
         lte(
           conventionsTable.prochaineEcheance,
@@ -219,16 +219,16 @@ router.get("/conventions/agenda", async (req, res): Promise<void> => {
     timeZone: "UTC",
   });
 
-  const groupes = new Map<string, ReturnType<typeof versApi>[]>();
+  const groupes = new Map<string, ReturnType<typeof toApiConvention>[]>();
   for (const ligne of lignes) {
     const echeance = ligne.prochaineEcheance;
     if (!echeance) continue;
     const cle = echeance.slice(0, 7);
     const groupe = groupes.get(cle);
     if (groupe) {
-      groupe.push(versApi(ligne));
+      groupe.push(toApiConvention(ligne));
     } else {
-      groupes.set(cle, [versApi(ligne)]);
+      groupes.set(cle, [toApiConvention(ligne)]);
     }
   }
 
@@ -239,7 +239,7 @@ router.get("/conventions/agenda", async (req, res): Promise<void> => {
     conventions,
   }));
 
-  res.json(valide(GetAgendaResponse, agenda));
+  res.json(assertValidApiResponse(GetAgendaResponse, agenda));
 });
 
 export default router;

@@ -9,18 +9,18 @@ import {
   ListConventionsQueryParams,
   ListConventionsResponse,
 } from "@workspace/api-zod";
-import { conditionsVisibles } from "../../lib/convention-access";
-import { colonnesConvention, versApi } from "../../lib/conventions-mapper";
+import { buildVisibleConventionConditions } from "../../lib/convention-access";
+import { conventionColumns, toApiConvention } from "../../lib/conventions-mapper";
 import { loadReferenceData } from "../../lib/reference-data";
-import { valide } from "./commun";
-import { construireFiltres, construireTri } from "./requetes";
+import { assertValidApiResponse } from "./commun";
+import { buildConventionFilters, buildConventionSort } from "./requetes";
 
 // Routers distincts pour conserver l'ordre des URL fixes avant /:id.
-export const listeRouter: IRouter = Router();
-export const optionsFiltresRouter: IRouter = Router();
-export const detailRouter: IRouter = Router();
+export const conventionListRouter: IRouter = Router();
+export const conventionFilterOptionsRouter: IRouter = Router();
+export const conventionDetailRouter: IRouter = Router();
 
-listeRouter.get("/conventions", async (req, res): Promise<void> => {
+conventionListRouter.get("/conventions", async (req, res): Promise<void> => {
   const partenaires = req.query.partenaires;
   const query = ListConventionsQueryParams.safeParse({
     ...req.query,
@@ -33,14 +33,14 @@ listeRouter.get("/conventions", async (req, res): Promise<void> => {
 
   const { page = 1, pageSize = 25, tri = "urgence", ordre = "asc", ...filtres } = query.data;
   const reference = await loadReferenceData();
-  const where = conditionsVisibles(req.user!, reference, construireFiltres(filtres));
+  const where = buildVisibleConventionConditions(req.user!, reference, buildConventionFilters(filtres));
 
   const [lignes, [total]] = await Promise.all([
     db
-      .select(colonnesConvention)
+      .select(conventionColumns)
       .from(conventionsTable)
       .where(where)
-      .orderBy(...construireTri(tri, ordre))
+      .orderBy(...buildConventionSort(tri, ordre))
       .limit(pageSize)
       .offset((page - 1) * pageSize),
     db.select({ valeur: count() }).from(conventionsTable).where(where),
@@ -49,8 +49,8 @@ listeRouter.get("/conventions", async (req, res): Promise<void> => {
   const nombreTotal = total?.valeur ?? 0;
 
   res.json(
-    valide(ListConventionsResponse, {
-      items: lignes.map(versApi),
+    assertValidApiResponse(ListConventionsResponse, {
+      items: lignes.map(toApiConvention),
       total: nombreTotal,
       page,
       pageSize,
@@ -59,13 +59,13 @@ listeRouter.get("/conventions", async (req, res): Promise<void> => {
   );
 });
 
-optionsFiltresRouter.get("/conventions/options-filtres", async (req, res): Promise<void> => {
+conventionFilterOptionsRouter.get("/conventions/options-filtres", async (req, res): Promise<void> => {
   const reference = await loadReferenceData();
   async function valeursDistinctes(colonne: AnyPgColumn) {
     const lignes = await db
       .selectDistinct({ valeur: colonne })
       .from(conventionsTable)
-      .where(and(conditionsVisibles(req.user!, reference), isNotNull(colonne), sql`btrim(${colonne}) <> ''`))
+      .where(and(buildVisibleConventionConditions(req.user!, reference), isNotNull(colonne), sql`btrim(${colonne}) <> ''`))
       .orderBy(asc(colonne));
     return lignes
       .map((ligne) => ligne.valeur as string | null)
@@ -82,13 +82,13 @@ optionsFiltresRouter.get("/conventions/options-filtres", async (req, res): Promi
     db
       .select({ valeurs: conventionsTable.partenaires })
       .from(conventionsTable)
-      .where(conditionsVisibles(req.user!, reference)),
+      .where(buildVisibleConventionConditions(req.user!, reference)),
   ]);
   const partenaires = [...new Set(lignesPartenaires.flatMap((ligne) => ligne.valeurs ?? []).filter((nom) => nom.trim() !== ""))]
     .sort((a, b) => a.localeCompare(b, "fr"));
 
   res.json(
-    valide(GetOptionsFiltresResponse, {
+    assertValidApiResponse(GetOptionsFiltresResponse, {
       rattachements,
       responsables,
       statuts,
@@ -100,7 +100,7 @@ optionsFiltresRouter.get("/conventions/options-filtres", async (req, res): Promi
   );
 });
 
-detailRouter.get("/conventions/:id", async (req, res): Promise<void> => {
+conventionDetailRouter.get("/conventions/:id", async (req, res): Promise<void> => {
   const params = GetConventionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: "Identifiant de convention invalide." });
@@ -109,11 +109,11 @@ detailRouter.get("/conventions/:id", async (req, res): Promise<void> => {
 
   const reference = await loadReferenceData();
   const [ligne] = await db
-    .select(colonnesConvention)
+    .select(conventionColumns)
     .from(conventionsTable)
     .where(and(
       eq(conventionsTable.id, params.data.id),
-      conditionsVisibles(req.user!, reference),
+      buildVisibleConventionConditions(req.user!, reference),
     ));
 
   if (!ligne) {
@@ -121,5 +121,5 @@ detailRouter.get("/conventions/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(valide(GetConventionResponse, versApi(ligne)));
+  res.json(assertValidApiResponse(GetConventionResponse, toApiConvention(ligne)));
 });

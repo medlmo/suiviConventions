@@ -1,7 +1,7 @@
 import { and, eq, isNotNull, lt, ne, sql } from "drizzle-orm";
 import { db, conventionsTable } from "@workspace/db";
 import { ObjectStorageService } from "./objectStorage";
-import { documentsConvention } from "./document-history-mapper";
+import { getConventionDocuments } from "./document-history-mapper";
 import { logger } from "./logger";
 import { safeErrorFields } from "./error-logging";
 
@@ -59,7 +59,7 @@ export async function purgeDeletedConventions(): Promise<ConventionPurgeResult> 
             .for("update");
           if (!current) return { kind: "skipped" as const, objectsProcessed: 0, sharedRetained: 0, unmanaged: 0 };
 
-          const allPaths = [...new Set(documentsConvention(current).map(document => document.objectPath))];
+          const allPaths = [...new Set(getConventionDocuments(current).map(document => document.objectPath))];
           const managedPaths = allPaths.filter(path => DOCUMENT_OBJECT_PATH.test(path));
           let objectsProcessed = 0;
           let sharedRetained = 0;

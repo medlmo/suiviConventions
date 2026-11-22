@@ -2,11 +2,11 @@ import ExcelJS from "exceljs";
 import type { Writable } from "node:stream";
 import { finished } from "node:stream/promises";
 import { setImmediate } from "node:timers/promises";
-import type { versApi } from "./conventions-mapper";
+import type { toApiConvention } from "./conventions-mapper";
 
 export const EXPORT_MAX_ROWS = 5_000;
 const EXPORT_MAX_TEXT_BYTES = 32 * 1024 * 1024;
-type ConventionExport = ReturnType<typeof versApi>;
+type ConventionExport = ReturnType<typeof toApiConvention>;
 type ColonneExport = {
   titre: string;
   extraire: (convention: ConventionExport) => unknown;
@@ -60,15 +60,15 @@ const colonnes: ColonneExport[] = [
   { titre: "Commentaires", extraire: c => c.commentaires, largeurMin: 30, largeurMax: 60 },
 ];
 
-function valeurDateExcel(valeur: unknown): unknown {
-  if (typeof valeur !== "string") return valeur ?? null;
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valeur);
-  if (!match) return valeur;
-  const [, annee, mois, jour] = match;
+function toExcelDateValue(value: unknown): unknown {
+  if (typeof value !== "string") return value ?? null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return value;
+  const [, year, month, day] = match;
   const date = new Date(0);
   date.setUTCHours(0, 0, 0, 0);
-  date.setUTCFullYear(Number(annee), Number(mois) - 1, Number(jour));
-  if (date.getUTCFullYear() !== Number(annee) || date.getUTCMonth() !== Number(mois) - 1 || date.getUTCDate() !== Number(jour)) return valeur;
+  date.setUTCFullYear(Number(year), Number(month) - 1, Number(day));
+  if (date.getUTCFullYear() !== Number(year) || date.getUTCMonth() !== Number(month) - 1 || date.getUTCDate() !== Number(day)) return value;
   return date.getTime() / 86_400_000 + 25_569;
 }
 
@@ -76,27 +76,27 @@ function valeurDateExcel(valeur: unknown): unknown {
  * Deux lectures par lots dans le même instantané SQL : mesure des colonnes,
  * puis écriture ligne par ligne. Aucun tableau de toutes les conventions.
  */
-export async function genererExcelConventions(
-  chargerLots: () => AsyncIterable<ConventionExport[]>,
+export async function generateConventionsExcel(
+  loadBatches: () => AsyncIterable<ConventionExport[]>,
   output: Writable,
   signal: AbortSignal,
 ): Promise<void> {
-  const largeurs = colonnes.map(c => c.titre.length);
-  let nombre = 0;
-  let octetsTexte = 0;
-  for await (const lot of chargerLots()) {
+  const widths = colonnes.map(c => c.titre.length);
+  let rowCount = 0;
+  let textBytes = 0;
+  for await (const batch of loadBatches()) {
     signal.throwIfAborted();
-    for (const convention of lot) {
-      if (++nombre > EXPORT_MAX_ROWS) throw new ExportExcelError("L'export dépasse 5 000 conventions. Précisez les filtres.");
+    for (const convention of batch) {
+      if (++rowCount > EXPORT_MAX_ROWS) throw new ExportExcelError("L'export dépasse 5 000 conventions. Précisez les filtres.");
       colonnes.forEach((colonne, index) => {
-        const valeur = colonne.extraire(convention);
-        if (valeur === null || valeur === undefined) return;
-        const texte = String(valeur);
+        const value = colonne.extraire(convention);
+        if (value === null || value === undefined) return;
+        const text = String(value);
         // Excel ne peut pas stocker davantage dans une cellule. Ne rien tronquer.
-        if (texte.length > 32_767) throw new ExportExcelError("Un champ dépasse la capacité d'une cellule Excel. Réduisez le périmètre ou corrigez le champ concerné.");
-        octetsTexte += Buffer.byteLength(texte, "utf8");
-        if (octetsTexte > EXPORT_MAX_TEXT_BYTES) throw new ExportExcelError("Le volume de texte de cet export est trop important. Précisez les filtres.");
-        largeurs[index] = Math.max(largeurs[index]!, colonne.date ? 10 : texte.length);
+        if (text.length > 32_767) throw new ExportExcelError("Un champ dépasse la capacité d'une cellule Excel. Réduisez le périmètre ou corrigez le champ concerné.");
+        textBytes += Buffer.byteLength(text, "utf8");
+        if (textBytes > EXPORT_MAX_TEXT_BYTES) throw new ExportExcelError("Le volume de texte de cet export est trop important. Précisez les filtres.");
+        widths[index] = Math.max(widths[index]!, colonne.date ? 10 : text.length);
       });
     }
   }
@@ -125,40 +125,40 @@ export async function genererExcelConventions(
     });
     sheet.columns = colonnes.map((colonne, index) => ({
       header: colonne.titre, key: colonne.titre,
-      width: Math.max(colonne.largeurMin, Math.min(colonne.largeurMax, largeurs[index]! + 2)),
+      width: Math.max(colonne.largeurMin, Math.min(colonne.largeurMax, widths[index]! + 2)),
       style: {
         ...(colonne.format ? { numFmt: colonne.format } : {}),
         alignment: { vertical: "top", wrapText: true },
       },
     }));
-    const entete = sheet.getRow(1);
-    entete.height = 34;
-    entete.eachCell(cell => {
+    const header = sheet.getRow(1);
+    header.height = 34;
+    header.eachCell(cell => {
       cell.font = { name: "Aptos", bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF17365D" } };
       cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     });
-    entete.commit();
-    let numero = 1;
-    for await (const lot of chargerLots()) {
+    header.commit();
+    let rowNumber = 1;
+    for await (const batch of loadBatches()) {
       signal.throwIfAborted();
       if (streamError) throw streamError;
-      for (const convention of lot) {
+      for (const convention of batch) {
         const row = sheet.addRow(colonnes.map(colonne => {
-          const valeur = colonne.extraire(convention);
-          return colonne.date ? valeurDateExcel(valeur) : valeur ?? null;
+          const value = colonne.extraire(convention);
+          return colonne.date ? toExcelDateValue(value) : value ?? null;
         }));
-        numero++;
+        rowNumber++;
         row.eachCell(cell => {
           cell.alignment = { vertical: "top", wrapText: true };
-          if (numero % 2 === 0) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3F6FA" } };
+          if (rowNumber % 2 === 0) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3F6FA" } };
         });
         row.commit();
       }
       // Laisser le compresseur vider ses buffers entre les lots.
       await setImmediate(undefined, { signal });
     }
-    sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: numero, column: colonnes.length } };
+    sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: rowNumber, column: colonnes.length } };
     sheet.commit();
     await Promise.all([workbook.commit(), completed]);
     signal.throwIfAborted();

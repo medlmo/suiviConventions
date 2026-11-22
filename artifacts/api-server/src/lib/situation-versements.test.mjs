@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { erreurSituationVersements } from "./situation-versements.ts";
+import { getPaymentSituationValidationError as erreurSituationVersements } from "./situation-versements.ts";
 
 const ligne = (valeurs = {}) => ({
   annee: 2026,

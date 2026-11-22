@@ -9,7 +9,7 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const GROUP_WINDOW_MS = 10 * 60 * 1000;
 
 /** Persisted in the convention's transaction: never announce a failed save. */
-export async function notifierChangementConvention(
+export async function notifyConventionChange(
   tx: Transaction, actor: SessionUser, before: Convention | null, after: Convention, reference: ReferenceData,
 ): Promise<void> {
   const change = getNotificationChanges(before, after);

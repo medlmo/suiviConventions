@@ -3,7 +3,7 @@ import { ObjectStorageService, type VerifiedDocument } from "../../lib/objectSto
 
 export const objectStorageService = new ObjectStorageService();
 
-export async function documentVerifie(path: string): Promise<VerifiedDocument | null> {
+export async function verifyStoredDocument(path: string): Promise<VerifiedDocument | null> {
   return objectStorageService.getVerifiedDocumentInfo(path);
 }
 
@@ -17,13 +17,13 @@ export async function documentVerifie(path: string): Promise<VerifiedDocument | 
  * complet, avec un risque de décalage d'un jour côté client. La validation ne
  * doit donc jamais réécrire la charge utile.
  */
-export function valide<T>(schema: { parse: (valeur: unknown) => unknown }, donnees: T): T {
+export function assertValidApiResponse<T>(schema: { parse: (value: unknown) => unknown }, data: T): T {
   if (process.env.NODE_ENV !== "production") {
-    schema.parse(donnees);
+    schema.parse(data);
   }
-  return donnees;
+  return data;
 }
 
-export function snapshot(row: typeof conventionsTable.$inferSelect): Record<string, unknown> {
+export function createConventionSnapshot(row: typeof conventionsTable.$inferSelect): Record<string, unknown> {
   return { ...row };
 }

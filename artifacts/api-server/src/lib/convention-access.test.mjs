@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DIRECTION_GENERALE_SERVICES } from "@workspace/organisation";
-import { accessible, affectationsValides, filtrePerimetre } from "./convention-access-domain.ts";
+import {
+  isConventionAccessible as accessible,
+  areAssignmentsValid as affectationsValides,
+  getConventionScopeFilter as filtrePerimetre,
+} from "./convention-access-domain.ts";
 
 const direction = "Direction A";
 const division = "Division A";

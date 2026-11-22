@@ -7,12 +7,12 @@ import { finished, pipeline } from "node:stream/promises";
 import { asc, sql } from "drizzle-orm";
 import { db, conventionsTable, type SuiviFinancier } from "@workspace/db";
 import { ListConventionsQueryParams } from "@workspace/api-zod";
-import { conditionsVisibles } from "../../lib/convention-access";
-import { colonnesConvention, versApi } from "../../lib/conventions-mapper";
-import { EXPORT_MAX_ROWS, ExportExcelError, genererExcelConventions } from "../../lib/conventions-excel";
+import { buildVisibleConventionConditions } from "../../lib/convention-access";
+import { conventionColumns, toApiConvention } from "../../lib/conventions-mapper";
+import { EXPORT_MAX_ROWS, ExportExcelError, generateConventionsExcel } from "../../lib/conventions-excel";
 import { recordRequestFailure } from "../../lib/http-logging";
 import { loadReferenceData } from "../../lib/reference-data";
-import { construireFiltres, construireTri } from "./requetes";
+import { buildConventionFilters, buildConventionSort } from "./requetes";
 
 const router: IRouter = Router();
 const BATCH_SIZE = 50;
@@ -21,7 +21,7 @@ let exportEnCours = false;
 
 // Ne pas charger les historiques/JSON qui ne figurent dans aucune colonne Excel.
 const projectionExport = {
-  ...colonnesConvention,
+  ...conventionColumns,
   documents: sql<[]>`'[]'::jsonb`,
   suiviFinancier: sql<SuiviFinancier>`'{"annees":[],"lignes":[]}'::jsonb`,
   situationVersements: sql<[]>`'[]'::jsonb`,
@@ -54,7 +54,7 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
   try {
     const { tri = "urgence", ordre = "asc", ...filtres } = query.data;
     const reference = await loadReferenceData();
-    const where = conditionsVisibles(req.user!, reference, construireFiltres(filtres));
+    const where = buildVisibleConventionConditions(req.user!, reference, buildConventionFilters(filtres));
     directory = await mkdtemp(join(tmpdir(), "conventions-export-"));
     const path = join(directory, "conventions.xlsx");
     // L'instantané empêche doublons/omissions lors d'éditions pendant l'export.
@@ -69,9 +69,9 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
         for (let offset = 0; offset < ids.length; offset += BATCH_SIZE) {
           controller.signal.throwIfAborted();
           const lot = await tx.select(projectionExport).from(conventionsTable).where(where)
-            .orderBy(...construireTri(tri, ordre), asc(conventionsTable.id))
+            .orderBy(...buildConventionSort(tri, ordre), asc(conventionsTable.id))
             .limit(BATCH_SIZE).offset(offset);
-          yield lot.map(versApi);
+          yield lot.map(toApiConvention);
         }
       }
       const output = createWriteStream(path, { mode: 0o600 });
@@ -79,7 +79,7 @@ router.get("/conventions/export", async (req, res): Promise<void> => {
       let diskError: Error | undefined;
       output.on("error", error => { diskError = error; });
       try {
-        await genererExcelConventions(chargerLots, output, controller.signal);
+        await generateConventionsExcel(chargerLots, output, controller.signal);
         if (diskError) throw diskError;
       } finally {
         output.destroy();

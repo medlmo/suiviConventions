@@ -103,7 +103,7 @@ before(async () => {
   purgeBundlePath = join(workspaceRoot, "lib/db/dist", `test-convention-purge-${process.pid}.mjs`);
   purgeEntryPath = join(packageDir, "src/integration", `.convention-purge-entry-${process.pid}.ts`);
   writeFileSync(purgeEntryPath, `
-    export { purgerConventionsSupprimees } from "../lib/convention-purge.ts";
+    export { purgeDeletedConventions as purgerConventionsSupprimees } from "../lib/convention-purge.ts";
     export { pool } from "@workspace/db";
   `);
   await build({
@@ -165,7 +165,7 @@ test("la purge respecte la rétention, supprime les documents et conserve l’au
   insertAudit(expiredId, "delete");
 
   globalThis.__purgedDocumentPaths = [];
-  const { purgerConventionsSupprimees, pool } = await import(
+  const { purgeDeletedConventions: purgerConventionsSupprimees, pool } = await import(
     `${pathToFileURL(purgeBundlePath).href}?integration=${Date.now()}`
   );
   databasePool = pool;

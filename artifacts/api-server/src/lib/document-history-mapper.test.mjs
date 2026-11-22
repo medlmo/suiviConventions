@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { documentsConvention } from "./document-history-mapper.ts";
+import { getConventionDocuments as documentsConvention } from "./document-history-mapper.ts";
 
 test("la date historique est associée uniquement au PV correspondant", () => {
   const datePvComite = "2026-10-20";

@@ -1,8 +1,8 @@
-import { erreurSuiviFinancier } from "../../lib/suivi-financier";
-import { erreurAvancementPhysique } from "../../lib/avancement-physique";
+import { getFinancialTrackingValidationError } from "../../lib/suivi-financier";
+import { getPhysicalProgressValidationError } from "../../lib/avancement-physique";
 import { getPaymentSituationValidationError } from "../../lib/situation-versements";
-import { normaliserDatePv } from "../../lib/pv-date";
-import { maitriseOuvrageConnue, type ReferenceData } from "../../lib/reference-data";
+import { normalizeCommitteeMinutesDate } from "../../lib/pv-date";
+import { isKnownProjectOwner, type ReferenceData } from "../../lib/reference-data";
 
 const CHAMPS_DATE_CORPS = [
   "session",
@@ -16,7 +16,7 @@ const CHAMPS_MONTANT_CORPS = ["enveloppeBudgetaire", "contributionRegion"] as co
 export const ERREUR_CONTRIBUTION = "La contribution de la Région (MAD) ne peut pas dépasser l'enveloppe budgétaire (MAD).";
 export const ERREUR_DOCUMENT = "Les champs Convention et PV doivent contenir un PDF ou un document Word de 10 Mo maximum.";
 
-export function contributionDepasseEnveloppe(
+export function doesContributionExceedBudget(
   enveloppe: number | string | null | undefined,
   contribution: number | string | null | undefined,
 ): boolean {
@@ -35,98 +35,100 @@ const JOUR_ISO = /^\d{4}-\d{2}-\d{2}$/;
  * dates de comité qui pilotent toutes les alertes, une correction silencieuse
  * est pire qu'un refus.
  */
-export function normaliserCorps(corps: unknown): { ok: true; valeur: Record<string, unknown> } | { ok: false; erreur: string } {
-  if (typeof corps !== "object" || corps === null || Array.isArray(corps)) {
-    return { ok: false, erreur: "Le corps de la requête doit être un objet." };
+export function normalizeConventionPayload(
+  payload: unknown,
+): { ok: true; value: Record<string, unknown> } | { ok: false; error: string } {
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+    return { ok: false, error: "Le corps de la requête doit être un objet." };
   }
 
-  const valeur: Record<string, unknown> = { ...(corps as Record<string, unknown>) };
-  if ("situationVersements" in valeur) {
-    const error = getPaymentSituationValidationError(valeur.situationVersements);
-    if (error) return { ok: false, erreur: error };
+  const value: Record<string, unknown> = { ...(payload as Record<string, unknown>) };
+  if ("situationVersements" in value) {
+    const error = getPaymentSituationValidationError(value.situationVersements);
+    if (error) return { ok: false, error };
   }
-  if ("avancementPhysiqueHistorique" in valeur) {
-    return { ok: false, erreur: "L'historique de l'avancement physique ne peut pas être remplacé. Ajoutez un nouveau constat." };
+  if ("avancementPhysiqueHistorique" in value) {
+    return { ok: false, error: "L'historique de l'avancement physique ne peut pas être remplacé. Ajoutez un nouveau constat." };
   }
-  if ("avancementPhysiqueAjoute" in valeur) {
-    const erreur = erreurAvancementPhysique(valeur.avancementPhysiqueAjoute);
-    if (erreur) return { ok: false, erreur };
+  if ("avancementPhysiqueAjoute" in value) {
+    const error = getPhysicalProgressValidationError(value.avancementPhysiqueAjoute);
+    if (error) return { ok: false, error };
   }
-  if ("suiviFinancier" in valeur) {
-    const erreur = erreurSuiviFinancier(valeur.suiviFinancier);
-    if (erreur) return { ok: false, erreur };
+  if ("suiviFinancier" in value) {
+    const error = getFinancialTrackingValidationError(value.suiviFinancier);
+    if (error) return { ok: false, error };
   }
 
-  for (const champ of CHAMPS_DATE_CORPS) {
-    if (!(champ in valeur)) continue;
-    const brut = valeur[champ];
-    if (brut === null || brut === undefined || brut === "") {
-      valeur[champ] = null;
+  for (const field of CHAMPS_DATE_CORPS) {
+    if (!(field in value)) continue;
+    const rawValue = value[field];
+    if (rawValue === null || rawValue === undefined || rawValue === "") {
+      value[field] = null;
       continue;
     }
-    if (typeof brut !== "string" || !JOUR_ISO.test(brut)) {
-      return { ok: false, erreur: `Le champ « ${champ} » doit être une date au format AAAA-MM-JJ.` };
+    if (typeof rawValue !== "string" || !JOUR_ISO.test(rawValue)) {
+      return { ok: false, error: `Le champ « ${field} » doit être une date au format AAAA-MM-JJ.` };
     }
-    const [annee, mois, jour] = brut.split("-").map(Number);
-    const controle = new Date(Date.UTC(annee!, mois! - 1, jour!));
+    const [year, month, day] = rawValue.split("-").map(Number);
+    const parsedDate = new Date(Date.UTC(year!, month! - 1, day!));
     if (
-      controle.getUTCFullYear() !== annee ||
-      controle.getUTCMonth() !== mois! - 1 ||
-      controle.getUTCDate() !== jour
+      parsedDate.getUTCFullYear() !== year ||
+      parsedDate.getUTCMonth() !== month! - 1 ||
+      parsedDate.getUTCDate() !== day
     ) {
-      return { ok: false, erreur: `Le champ « ${champ} » ne correspond pas à une date réelle du calendrier.` };
+      return { ok: false, error: `Le champ « ${field} » ne correspond pas à une date réelle du calendrier.` };
     }
   }
 
-  if (Array.isArray(valeur.documentsAjoutes)) {
-    for (const document of valeur.documentsAjoutes) {
+  if (Array.isArray(value.documentsAjoutes)) {
+    for (const document of value.documentsAjoutes) {
       if (typeof document !== "object" || document === null || Array.isArray(document)) continue;
-      const ajout = document as Record<string, unknown>;
-      const resultatDatePv = normaliserDatePv(ajout.datePvComite);
-      if (!resultatDatePv.ok) {
-        const erreur = typeof ajout.datePvComite === "string" &&
-          /^\d{4}-\d{2}-\d{2}$/.test(ajout.datePvComite)
+      const addition = document as Record<string, unknown>;
+      const dateResult = normalizeCommitteeMinutesDate(addition.datePvComite);
+      if (!dateResult.ok) {
+        const error = typeof addition.datePvComite === "string" &&
+          /^\d{4}-\d{2}-\d{2}$/.test(addition.datePvComite)
           ? "La date d’un PV doit correspondre à un jour réel du calendrier."
           : "La date du PV doit être au format AAAA-MM-JJ.";
-        return { ok: false, erreur };
+        return { ok: false, error };
       }
-      ajout.datePvComite = resultatDatePv.date;
-      if (resultatDatePv.date && ajout.type !== "pv") {
-        return { ok: false, erreur: "La date du PV ne peut être définie que pour un document de type PV." };
+      addition.datePvComite = dateResult.date;
+      if (dateResult.date && addition.type !== "pv") {
+        return { ok: false, error: "La date du PV ne peut être définie que pour un document de type PV." };
       }
     }
   }
 
-  for (const champ of CHAMPS_MONTANT_CORPS) {
-    if (!(champ in valeur)) continue;
-    const brut = valeur[champ];
-    if (brut === null || brut === undefined || brut === "") {
-      valeur[champ] = null;
+  for (const field of CHAMPS_MONTANT_CORPS) {
+    if (!(field in value)) continue;
+    const rawValue = value[field];
+    if (rawValue === null || rawValue === undefined || rawValue === "") {
+      value[field] = null;
       continue;
     }
-    const nombre = typeof brut === "number" ? brut : Number(brut);
-    if (!Number.isFinite(nombre) || nombre < 0) {
-      return { ok: false, erreur: `Le champ « ${champ} » doit être un montant positif.` };
+    const amount = typeof rawValue === "number" ? rawValue : Number(rawValue);
+    if (!Number.isFinite(amount) || amount < 0) {
+      return { ok: false, error: `Le champ « ${field} » doit être un montant positif.` };
     }
-    valeur[champ] = nombre;
+    value[field] = amount;
   }
 
-  return { ok: true, valeur };
+  return { ok: true, value };
 }
 
-export function listeMoValide(
+export function isValidProjectOwnerList(
   valeurs: string[] | null | undefined,
   reference: ReferenceData,
   historique: string[] = [],
 ): boolean {
   return valeurs == null || valeurs.every((valeur) => {
     const nom = valeur.trim();
-    return !nom || maitriseOuvrageConnue(reference, nom) || historique.includes(nom);
+    return !nom || isKnownProjectOwner(reference, nom) || historique.includes(nom);
   });
 }
 
-function normaliserNomTerritoire(nom: string): string {
-  return nom
+function normalizeTerritoryName(name: string): string {
+  return name
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
     .replace(/[’‘`]/g, "'")
@@ -134,38 +136,38 @@ function normaliserNomTerritoire(nom: string): string {
     .trim();
 }
 
-export function nomProvinceOuPrefecture(nom: string): boolean {
-  return /^(?:province\s+de\s+|prefecture\s+(?:de\s+|d'))/.test(normaliserNomTerritoire(nom));
+export function isProvinceOrPrefecture(name: string): boolean {
+  return /^(?:province\s+de\s+|prefecture\s+(?:de\s+|d'))/.test(normalizeTerritoryName(name));
 }
 
-export function nomCommune(nom: string): boolean {
-  return /^commune\s+(?:de\s+|d')/.test(normaliserNomTerritoire(nom));
+export function isCommuneName(name: string): boolean {
+  return /^commune\s+(?:de\s+|d')/.test(normalizeTerritoryName(name));
 }
 
-export function listeTerritoiresValide(
+export function areTerritoriesValid(
   valeurs: string[] | null | undefined,
   reference: ReferenceData,
-  estValide: (nom: string) => boolean,
+  isValid: (name: string) => boolean,
   historique: string[] = [],
 ): boolean {
   return valeurs == null || valeurs.every((valeur) => {
     const nom = valeur.trim();
     return !nom ||
       historique.includes(nom) ||
-      (maitriseOuvrageConnue(reference, nom) && estValide(nom));
+      (isKnownProjectOwner(reference, nom) && isValid(nom));
   });
 }
 
-export function valeurMoValide(
+export function isProjectOwnerValueValid(
   valeur: string | null | undefined,
   reference: ReferenceData,
   historique: string | null | undefined = null,
 ): boolean {
   const nom = valeur?.trim();
-  return !nom || maitriseOuvrageConnue(reference, nom) || nom === historique;
+  return !nom || isKnownProjectOwner(reference, nom) || nom === historique;
 }
 
-export interface ValeursReferencesConvention {
+export interface ConventionReferenceValues {
   maitriseOuvrage?: string[] | null;
   maitriseOuvrageDeleguee?: string[] | null;
   partenaires?: string[] | null;
@@ -174,7 +176,7 @@ export interface ValeursReferencesConvention {
   porteurProjet?: string | null;
 }
 
-export interface HistoriqueReferencesConvention {
+export interface ConventionReferenceHistory {
   maitriseOuvrage?: string[];
   maitriseOuvrageDeleguee?: string[];
   partenaires?: string[];
@@ -184,27 +186,27 @@ export interface HistoriqueReferencesConvention {
 }
 
 /** Applique les mêmes contrôles de référentiel à la création et à la modification. */
-export function referencesConventionValides(
-  valeurs: ValeursReferencesConvention,
+export function areConventionReferencesValid(
+  values: ConventionReferenceValues,
   reference: ReferenceData,
-  historique: HistoriqueReferencesConvention = {},
+  history: ConventionReferenceHistory = {},
 ): boolean {
   return (
-    listeMoValide(valeurs.maitriseOuvrage, reference, historique.maitriseOuvrage) &&
-    listeMoValide(valeurs.maitriseOuvrageDeleguee, reference, historique.maitriseOuvrageDeleguee) &&
-    listeMoValide(valeurs.partenaires, reference, historique.partenaires) &&
-    listeTerritoiresValide(
-      valeurs.provincesPrefectures,
+    isValidProjectOwnerList(values.maitriseOuvrage, reference, history.maitriseOuvrage) &&
+    isValidProjectOwnerList(values.maitriseOuvrageDeleguee, reference, history.maitriseOuvrageDeleguee) &&
+    isValidProjectOwnerList(values.partenaires, reference, history.partenaires) &&
+    areTerritoriesValid(
+      values.provincesPrefectures,
       reference,
-      nomProvinceOuPrefecture,
-      historique.provincesPrefectures,
+      isProvinceOrPrefecture,
+      history.provincesPrefectures,
     ) &&
-    listeTerritoiresValide(
-      valeurs.communes,
+    areTerritoriesValid(
+      values.communes,
       reference,
-      nomCommune,
-      historique.communes,
+      isCommuneName,
+      history.communes,
     ) &&
-    valeurMoValide(valeurs.porteurProjet, reference, historique.porteurProjet)
+    isProjectOwnerValueValid(values.porteurProjet, reference, history.porteurProjet)
   );
 }

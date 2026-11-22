@@ -1,4 +1,4 @@
-const echapperHtml = (value: string) => value.replace(/[&<>"']/g, (char) =>
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 
 export function buildCommitteeReminderContent(
@@ -16,6 +16,6 @@ export function buildCommitteeReminderContent(
   return {
     subject,
     text: `Bonjour,\n\n${introduction}\n\nConvention : ${titre}\n\nConsulter la convention : ${lien}\n\n${avertissement}\n\nSuivi des conventions — Région Souss Massa`,
-    html: `<div lang="fr" style="font-family:Arial,sans-serif;line-height:1.6;color:#122b49;max-width:640px;margin:auto"><h2>Rappel de comité de suivi</h2><p>Bonjour,</p><p>${echapperHtml(introduction)}</p><p dir="auto"><strong>Convention :</strong> ${echapperHtml(titre)}</p><p><a href="${echapperHtml(lien)}">Consulter la convention</a></p><p style="color:#64748b;font-size:13px">${avertissement}</p><p>Suivi des conventions — Région Souss Massa</p></div>`,
+    html: `<div lang="fr" style="font-family:Arial,sans-serif;line-height:1.6;color:#122b49;max-width:640px;margin:auto"><h2>Rappel de comité de suivi</h2><p>Bonjour,</p><p>${escapeHtml(introduction)}</p><p dir="auto"><strong>Convention :</strong> ${escapeHtml(titre)}</p><p><a href="${escapeHtml(lien)}">Consulter la convention</a></p><p style="color:#64748b;font-size:13px">${avertissement}</p><p>Suivi des conventions — Région Souss Massa</p></div>`,
   };
 }

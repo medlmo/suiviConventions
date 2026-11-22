@@ -2,34 +2,34 @@ import { Router, type IRouter } from "express";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, conventionsTable } from "@workspace/db";
 import { GetConventionParams } from "@workspace/api-zod";
-import { conditionsVisibles } from "../../lib/convention-access";
-import { colonnesConvention, documentsConvention, versApi } from "../../lib/conventions-mapper";
-import { genererFicheTechnique } from "../../lib/fiche-technique";
+import { buildVisibleConventionConditions } from "../../lib/convention-access";
+import { conventionColumns, getConventionDocuments, toApiConvention } from "../../lib/conventions-mapper";
+import { generateTechnicalSheet } from "../../lib/fiche-technique";
 import { recordRequestFailure } from "../../lib/http-logging";
 import { loadReferenceData } from "../../lib/reference-data";
-import { documentVerifie, objectStorageService } from "./commun";
+import { verifyStoredDocument, objectStorageService } from "./commun";
 
-export const ficheTechniqueRouter: IRouter = Router();
-export const documentsRouter: IRouter = Router();
+export const technicalSheetRouter: IRouter = Router();
+export const conventionDocumentsRouter: IRouter = Router();
 
-ficheTechniqueRouter.get("/conventions/:id/fiche-technique", async (req, res): Promise<void> => {
+technicalSheetRouter.get("/conventions/:id/fiche-technique", async (req, res): Promise<void> => {
   const params = GetConventionParams.safeParse(req.params);
   if (!params.success) {
     res.status(404).json({ error: "Convention introuvable." });
     return;
   }
   const reference = await loadReferenceData();
-  const [ligne] = await db.select(colonnesConvention).from(conventionsTable).where(and(
+  const [ligne] = await db.select(conventionColumns).from(conventionsTable).where(and(
     eq(conventionsTable.id, params.data.id),
     isNull(conventionsTable.deletedAt),
-    conditionsVisibles(req.user!, reference),
+    buildVisibleConventionConditions(req.user!, reference),
   ));
   if (!ligne) {
     res.status(404).json({ error: "Convention introuvable." });
     return;
   }
   try {
-    const fichier = await genererFicheTechnique(versApi(ligne));
+    const fichier = await generateTechnicalSheet(toApiConvention(ligne));
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     res.setHeader("Content-Disposition", `attachment; filename="fiche-technique-convention-${ligne.id}.docx"`);
     res.setHeader("Cache-Control", "private, no-store");
@@ -44,7 +44,7 @@ ficheTechniqueRouter.get("/conventions/:id/fiche-technique", async (req, res): P
   }
 });
 
-documentsRouter.get("/conventions/:id/documents/:field", async (req, res): Promise<void> => {
+conventionDocumentsRouter.get("/conventions/:id/documents/:field", async (req, res): Promise<void> => {
   const params = GetConventionParams.safeParse(req.params);
   if (!params.success) {
     res.status(404).json({ error: "Convention ou document introuvable." });
@@ -59,7 +59,7 @@ documentsRouter.get("/conventions/:id/documents/:field", async (req, res): Promi
   const [ligne] = await db.select().from(conventionsTable).where(and(
     eq(conventionsTable.id, params.data.id),
     isNull(conventionsTable.deletedAt),
-    conditionsVisibles(req.user!, reference),
+    buildVisibleConventionConditions(req.user!, reference),
   ));
   if (!ligne) {
     res.status(404).json({ error: "Convention ou document introuvable." });
@@ -72,7 +72,7 @@ documentsRouter.get("/conventions/:id/documents/:field", async (req, res): Promi
     return;
   }
   const chemin = typeof cheminDemande === "string"
-    ? documentsConvention(ligne).find(document =>
+    ? getConventionDocuments(ligne).find(document =>
       document.objectPath === cheminDemande &&
       (req.params.field === "pv" ? document.type === "pv" : document.type !== "pv")
     )?.objectPath
@@ -81,7 +81,7 @@ documentsRouter.get("/conventions/:id/documents/:field", async (req, res): Promi
     res.status(404).json({ error: "Convention ou document introuvable." });
     return;
   }
-  const document = await documentVerifie(chemin);
+  const document = await verifyStoredDocument(chemin);
   if (!document) {
     res.status(404).json({ error: "Convention ou document introuvable." });
     return;

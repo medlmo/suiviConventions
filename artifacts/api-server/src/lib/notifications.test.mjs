@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { DIRECTION_GENERALE_SERVICES } from "@workspace/organisation";
 import {
-  changementsNotification,
-  estDestinataire,
-  resumeNotification,
+  getNotificationChanges as changementsNotification,
+  isNotificationRecipient as estDestinataire,
+  buildNotificationSummary as resumeNotification,
 } from "./notifications-domain.ts";
 
 const direction = "Direction A";

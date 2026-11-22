@@ -12,8 +12,8 @@ import {
   InvalidDocumentError,
   ObjectNotFoundError,
   ObjectStorageService,
-  normaliserNomDocument,
-  typeDocumentPourNom,
+  normalizeDocumentName,
+  getDocumentContentTypeFromName,
   validateUploadBytes,
 } from "../lib/objectStorage";
 import {
@@ -30,7 +30,7 @@ const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
 const ERREUR_FORMAT = "Choisissez un fichier PDF ou Word (.doc, .docx) de 10 Mo maximum.";
 
-function peutTeleverser(role: string): boolean {
+function canUploadDocuments(role: string): boolean {
   return role !== "directeur" && role !== "directeur_general_services";
 }
 
@@ -39,7 +39,7 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Authentification requise." });
     return;
   }
-  if (!peutTeleverser(req.user.role)) {
+  if (!canUploadDocuments(req.user.role)) {
     res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
     return;
   }
@@ -50,14 +50,14 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
     return;
   }
   const { name, size, contentType } = parsed.data;
-  const safeName = normaliserNomDocument(name);
+  const safeName = normalizeDocumentName(name);
   if (
     !safeName ||
     safeName !== name ||
     !Number.isSafeInteger(size) ||
     size < 1 ||
     size > DOCUMENT_MAX_SIZE_BYTES ||
-    typeDocumentPourNom(safeName) !== contentType
+    getDocumentContentTypeFromName(safeName) !== contentType
   ) {
     res.status(400).json({ error: ERREUR_FORMAT });
     return;
@@ -83,7 +83,7 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
 const readUpload = raw({ type: () => true, limit: DOCUMENT_MAX_SIZE_BYTES, inflate: false });
 router.put("/storage/uploads/:token", (req, res, next): void => {
   if (!req.user) { res.status(401).json({ error: "Authentification requise." }); return; }
-  if (!peutTeleverser(req.user.role)) {
+  if (!canUploadDocuments(req.user.role)) {
     res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." }); return;
   }
   const objectPath = `/objects/uploads/${req.params.token}`;
@@ -134,7 +134,7 @@ router.get("/storage/uploads/:token", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Authentification requise." });
     return;
   }
-  if (!peutTeleverser(req.user.role)) {
+  if (!canUploadDocuments(req.user.role)) {
     res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
     return;
   }
@@ -156,7 +156,7 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Authentification requise." });
     return;
   }
-  if (!peutTeleverser(req.user.role)) {
+  if (!canUploadDocuments(req.user.role)) {
     res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
     return;
   }

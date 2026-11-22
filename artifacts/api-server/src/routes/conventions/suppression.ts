@@ -4,7 +4,7 @@ import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
 import { DeleteConventionParams } from "@workspace/api-zod";
 import { isConventionAccessible, canEditConventions } from "../../lib/convention-access";
 import { loadReferenceData, loadReferenceDataFrom } from "../../lib/reference-data";
-import { snapshot } from "./commun";
+import { createConventionSnapshot } from "./commun";
 
 const router: IRouter = Router();
 
@@ -47,8 +47,8 @@ router.delete("/conventions/:id", async (req, res): Promise<void> => {
       conventionId: removed.id,
       action: "delete",
       actorUsername: req.user!.username,
-      before: snapshot(current),
-      after: snapshot(removed),
+      before: createConventionSnapshot(current),
+      after: createConventionSnapshot(removed),
     });
     return "deleted" as const;
   });

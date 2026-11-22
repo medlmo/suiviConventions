@@ -58,7 +58,7 @@ router.get("/notifications", async (req, res) => {
   });
 });
 
-async function marquerLecture(req: Request, res: Response, all: boolean): Promise<void> {
+async function markNotificationsRead(req: Request, res: Response, markAll: boolean): Promise<void> {
   // Do not let the generated date coercion turn null/numbers into valid instants.
   const rawObservedAt: unknown = req.body?.observedAt;
   if (typeof rawObservedAt !== "string" ||
@@ -66,8 +66,8 @@ async function marquerLecture(req: Request, res: Response, all: boolean): Promis
     res.status(400).json({ error: "Date de lecture invalide." });
     return;
   }
-  const body = (all ? ReadAllNotificationsBody : ReadNotificationBody).safeParse(req.body);
-  const params = all ? null : ReadNotificationParams.safeParse(req.params);
+  const body = (markAll ? ReadAllNotificationsBody : ReadNotificationBody).safeParse(req.body);
+  const params = markAll ? null : ReadNotificationParams.safeParse(req.params);
   if (!body.success || (params && !params.success)) {
     res.status(400).json({ error: "Paramètres de lecture invalides." });
     return;
@@ -90,7 +90,7 @@ async function marquerLecture(req: Request, res: Response, all: boolean): Promis
   );
   const exists = await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741025, ${user.id})`);
-    if (!all) {
+    if (!markAll) {
       const [item] = await tx.select({ id: notificationsTable.id }).from(notificationsTable).where(owned).limit(1);
       if (!item) return false;
     }
@@ -106,6 +106,6 @@ async function marquerLecture(req: Request, res: Response, all: boolean): Promis
   res.sendStatus(204);
 }
 
-router.patch("/notifications/read-all", (req, res) => marquerLecture(req, res, true));
-router.patch("/notifications/:id/read", (req, res) => marquerLecture(req, res, false));
+router.patch("/notifications/read-all", (req, res) => markNotificationsRead(req, res, true));
+router.patch("/notifications/:id/read", (req, res) => markNotificationsRead(req, res, false));
 export default router;

@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, or, sql, type SQL } from "drizzle-orm";
 import { conventionsTable } from "@workspace/db";
 import { niveauAlerteSql, rangUrgenceSql } from "../../lib/alertes";
-import { echapperJokersLike, normaliserPourRecherche } from "../../lib/conventions-mapper";
+import { escapeLikeWildcards, normalizeSearchExpression } from "../../lib/conventions-mapper";
 
 interface FiltresListe {
   q?: string;
@@ -15,12 +15,12 @@ interface FiltresListe {
   decision?: string;
 }
 
-export function construireFiltres(filtres: FiltresListe): SQL | undefined {
+export function buildConventionFilters(filtres: FiltresListe): SQL | undefined {
   const conditions: SQL[] = [];
 
   if (filtres.q && filtres.q.trim() !== "") {
-    const terme = `%${echapperJokersLike(filtres.q.trim())}%`;
-    const motif = normaliserPourRecherche(terme);
+    const searchTerm = `%${escapeLikeWildcards(filtres.q.trim())}%`;
+    const normalizedPattern = normalizeSearchExpression(searchTerm);
     const champsRecherchables = [
       conventionsTable.nomConvention,
       conventionsTable.objetConventionFr,
@@ -38,7 +38,7 @@ export function construireFiltres(filtres: FiltresListe): SQL | undefined {
     const recherche = or(
       ...champsRecherchables.map(
         (champ) =>
-          sql`${normaliserPourRecherche(sql`COALESCE(${champ}, '')`)} LIKE ${motif}`,
+          sql`${normalizeSearchExpression(sql`COALESCE(${champ}, '')`)} LIKE ${normalizedPattern}`,
       ),
     );
     if (recherche) conditions.push(recherche);
@@ -73,7 +73,7 @@ export function construireFiltres(filtres: FiltresListe): SQL | undefined {
   return conditions.length > 0 ? and(...conditions) : undefined;
 }
 
-export function construireTri(tri: string, ordre: string): SQL[] {
+export function buildConventionSort(tri: string, ordre: string): SQL[] {
   const sens = ordre === "desc" ? desc : asc;
 
   switch (tri) {

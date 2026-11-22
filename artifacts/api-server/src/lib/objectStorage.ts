@@ -41,25 +41,25 @@ export interface VerifiedDocument {
   generation: string;
 }
 
-export function normaliserNomDocument(nomBrut: string): string | null {
-  const nom = nomBrut.split(/[\\/]/).pop()?.replace(/[\u0000-\u001f\u007f]/g, "").trim();
-  if (!nom || nom.length > 255 || nom === "." || nom === "..") return null;
-  return nom;
+export function normalizeDocumentName(rawName: string): string | null {
+  const safeName = rawName.split(/[\\/]/).pop()?.replace(/[\u0000-\u001f\u007f]/g, "").trim();
+  if (!safeName || safeName.length > 255 || safeName === "." || safeName === "..") return null;
+  return safeName;
 }
 
-export function typeDocumentPourNom(nom: string): string | null {
-  const extension = nom.slice(nom.lastIndexOf(".")).toLowerCase();
+export function getDocumentContentTypeFromName(name: string): string | null {
+  const extension = name.slice(name.lastIndexOf(".")).toLowerCase();
   return CONTENT_TYPE_BY_EXTENSION[extension] ?? null;
 }
 
-function signatureValide(nom: string, prefixe: Buffer): boolean {
-  const extension = nom.slice(nom.lastIndexOf(".")).toLowerCase();
-  if (extension === ".pdf") return prefixe.subarray(0, 5).toString("ascii") === "%PDF-";
+function hasValidDocumentSignature(name: string, prefix: Buffer): boolean {
+  const extension = name.slice(name.lastIndexOf(".")).toLowerCase();
+  if (extension === ".pdf") return prefix.subarray(0, 5).toString("ascii") === "%PDF-";
   if (extension === ".doc") {
-    return prefixe.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]));
+    return prefix.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]));
   }
   if (extension === ".docx") {
-    return prefixe.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+    return prefix.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
   }
   return false;
 }
@@ -114,9 +114,9 @@ export class ObjectStorageService {
   }
 
   async finalizeUploadedDocument(bytes: Buffer, rawName: string, stableId?: string): Promise<VerifiedDocument> {
-    const name = normaliserNomDocument(rawName);
+    const name = normalizeDocumentName(rawName);
     if (!name || name !== rawName) throw new InvalidDocumentError();
-    const expectedContentType = typeDocumentPourNom(name);
+    const expectedContentType = getDocumentContentTypeFromName(name);
     if (!expectedContentType) throw new InvalidDocumentError();
     validateUploadBytes(name, bytes);
     // Aucun objet n'est créé avant les contrôles de format et de structure.
@@ -192,7 +192,7 @@ export class ObjectStorageService {
     if (
       metadata.metadata?.documentVerified !== "true" ||
       typeof name !== "string" ||
-      typeDocumentPourNom(name) !== contentType ||
+      getDocumentContentTypeFromName(name) !== contentType ||
       !Number.isSafeInteger(size) ||
       size < 1 ||
       size > DOCUMENT_MAX_SIZE_BYTES
@@ -231,7 +231,7 @@ function parseObjectPath(path: string): { bucketName: string; objectName: string
 }
 
 export function validateUploadBytes(name: string, bytes: Buffer): void {
-  if (bytes.length < 1 || bytes.length > DOCUMENT_MAX_SIZE_BYTES || !signatureValide(name, bytes)) {
+  if (bytes.length < 1 || bytes.length > DOCUMENT_MAX_SIZE_BYTES || !hasValidDocumentSignature(name, bytes)) {
     throw new InvalidDocumentError();
   }
 }

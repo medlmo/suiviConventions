@@ -14,10 +14,10 @@ export type CalculatedDeadline = {
 function addMonths(date: string | null | undefined, monthsToAdd: number): string | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date ?? "");
   if (!match) return null;
-  const [, anneeBrute, moisBrut, jourBrut] = match;
-  const year = Number(anneeBrute);
-  const month = Number(moisBrut);
-  const day = Number(jourBrut);
+  const [, yearPart, monthPart, dayPart] = match;
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
   const origin = new Date(Date.UTC(year, month - 1, day));
   if (
     year < 100 ||
@@ -49,9 +49,9 @@ export function calculateDeadline(input: DeadlineInput): CalculatedDeadline | nu
     return date && months !== null ? { date, source: "dernier-comite", mois: months } : null;
   }
 
-  const nature = input.nature?.trim().toLocaleLowerCase("fr");
-  const months = nature === "infrastructure" ? 3
-    : ["subvention", "subventions", "prestation", "prestations"].includes(nature ?? "") ? 3
+  const projectType = input.nature?.trim().toLocaleLowerCase("fr");
+  const months = projectType === "infrastructure" ? 3
+    : ["subvention", "subventions", "prestation", "prestations"].includes(projectType ?? "") ? 3
     : null;
   const date = months === null ? null : addMonths(input.dateVisa, months);
   return date && months !== null ? { date, source: "visa", mois: months } : null;

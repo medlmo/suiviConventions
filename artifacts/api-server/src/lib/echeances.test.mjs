@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calculerEcheance } from "./echeances.ts";
+import { calculateDeadline as calculerEcheance } from "./echeances.ts";
 
 test("calcule trois mois après le visa pour les natures concernées", () => {
   assert.deepEqual(

@@ -1,9 +1,9 @@
 import { getTableColumns, sql, type SQL } from "drizzle-orm";
 import { conventionsTable, type SituationVersementAnnuelle, type SuiviFinancier } from "@workspace/db";
-import { documentsConvention } from "./document-history-mapper";
-export { documentsConvention } from "./document-history-mapper";
+import { getConventionDocuments } from "./document-history-mapper";
+export { getConventionDocuments } from "./document-history-mapper";
 import {
-  construireAlerte,
+  buildAlert,
   joursRestantsSql,
   niveauAlerteSql,
   type NiveauAlerte,
@@ -11,7 +11,7 @@ import {
 import { getDisplayPartnerName, PARTENAIRE_REGION } from "./situation-versements";
 
 /** Colonnes de la table + les deux valeurs recalculées à chaque lecture. */
-export const colonnesConvention = {
+export const conventionColumns = {
   ...getTableColumns(conventionsTable),
   niveauAlerte: niveauAlerteSql,
   joursRestants: joursRestantsSql,
@@ -22,42 +22,42 @@ type LigneConvention = typeof conventionsTable.$inferSelect & {
   joursRestants: number | null;
 };
 
-function nombreOuNull(valeur: string | null): number | null {
-  if (valeur === null) return null;
-  const nombre = Number(valeur);
-  return Number.isFinite(nombre) ? nombre : null;
+function toNumberOrNull(value: string | null): number | null {
+  if (value === null) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
-function versementsVersApi(lignes: SituationVersementAnnuelle[]) {
-  return lignes.map((ligne) => {
-    if ("tranches" in ligne) {
-      const tranches = ligne.tranches.map((tranche) => ({
-        montant: tranche.montant,
-        ...(tranche.dateVersement ? { dateVersement: tranche.dateVersement } : {}),
+function mapPaymentsToApi(lines: SituationVersementAnnuelle[]) {
+  return lines.map((line) => {
+    if ("tranches" in line) {
+      const tranches = line.tranches.map((installment) => ({
+        montant: installment.montant,
+        ...(installment.dateVersement ? { dateVersement: installment.dateVersement } : {}),
       }));
-      const montantVerseCentimes = tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0);
-      const montantVerse = tranches.length > 0 ? montantVerseCentimes / 100 : ligne.montantVerse;
+      const paidAmountCents = tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0);
+      const paidAmount = tranches.length > 0 ? paidAmountCents / 100 : line.montantVerse;
       return {
-        annee: ligne.annee,
-        partenaire: "partenaire" in ligne ? getDisplayPartnerName(ligne.partenaire) : PARTENAIRE_REGION,
-        montantVerse,
+        annee: line.annee,
+        partenaire: "partenaire" in line ? getDisplayPartnerName(line.partenaire) : PARTENAIRE_REGION,
+        montantVerse: paidAmount,
         tranches,
       };
     }
-    const tranches = ligne.montantVerse > 0
-      ? [{ montant: ligne.montantVerse, ...(ligne.dateDernierVersement ? { dateVersement: ligne.dateDernierVersement } : {}) }]
+    const tranches = line.montantVerse > 0
+      ? [{ montant: line.montantVerse, ...(line.dateDernierVersement ? { dateVersement: line.dateDernierVersement } : {}) }]
       : [];
     return {
-      annee: ligne.annee,
+      annee: line.annee,
       partenaire: PARTENAIRE_REGION,
-      montantVerse: ligne.montantVerse,
+      montantVerse: line.montantVerse,
       tranches,
     };
   });
 }
 
 /** Ligne de base -> objet Convention du contrat OpenAPI. */
-export function versApi(ligne: LigneConvention) {
+export function toApiConvention(ligne: LigneConvention) {
   return {
     id: ligne.id,
     version: ligne.version,
@@ -71,15 +71,15 @@ export function versApi(ligne: LigneConvention) {
     presidenceComite: ligne.presidenceComite,
     membresComite: ligne.membresComite,
     frequenceReunions: ligne.frequenceReunions,
-    enveloppeBudgetaire: nombreOuNull(ligne.enveloppeBudgetaire),
-    contributionRegion: nombreOuNull(ligne.contributionRegion),
+    enveloppeBudgetaire: toNumberOrNull(ligne.enveloppeBudgetaire),
+    contributionRegion: toNumberOrNull(ligne.contributionRegion),
     porteurProjet: ligne.porteurProjet,
     maitriseOuvrage: ligne.maitrisesOuvrage ?? (ligne.maitriseOuvrage ? [ligne.maitriseOuvrage] : []),
     maitriseOuvrageDeleguee: ligne.maitrisesOuvrageDeleguees ??
       (ligne.maitriseOuvrageDeleguee ? [ligne.maitriseOuvrageDeleguee] : []),
     partenaires: ligne.partenaires ?? [],
     suiviFinancier: ligne.suiviFinancier ?? { annees: [], lignes: [] },
-    situationVersements: versementsVersApi(ligne.situationVersements ?? []),
+    situationVersements: mapPaymentsToApi(ligne.situationVersements ?? []),
     avancementPhysiqueHistorique: ligne.avancementPhysiqueHistorique ?? [],
     provincesPrefectures: ligne.provincesPrefectures ?? [],
     communes: ligne.communes ?? [],
@@ -91,7 +91,7 @@ export function versApi(ligne: LigneConvention) {
     competence: ligne.competence,
     nature: ligne.nature,
     documentConvention: ligne.documentConvention,
-    documents: documentsConvention(ligne),
+    documents: getConventionDocuments(ligne),
     ficheTechnique: ligne.ficheTechnique,
     statutConvention: ligne.statutConvention,
     prochaineEcheance: ligne.prochaineEcheance,
@@ -99,13 +99,13 @@ export function versApi(ligne: LigneConvention) {
     natureFonds: ligne.natureFonds,
     commentaires: ligne.commentaires,
     sourceImport: ligne.sourceImport,
-    alerte: construireAlerte(ligne.niveauAlerte, ligne.joursRestants),
+    alerte: buildAlert(ligne.niveauAlerte, ligne.joursRestants),
     creeLe: ligne.createdAt.toISOString(),
     modifieLe: ligne.updatedAt.toISOString(),
   };
 }
 
-export type ConventionApi = ReturnType<typeof versApi>;
+export type ConventionApi = ReturnType<typeof toApiConvention>;
 
 const CHAMPS_TEXTE = [
   "nomConvention",
@@ -175,13 +175,13 @@ type ChampsEcrivables = Partial<
  * Date. Les colonnes, elles, sont des jours calendaires stockés en texte : on
  * repasse par les composantes UTC pour ne pas décaler la date d'un jour.
  */
-function versJourCalendaire(valeur: string | Date | null | undefined): string | null {
-  if (valeur === null || valeur === undefined || valeur === "") return null;
-  if (valeur instanceof Date) {
-    if (Number.isNaN(valeur.getTime())) return null;
-    return valeur.toISOString().slice(0, 10);
+function toCalendarDate(value: string | Date | null | undefined): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return value.toISOString().slice(0, 10);
   }
-  return valeur;
+  return value;
 }
 
 /**
@@ -192,47 +192,47 @@ function versJourCalendaire(valeur: string | Date | null | undefined): string | 
  * formulaires sont ramenées à NULL : « pas de date » et « date vide » doivent
  * être la même chose en base, sinon les filtres et le calcul d'alerte divergent.
  */
-export function versColonnes(corps: ChampsEcrivables): Record<string, unknown> {
-  const valeurs: Record<string, unknown> = {};
-  if (corps.suiviFinancier !== undefined) valeurs.suiviFinancier = corps.suiviFinancier;
-  if (corps.situationVersements !== undefined) {
-    valeurs.situationVersements = corps.situationVersements.map(ligne => ({
-      annee: ligne.annee,
-      partenaire: ligne.partenaire,
-      montantVerse: ligne.tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0) / 100,
-      tranches: ligne.tranches.map((tranche) => {
-        const dateVersement = versJourCalendaire(tranche.dateVersement);
+export function toConventionColumns(payload: ChampsEcrivables): Record<string, unknown> {
+  const columns: Record<string, unknown> = {};
+  if (payload.suiviFinancier !== undefined) columns.suiviFinancier = payload.suiviFinancier;
+  if (payload.situationVersements !== undefined) {
+    columns.situationVersements = payload.situationVersements.map(line => ({
+      annee: line.annee,
+      partenaire: line.partenaire,
+      montantVerse: line.tranches.reduce((total, tranche) => total + Math.round(tranche.montant * 100), 0) / 100,
+      tranches: line.tranches.map((tranche) => {
+        const dateVersement = toCalendarDate(tranche.dateVersement);
         return { montant: tranche.montant, ...(dateVersement ? { dateVersement } : {}) };
       }),
     })).sort((a, b) => a.annee - b.annee || a.partenaire.localeCompare(b.partenaire, "fr"));
   }
 
   for (const champ of CHAMPS_TEXTE) {
-    if (!(champ in corps)) continue;
-    const brut = corps[champ];
-    const nettoye = typeof brut === "string" ? brut.trim() : brut;
-    valeurs[champ] = nettoye === "" ? null : (nettoye ?? null);
+    if (!(champ in payload)) continue;
+    const rawValue = payload[champ];
+    const trimmedValue = typeof rawValue === "string" ? rawValue.trim() : rawValue;
+    columns[champ] = trimmedValue === "" ? null : (trimmedValue ?? null);
   }
 
   for (const champ of CHAMPS_LISTE_TEXTE) {
-    if (!(champ in corps)) continue;
+    if (!(champ in payload)) continue;
     const colonne = COLONNES_LISTE_TEXTE[champ];
-    const brut = corps[champ];
-    valeurs[colonne] = brut == null ? [] : [...new Set(brut.map((nom) => nom.trim()).filter(Boolean))];
+    const rawValue = payload[champ];
+    columns[colonne] = rawValue == null ? [] : [...new Set(rawValue.map((name) => name.trim()).filter(Boolean))];
   }
 
   for (const champ of CHAMPS_DATE) {
-    if (!(champ in corps)) continue;
-    valeurs[champ] = versJourCalendaire(corps[champ]);
+    if (!(champ in payload)) continue;
+    columns[champ] = toCalendarDate(payload[champ]);
   }
 
   for (const champ of CHAMPS_MONTANT) {
-    if (!(champ in corps)) continue;
-    const brut = corps[champ];
-    valeurs[champ] = brut === null || brut === undefined ? null : String(brut);
+    if (!(champ in payload)) continue;
+    const rawValue = payload[champ];
+    columns[champ] = rawValue === null || rawValue === undefined ? null : String(rawValue);
   }
 
-  return valeurs;
+  return columns;
 }
 
 /**
@@ -258,7 +258,7 @@ const ARABE_CIBLE = "يكيااااهوي";
 const ARABE_A_SUPPRIMER =
   "\u0640\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652\u0653\u0654\u0655\u0670";
 
-export function normaliserPourRecherche(expression: SQL | string): SQL {
+export function normalizeSearchExpression(expression: SQL | string): SQL {
   const cible =
     typeof expression === "string" ? sql`${expression}` : expression;
   return sql`translate(lower(${cible}), ${ARABE_SOURCE + ARABE_A_SUPPRIMER}, ${ARABE_CIBLE})`;
@@ -270,6 +270,6 @@ export function normaliserPourRecherche(expression: SQL | string): SQL {
  * « _ » remplacerait n'importe quel caractère, ce qui donne des résultats
  * incompréhensibles pour l'agent qui cherche un nom précis.
  */
-export function echapperJokersLike(terme: string): string {
-  return terme.replace(/[\\%_]/g, "\\$&");
+export function escapeLikeWildcards(term: string): string {
+  return term.replace(/[\\%_]/g, "\\$&");
 }

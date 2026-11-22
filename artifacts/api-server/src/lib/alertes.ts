@@ -174,7 +174,7 @@ export const rangUrgenceSql: SQL<number> = sql<number>`
   END
 `;
 
-export function construireAlerte(
+export function buildAlert(
   niveau: NiveauAlerte,
   joursRestants: number | null,
 ): {

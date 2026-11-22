@@ -11,10 +11,10 @@ import {
 import {
   loadReferenceData,
   loadReferenceDataFrom,
-  directionConnue,
-  divisionDeDirection,
-  serviceDansDivision,
-  perimetreChefService,
+  isKnownDirectorate,
+  divisionBelongsToDirectorate,
+  serviceBelongsToDivision,
+  getServiceScope,
   type ReferenceData,
 } from "../../lib/reference-data";
 import { postgresErrorCode } from "../../lib/database-errors";
@@ -26,15 +26,15 @@ type Profile = Pick<typeof usersTable.$inferInsert, "role" | "direction" | "divi
 function profileIsValid(profile: Profile, reference: ReferenceData): boolean {
   const { role, direction, division, service } = profile;
   if (!ROLES.includes(role as Role)) return false;
-  if (direction !== null && direction !== undefined && !directionConnue(reference, direction)) return false;
-  if (division !== null && division !== undefined && (!direction || !divisionDeDirection(reference, direction, division))) return false;
-  if (role === "chef_service") return perimetreChefService(reference, profile) !== null;
-  if (service !== null && service !== undefined && (!division || !serviceDansDivision(reference, division, service))) return false;
+  if (direction !== null && direction !== undefined && !isKnownDirectorate(reference, direction)) return false;
+  if (division !== null && division !== undefined && (!direction || !divisionBelongsToDirectorate(reference, direction, division))) return false;
+  if (role === "chef_service") return getServiceScope(reference, profile) !== null;
+  if (service !== null && service !== undefined && (!division || !serviceBelongsToDivision(reference, division, service))) return false;
   if (role === "admin") return true;
-  if (role === "directeur") return !!direction && directionConnue(reference, direction) && !division && !service;
+  if (role === "directeur") return !!direction && isKnownDirectorate(reference, direction) && !division && !service;
   if (role === "directeur_general_services") return !direction && !division && !service;
-  if (role === "chef_division") return !!direction && !!division && divisionDeDirection(reference, direction, division) && !service;
-  return !!direction && !!division && !!service && serviceDansDivision(reference, division, service);
+  if (role === "chef_division") return !!direction && !!division && divisionBelongsToDirectorate(reference, direction, division) && !service;
+  return !!direction && !!division && !!service && serviceBelongsToDivision(reference, division, service);
 }
 
 function idFrom(raw: string | string[] | undefined): number | undefined {

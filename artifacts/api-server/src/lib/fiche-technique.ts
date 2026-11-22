@@ -433,7 +433,7 @@ function rubrique(label: string): TableRow {
 }
 
 /** Génération à la demande : ni données inventées, ni fichier sauvegardé dans la fiche. */
-export async function genererFicheTechnique(convention: ConventionApi): Promise<Buffer> {
+export async function generateTechnicalSheet(convention: ConventionApi): Promise<Buffer> {
   const dateGeneration = new Date();
   const header = new Header({
     children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new ImageRun({

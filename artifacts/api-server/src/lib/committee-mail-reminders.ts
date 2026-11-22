@@ -56,7 +56,7 @@ export async function listEligibleCommitteeReminders(): Promise<EligibleCommitte
       rattachement: conventionsTable.rattachement,
       responsableProjet: conventionsTable.responsableProjet,
     }).from(conventionsTable).where(and(
-      isNull(conventionsTable.deletedAt), buildScopeSqlFilter(responsable, reference),
+      isNull(conventionsTable.deletedAt), buildScopeSqlFilter(recipient, reference),
       isConventionOpen(), gte(daysRemainingSql, 1), lte(daysRemainingSql, 30),
     )).then((rows) => rows.filter((row) => isReminderRecipient(recipient, row, reference)));
     for (const row of upcoming) {
@@ -119,12 +119,12 @@ export async function sendCommitteeReminders(options: { dryRun?: boolean } = {})
       const owned = and(eq(mailRemindersTable.id, job.id), eq(mailRemindersTable.leaseToken, token));
       try {
         // Resolve current account, address, organisation and deadline just before sending.
-        const [responsable] = await db.select().from(usersTable).where(and(
+        const [recipient] = await db.select().from(usersTable).where(and(
           eq(usersTable.id, job.recipientId), eq(usersTable.active, true),
           inArray(usersTable.role, ["chef_service", "chef_division", "directeur", "directeur_general_services"]),
         ));
         const currentReference = await loadReferenceData();
-        const [convention] = responsable ? await db.select({
+        const [convention] = recipient ? await db.select({
           title: conventionsTable.nomConvention, days: daysRemainingSql.mapWith(Number),
           rattachement: conventionsTable.rattachement,
           responsableProjet: conventionsTable.responsableProjet,
@@ -132,14 +132,14 @@ export async function sendCommitteeReminders(options: { dryRun?: boolean } = {})
           eq(conventionsTable.id, job.conventionId), isNull(conventionsTable.deletedAt),
           eq(conventionsTable.prochaineEcheance, job.deadlineDate),
           eq(reminderThresholdSql, job.reminderDays),
-          buildScopeSqlFilter(responsable, currentReference), isConventionOpen(),
+          buildScopeSqlFilter(recipient, currentReference), isConventionOpen(),
           gte(daysRemainingSql, 1), lte(daysRemainingSql, 30),
         )) : [];
         if (
-          !responsable?.email ||
-          !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(responsable.email) ||
+          !recipient?.email ||
+          !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(recipient.email) ||
           !convention ||
-          !isReminderRecipient(responsable, convention, currentReference)
+          !isReminderRecipient(recipient, convention, currentReference)
         ) {
           await db.update(mailRemindersTable).set({
             state: "cancelled", leaseUntil: null, leaseToken: null,
@@ -153,7 +153,7 @@ export async function sendCommitteeReminders(options: { dryRun?: boolean } = {})
         );
         const delivered = await transport.sendMail({
           from: { name: "Suivi des conventions — Région Souss Massa", address: config.from },
-          to: responsable.email, ...message,
+          to: recipient.email, ...message,
           messageId: `<committee-${job.recipientId}-${job.conventionId}-${job.deadlineDate}-${job.reminderDays}@${config.messageDomain}>`,
         });
         if (!delivered.accepted?.length) throw new Error("SMTP_RECIPIENT_NOT_ACCEPTED");
@@ -178,16 +178,16 @@ export async function sendCommitteeReminders(options: { dryRun?: boolean } = {})
   }
 }
 
-let prochaineVerification = 0;
-let verificationEnCours: Promise<void> | undefined;
+let nextVerificationAt = 0;
+let verificationInProgress: Promise<void> | undefined;
 
 /** Activity-triggered check, not a timer. Await SMTP work before ending the request. */
 export async function checkMailReminders(): Promise<void> {
   if (!isAutomaticMailSendingEnabled()) return;
-  if (verificationEnCours) return verificationEnCours;
-  if (Date.now() < prochaineVerification) return;
-  prochaineVerification = Date.now() + 60 * 60_000;
-  verificationEnCours = sendCommitteeReminders()
+  if (verificationInProgress) return verificationInProgress;
+  if (Date.now() < nextVerificationAt) return;
+  nextVerificationAt = Date.now() + 60 * 60_000;
+  verificationInProgress = sendCommitteeReminders()
     .then(() => undefined)
     .catch(() => {
       logger.error({
@@ -195,6 +195,6 @@ export async function checkMailReminders(): Promise<void> {
         errorCode: "MAIL_REMINDERS_FAILED",
       }, "Committee email reminder check failed; in-app notifications remain available");
     })
-    .finally(() => { verificationEnCours = undefined; });
-  return verificationEnCours;
+    .finally(() => { verificationInProgress = undefined; });
+  return verificationInProgress;
 }

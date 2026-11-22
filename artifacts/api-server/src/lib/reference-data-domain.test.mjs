@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  construireReferentiel,
-  directionConnue,
-  maitriseOuvrageConnue,
+  buildReferenceData as construireReferentiel,
+  isKnownDirectorate as directionConnue,
+  isKnownProjectOwner as maitriseOuvrageConnue,
 } from "./reference-data-domain.ts";
 
 const lignes = {

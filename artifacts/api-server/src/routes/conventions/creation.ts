@@ -3,21 +3,21 @@ import { eq, sql } from "drizzle-orm";
 import { db, conventionsTable, conventionAuditTable } from "@workspace/db";
 import { CreateConventionBody, CreateConventionResponse } from "@workspace/api-zod";
 import { areAssignmentsValid, canEditConventions } from "../../lib/convention-access";
-import { notifierChangementConvention } from "../../lib/notifications";
-import { colonnesConvention, versApi, versColonnes } from "../../lib/conventions-mapper";
+import { notifyConventionChange } from "../../lib/notifications";
+import { conventionColumns, toApiConvention, toConventionColumns } from "../../lib/conventions-mapper";
 import { calculateDeadline } from "../../lib/echeances";
-import { preparerHistoriqueDocuments } from "../../lib/document-history";
+import { prepareDocumentHistory } from "../../lib/document-history";
 import { recordRequestFailure } from "../../lib/http-logging";
-import { loadReferenceData, loadReferenceDataFrom, perimetreChefService } from "../../lib/reference-data";
-import { documentVerifie, snapshot, valide } from "./commun";
+import { loadReferenceData, loadReferenceDataFrom, getServiceScope } from "../../lib/reference-data";
+import { verifyStoredDocument, createConventionSnapshot, assertValidApiResponse } from "./commun";
 import {
-  contributionDepasseEnveloppe,
+  doesContributionExceedBudget,
   ERREUR_CONTRIBUTION,
   ERREUR_DOCUMENT,
-  normaliserCorps,
-  referencesConventionValides,
+  normalizeConventionPayload,
+  areConventionReferencesValid,
 } from "./validation";
-import { appliquerColonnesDocumentsAjoutes } from "../../lib/convention-write-helpers";
+import { applyAddedDocumentColumns } from "../../lib/convention-write-helpers";
 
 const router: IRouter = Router();
 
@@ -26,13 +26,13 @@ router.post("/conventions", async (req, res): Promise<void> => {
     res.status(403).json({ error: "Ce rôle ne peut pas modifier les conventions." });
     return;
   }
-  const nettoye = normaliserCorps(req.body);
-  if (!nettoye.ok) {
-    res.status(400).json({ error: nettoye.erreur });
+  const normalizedPayload = normalizeConventionPayload(req.body);
+  if (!normalizedPayload.ok) {
+    res.status(400).json({ error: normalizedPayload.error });
     return;
   }
 
-  const parsed = CreateConventionBody.safeParse(nettoye.valeur);
+  const parsed = CreateConventionBody.safeParse(normalizedPayload.value);
   if (!parsed.success) {
     recordRequestFailure(res, undefined, {
       event: "convention.create.rejected", operation: "convention.create",
@@ -41,11 +41,11 @@ router.post("/conventions", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Données de convention invalides." });
     return;
   }
-  if (contributionDepasseEnveloppe(parsed.data.enveloppeBudgetaire, parsed.data.contributionRegion)) {
+  if (doesContributionExceedBudget(parsed.data.enveloppeBudgetaire, parsed.data.contributionRegion)) {
     res.status(400).json({ error: ERREUR_CONTRIBUTION });
     return;
   }
-  const documents = await preparerHistoriqueDocuments(null, parsed.data, documentVerifie);
+  const documents = await prepareDocumentHistory(null, parsed.data, verifyStoredDocument);
   if (!documents) {
     res.status(400).json({ error: ERREUR_DOCUMENT });
     return;
@@ -56,9 +56,9 @@ router.post("/conventions", async (req, res): Promise<void> => {
   const result = await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(741024, 1)`);
     const reference = await loadReferenceDataFrom(tx);
-    const valeurs = versColonnes(parsed.data);
+    const valeurs = toConventionColumns(parsed.data);
     valeurs.documents = documents;
-    appliquerColonnesDocumentsAjoutes(valeurs, parsed.data.documentsAjoutes);
+    applyAddedDocumentColumns(valeurs, parsed.data.documentsAjoutes);
     const echeance = calculateDeadline({
       nature: valeurs.nature as string | null | undefined,
       dateVisa: valeurs.dateVisa as string | null | undefined,
@@ -66,7 +66,7 @@ router.post("/conventions", async (req, res): Promise<void> => {
       frequenceReunions: valeurs.frequenceReunions as string | null | undefined,
     });
     if (echeance) valeurs.prochaineEcheance = echeance.date;
-    if (!referencesConventionValides(parsed.data, reference)) {
+    if (!areConventionReferencesValid(parsed.data, reference)) {
       return { status: 400 as const, error: "Le porteur, les maîtrises d'ouvrage, les partenaires et les territoires doivent appartenir au référentiel adapté." };
     }
     if (typeof valeurs.nomConvention !== "string" || valeurs.nomConvention === "") {
@@ -79,7 +79,7 @@ router.post("/conventions", async (req, res): Promise<void> => {
       valeurs.rattachement = user.division;
     }
     if (user.role === "chef_service") {
-      const scope = perimetreChefService(reference, user);
+      const scope = getServiceScope(reference, user);
       if (
         !scope ||
         (valeurs.rattachement !== undefined && valeurs.rattachement !== scope) ||
@@ -110,10 +110,10 @@ router.post("/conventions", async (req, res): Promise<void> => {
       action: "create",
       actorUsername: user.username,
       before: null,
-      after: snapshot(created),
+      after: createConventionSnapshot(created),
     });
-    await notifierChangementConvention(tx, user, null, created, reference);
-    const [line] = await tx.select(colonnesConvention)
+    await notifyConventionChange(tx, user, null, created, reference);
+    const [line] = await tx.select(conventionColumns)
       .from(conventionsTable)
       .where(eq(conventionsTable.id, created.id));
     return line
@@ -124,7 +124,7 @@ router.post("/conventions", async (req, res): Promise<void> => {
     res.status(result.status).json({ error: result.error });
     return;
   }
-  res.status(201).json(valide(CreateConventionResponse, versApi(result.line)));
+  res.status(201).json(assertValidApiResponse(CreateConventionResponse, toApiConvention(result.line)));
 });
 
 export default router;
