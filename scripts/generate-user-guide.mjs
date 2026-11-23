@@ -73,7 +73,8 @@ const sections = [
     title: "4. Comprendre le tableau de bord",
     intro: "Les indicateurs s’adaptent au périmètre de votre compte. Les montants sont affichés en MAD et les pourcentages aident à comparer les périodes.",
     blocks: [
-      { type: "image", file: "tableau-de-bord-mobile.jpg", width: 440, height: 480, caption: "Exemple de tableau de bord sur mobile. Les chiffres visibles sont une capture du 11 novembre 2026; les données et indicateurs affichés évoluent selon votre compte." },
+      { type: "image", file: "tableau-bord-actuel.jpg", width: 540, height: 375, caption: "Capture de démonstration réalisée avec des données fictives. Le nombre, les montants et les alertes varient selon votre périmètre." },
+      { type: "image", file: "tableau-bord-mobile-actuel.jpg", width: 240, height: 520, caption: "Sur téléphone, les cartes s’empilent et restent accessibles en faisant défiler la page." },
       { type: "bullets", items: [
         "Nombre de conventions visées : nombre de fiches du périmètre.",
         "Budget alloué : somme des enveloppes budgétaires renseignées.",
@@ -97,7 +98,7 @@ const sections = [
     title: "5. Rechercher et filtrer les conventions",
     intro: "Ouvrez « Toutes les conventions ». La liste affiche 25 résultats par page et conserve le périmètre autorisé pour votre compte.",
     blocks: [
-      { type: "image", file: "liste-conventions.jpg", width: 540, height: 105, caption: "Exemple de la page « Toutes les conventions ». Le nombre de résultats et les actions visibles peuvent varier selon votre rôle." },
+      { type: "image", file: "liste-conventions-actuelle.jpg", width: 540, height: 375, caption: "Exemple de la liste avec recherche, filtres, export et fiche technique. Les lignes sont fictives; les actions varient selon le rôle." },
       { type: "steps", items: [
         "Saisissez un mot du titre en français ou en arabe, ou un terme lié à la convention.",
         "Affinez avec les filtres disponibles : statut, objet, partenaire et, selon votre rôle, service ou rattachement.",
@@ -105,7 +106,6 @@ const sections = [
         "Utilisez « Effacer les filtres » pour revenir à la liste non filtrée.",
         "Choisissez « Ouvrir » pour afficher la fiche complète ou « Fiche technique » pour télécharger son document Word.",
       ] },
-      { type: "image", file: "colonnes-conventions.jpg", width: 540, height: 99, caption: "Extrait des colonnes de la liste : alerte, convention, statut/entité, dates de comité et actions." },
       { type: "callout", title: "À retenir", text: "Un filtre ne donne pas accès à des conventions hors de votre périmètre. Si aucun résultat ne s’affiche, vérifiez les filtres actifs avant de conclure que la fiche n’existe pas." },
     ],
   },
@@ -113,6 +113,7 @@ const sections = [
     title: "6. Créer une convention",
     intro: "La création est disponible pour les chefs de service et les chefs de division. Les directeurs disposent d’un accès en consultation.",
     blocks: [
+      { type: "image", file: "formulaire-nouvelle-convention.jpg", width: 540, height: 375, caption: "Exemple du formulaire vierge. Les champs obligatoires sont signalés par un astérisque; le format des dates dépend du navigateur." },
       { type: "steps", items: [
         "Choisissez « Nouvelle convention » dans le menu.",
         "Saisissez l’intitulé en arabe. Vous pouvez ajouter l’intitulé français.",
@@ -128,6 +129,7 @@ const sections = [
     title: "7. Consulter et modifier une fiche",
     intro: "Depuis la liste, ouvrez la convention. Les champs de la fiche sont organisés par thème; une personne en lecture seule ne voit pas les actions d’enregistrement.",
     blocks: [
+      { type: "image", file: "fiche-convention-actuelle.jpg", width: 540, height: 375, caption: "Fiche de démonstration montrant les blocs Identification et Comité de Suivi. Les données sont fictives." },
       { type: "table", headers: ["Bloc", "Informations principales"], rows: [
         ["Identification", "Intitulés, statut, rattachement, responsable, session, compétence, objet, visa et territoires."],
         ["Budget & Maîtrise d’Ouvrage", "Enveloppe et contribution en MAD, nature des fonds, partenaires, porteur et maîtrise d’ouvrage."],
@@ -150,6 +152,7 @@ const sections = [
     title: "8. Saisir le montage financier et les versements",
     intro: "Les partenaires doivent d’abord être renseignés dans la fiche pour pouvoir les utiliser dans les tableaux financiers.",
     blocks: [
+      { type: "image", file: "montage-financier-actuel.jpg", width: 540, height: 375, caption: "Vue des blocs Montage financier et Situation des versements. Les champs disponibles évoluent avec les partenaires et les années ajoutés." },
       { type: "steps", items: [
         "Dans « Montage financier », ajoutez les années concernées puis saisissez, pour chaque partenaire, sa contribution prévue pour chaque année.",
         "Dans « Situation des versements », sélectionnez le partenaire et l’année, puis ajoutez une ou plusieurs tranches réellement versées.",
