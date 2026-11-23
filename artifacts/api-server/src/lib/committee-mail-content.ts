@@ -10,7 +10,7 @@ export function buildCommitteeReminderContent(
 ) {
   const [annee, mois, jour] = echeance.split("-");
   const date = `${jour}/${mois}/${annee}`;
-  const subject = `Rappel J−${seuil} — Comité de suivi du ${date}`;
+  const subject = `❗ Rappel J−${seuil} — Comité de suivi du ${date}`;
   const introduction = `La prochaine échéance du comité de suivi est fixée au ${date} (dans ${joursRestants} jour${joursRestants > 1 ? "s" : ""}).`;
   const avertissement = "Ce message est un rappel automatique fondé sur la prochaine échéance renseignée dans l’application.";
   return {
