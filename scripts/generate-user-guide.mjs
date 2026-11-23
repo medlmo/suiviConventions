@@ -97,6 +97,7 @@ const sections = [
     title: "5. Rechercher et filtrer les conventions",
     intro: "Ouvrez « Toutes les conventions ». La liste affiche 25 résultats par page et conserve le périmètre autorisé pour votre compte.",
     blocks: [
+      { type: "image", file: "liste-conventions.jpg", width: 540, height: 105, caption: "Exemple de la page « Toutes les conventions ». Le nombre de résultats et les actions visibles peuvent varier selon votre rôle." },
       { type: "steps", items: [
         "Saisissez un mot du titre en français ou en arabe, ou un terme lié à la convention.",
         "Affinez avec les filtres disponibles : statut, objet, partenaire et, selon votre rôle, service ou rattachement.",
@@ -104,6 +105,7 @@ const sections = [
         "Utilisez « Effacer les filtres » pour revenir à la liste non filtrée.",
         "Choisissez « Ouvrir » pour afficher la fiche complète ou « Fiche technique » pour télécharger son document Word.",
       ] },
+      { type: "image", file: "colonnes-conventions.jpg", width: 540, height: 99, caption: "Extrait des colonnes de la liste : alerte, convention, statut/entité, dates de comité et actions." },
       { type: "callout", title: "À retenir", text: "Un filtre ne donne pas accès à des conventions hors de votre périmètre. Si aucun résultat ne s’affiche, vérifiez les filtres actifs avant de conclure que la fiche n’existe pas." },
     ],
   },
