@@ -38,6 +38,13 @@ function montant(value?: number | null): string {
   }).format(value);
 }
 
+function pourcentageContribution(contribution?: number | null, enveloppe?: number | null): string {
+  if (contribution == null) return EMPTY;
+  if (enveloppe == null) return "Non calculable (enveloppe non renseignée)";
+  if (enveloppe === 0) return "Non calculable (enveloppe nulle)";
+  return `${(contribution / enveloppe * 100).toLocaleString("fr-MA", { maximumFractionDigits: 1 })} %`;
+}
+
 function montantCentimes(value: number): bigint {
   return BigInt(Math.round(value * 100));
 }
@@ -84,7 +91,7 @@ function ligneEnteteMontage(columnSpan = 1): TableRow {
       children: [new Paragraph({
         keepNext: true,
         spacing: { after: 0 },
-        children: [new TextRun({ text: "06  MONTAGE FINANCIER (MAD)", bold: true, size: 21, color: "FFFFFF" })],
+        children: [new TextRun({ text: "VI.  MONTAGE FINANCIER (MAD)", bold: true, size: 21, color: "FFFFFF" })],
       })],
     })],
   });
@@ -202,7 +209,7 @@ function tableauSituationVersements(convention: ConventionApi): Table {
           keepNext: true,
           spacing: { after: 0 },
           children: [new TextRun({
-            text: "07  SITUATION DES VERSEMENTS DES PARTENAIRES (MAD)",
+            text: "VII.  SITUATION DES VERSEMENTS DES PARTENAIRES (MAD)",
             bold: true,
             size: 21,
             color: "FFFFFF",
@@ -320,7 +327,7 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
           keepNext: true,
           spacing: { after: 0 },
           children: [new TextRun({
-            text: "08  AVANCEMENT PHYSIQUE DU PROJET",
+            text: "VIII.  AVANCEMENT PHYSIQUE DU PROJET",
             bold: true,
             size: 21,
             color: "FFFFFF",
@@ -436,10 +443,42 @@ function rubrique(label: string): TableRow {
 export async function generateTechnicalSheet(convention: ConventionApi): Promise<Buffer> {
   const dateGeneration = new Date();
   const header = new Header({
-    children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new ImageRun({
-      type: "png", data: Buffer.from(logo, "base64"), transformation: { width: 60, height: 81 },
-      altText: { name: "Logo Région Souss Massa", title: "Région Souss Massa", description: "Logo officiel de la Région Souss Massa" },
-    })] })],
+    children: [new Table({
+      width: { size: WIDTH, type: WidthType.DXA },
+      layout: TableLayoutType.FIXED,
+      columnWidths: [7000, WIDTH - 7000],
+      borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideHorizontal: NONE, insideVertical: NONE },
+      rows: [new TableRow({
+        cantSplit: true,
+        children: [
+          new TableCell({
+            width: { size: 7000, type: WidthType.DXA },
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: ["ROYAUME DU MAROC", "MINISTÈRE DE L’INTÉRIEUR", "RÉGION SOUSS MASSA"].map((text) =>
+              new Paragraph({
+                spacing: { before: 0, after: 20, line: 220 },
+                children: [new TextRun({ text, font: "Arial", size: 17, bold: true, color: NAVY })],
+              })),
+          }),
+          new TableCell({
+            width: { size: WIDTH - 7000, type: WidthType.DXA },
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [new Paragraph({
+              alignment: AlignmentType.RIGHT,
+              spacing: { before: 0, after: 0 },
+              children: [new ImageRun({
+                type: "png",
+                data: Buffer.from(logo, "base64"),
+                transformation: { width: 60, height: 81 },
+                altText: { name: "Logo Région Souss Massa", title: "Région Souss Massa", description: "Logo officiel de la Région Souss Massa" },
+              })],
+            })],
+          }),
+        ],
+      })],
+    })],
   });
   const footer = new Footer({ children: [new Paragraph({
     border: { top: { color: GOLD, style: BorderStyle.SINGLE, size: 6, space: 8 } },
@@ -453,36 +492,47 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
     ],
   })] });
   const rows = [
-    rubrique("01  OBJET DE LA CONVENTION"),
-    ligne("Intitulé de la convention (arabe)", convention.nomConvention),
-    ligne("Intitulé de la convention (français)", convention.objetConventionFr),
-    rubrique("02  IDENTIFICATION"),
-    ligne("Session", [
-      dateFr(convention.session),
-      ...(convention.typeSession ? [`Session ${convention.typeSession.toLocaleLowerCase("fr")}`] : []),
-    ]),
+    rubrique("I.  OBJET DE LA CONVENTION"),
+    ligne("Intitulé de la convention (Ar)", convention.nomConvention),
+    ligne("Intitulé de la convention (Fr)", convention.objetConventionFr),
+    rubrique("II.  IDENTIFICATION"),
+    ligne("Session", convention.typeSession ? `Session ${convention.typeSession.toLocaleLowerCase("fr")}` : EMPTY),
+    ligne("Date", dateFr(convention.session)),
     ligne("Objet", convention.nature),
     ligne("Compétence", convention.competence),
     ligne("Date de Visa", dateFr(convention.dateVisa)),
-    rubrique("03  LOCALISATION"),
+    rubrique("III.  LOCALISATION"),
     ligne("Province(s) / préfecture(s)", convention.provincesPrefectures),
     ligne("Commune(s)", convention.communes),
-    rubrique("04  PARTIES PRENANTES"),
+    rubrique("IV.  PARTIES PRENANTES"),
     ligne("Partenaires", convention.partenaires),
     ligne("Porteur du projet", convention.porteurProjet),
     ligne("Maîtrise d'ouvrage", convention.maitriseOuvrage),
     ligne("Maîtrise d'ouvrage déléguée", convention.maitriseOuvrageDeleguee),
-    rubrique("05  FINANCEMENT"),
+    rubrique("V.  FINANCEMENT"),
     ligne("Enveloppe budgétaire (MAD)", montant(convention.enveloppeBudgetaire), true),
     ligne("Contribution de la Région (MAD)", montant(convention.contributionRegion), true),
+    ligne("Contribution de la Région (%)", pourcentageContribution(
+      convention.contributionRegion,
+      convention.enveloppeBudgetaire,
+    ), true),
   ];
   return Packer.toBuffer(new Document({
     creator: "Région Souss Massa", title: `Fiche technique — Convention ${convention.id}`,
     description: "Fiche technique de convention de partenariat",
     styles: { default: { document: { run: { font: "Arial", size: 20, color: NAVY, language: { value: "fr-MA", bidirectional: "ar-MA" } } } } },
     sections: [{
-      properties: { page: { size: { width: 11906, height: 16838 },
-        margin: { top: 1900, bottom: 1000, left: 1050, right: 1050, header: 320, footer: 450 } } },
+      properties: { page: {
+        size: { width: 11906, height: 16838 },
+        margin: { top: 1900, bottom: 1000, left: 1050, right: 1050, header: 320, footer: 450 },
+        borders: {
+          pageBorders: { display: "allPages", offsetFrom: "page", zOrder: "back" },
+          pageBorderTop: { style: BorderStyle.SINGLE, size: 10, color: GOLD, space: 12 },
+          pageBorderRight: { style: BorderStyle.SINGLE, size: 10, color: GOLD, space: 12 },
+          pageBorderBottom: { style: BorderStyle.SINGLE, size: 10, color: GOLD, space: 12 },
+          pageBorderLeft: { style: BorderStyle.SINGLE, size: 10, color: GOLD, space: 12 },
+        },
+      } },
       headers: { default: header }, footers: { default: footer },
       children: [
         new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [new TextRun({
