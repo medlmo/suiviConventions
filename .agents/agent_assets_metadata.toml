@@ -14,3 +14,17 @@ mtime_ms = 1791644747289
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:0812b685-7833-4a90-96ff-67728fa70575/839b7003-7d6e-426f-ba1f-229d0348b7fe/1b4b5ef7-d4bf-4ca1-8710-ab9494464505"
 storage_version_token = "1791644785245567"
 content_type = "text/plain"
+
+[[outputs]]
+id = "Idiw9FB7IjcbncAhi7vUB"
+uri = "file://generated-artifacts/guide-utilisateur-suivi-des-conventions.docx"
+type = "word_document"
+title = "Guide utilisateur — Suivi des conventions"
+description = "Guide Word en français destiné aux chefs de service, chefs de division et directeurs. Il couvre les droits, le tableau de bord, la recherche, les fiches, les finances, les documents, les notifications et l’export Excel."
+logical_id = "c0f0fb20-6c0f-4c32-8138-c05548d0a563"
+content_hash = "sha256:6608c42a27cacad0611860d8b2d59160ede9f27ba298f1a253599caa72277c53"
+size = 18097
+mtime_ms = 1795422099689
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:0812b685-7833-4a90-96ff-67728fa70575/c0f0fb20-6c0f-4c32-8138-c05548d0a563/14ae0109-89d7-4d36-8635-e3edd2aa12ad"
+storage_version_token = "1795422120860383"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
