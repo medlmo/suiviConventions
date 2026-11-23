@@ -34,8 +34,8 @@ export default function SignIn() {
       />
       <div className="max-w-xl py-12 lg:py-0">
         <div className="w-14 h-1 bg-secondary mb-8" />
-        <p className="uppercase tracking-[.22em] text-xs text-sidebar-foreground/65 mb-5">Suivi des conventions</p>
-        <p className="mt-6 text-base md:text-lg text-sidebar-foreground/75 leading-relaxed max-w-md">Un espace réservé aux équipes de la Région pour suivre les conventions, leurs échéances et les décisions qui comptent.</p>
+        <p className="uppercase tracking-[.22em] text-sm text-sidebar-foreground/65 mb-5">Suivi des conventions</p>
+        <p className="mt-6 text-lg md:text-xl text-sidebar-foreground/75 leading-relaxed max-w-md">Un espace réservé aux équipes de la Région pour suivre les conventions, leurs échéances et les décisions qui comptent.</p>
       </div>
       <div className="hidden lg:flex items-center gap-2 text-xs text-sidebar-foreground/55"><ShieldCheck className="w-4 h-4" /> Accès réservé aux comptes autorisés</div>
     </section>
