@@ -115,7 +115,7 @@ export default function Dashboard() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Pilotage des Conventions</h1>
+        <h1 className="font-sans text-3xl font-bold tracking-tight text-foreground">Pilotage des Conventions</h1>
         <div className="text-muted-foreground text-lg">
           {resumeLoading ? (
             <Skeleton className="h-6 w-64" />
