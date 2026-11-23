@@ -62,18 +62,35 @@ export default function AdminJournal() {
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState("");
   const [input, setInput] = useState("");
+  const [authorFilter, setAuthorFilter] = useState("");
+  const [authorInput, setAuthorInput] = useState("");
   const query = useQuery({
-    queryKey: ["admin", "audit", page, filter],
-    queryFn: () => api<{ items: Audit[]; total: number }>(`/admin/audit?limit=${pageSize}&offset=${page * pageSize}${filter ? `&conventionId=${encodeURIComponent(filter)}` : ""}`),
+    queryKey: ["admin", "audit", page, filter, authorFilter],
+    queryFn: () => {
+      const params = new URLSearchParams({ limit: String(pageSize), offset: String(page * pageSize) });
+      if (filter) params.set("conventionId", filter);
+      if (authorFilter) params.set("author", authorFilter);
+      return api<{ items: Audit[]; total: number }>(`/admin/audit?${params.toString()}`);
+    },
     staleTime: 15_000,
   });
-  function submit(event: FormEvent) { event.preventDefault(); setPage(0); setFilter(input.trim()); }
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    setPage(0);
+    setFilter(input.trim());
+    setAuthorFilter(authorInput.trim());
+  }
   return <div className="space-y-6 pb-12">
     <div><span className="text-xs font-bold uppercase tracking-widest text-secondary">Administration / traçabilité</span><h1 className="text-3xl font-semibold mt-2">Journal des modifications</h1><p className="text-muted-foreground mt-1">L'historique des créations, modifications et suppressions.</p></div>
-    <form onSubmit={submit} className="flex flex-col sm:flex-row gap-2 max-w-md"><div className="relative flex-1"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Numéro de convention" inputMode="numeric" pattern="[0-9]*" placeholder="N° de convention" className="pl-9 bg-card" value={input} onChange={event => setInput(event.target.value)} /></div><Button variant="outline" type="submit">Filtrer</Button>{filter && <Button variant="ghost" type="button" onClick={() => { setFilter(""); setInput(""); setPage(0); }}>Effacer</Button>}</form>
+    <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] gap-2 max-w-3xl">
+      <div className="relative"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Numéro de convention" inputMode="numeric" pattern="[0-9]*" placeholder="N° de convention" className="pl-9 bg-card" value={input} onChange={event => setInput(event.target.value)} /></div>
+      <Input aria-label="Auteur" placeholder="Identifiant de l’auteur" className="bg-card" value={authorInput} onChange={event => setAuthorInput(event.target.value)} />
+      <Button variant="outline" type="submit">Filtrer</Button>
+      {(filter || authorFilter) && <Button variant="ghost" type="button" onClick={() => { setFilter(""); setInput(""); setAuthorFilter(""); setAuthorInput(""); setPage(0); }}>Effacer</Button>}
+    </form>
     {query.isPending ? <div className="space-y-3">{[1,2,3,4].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
       : query.isError ? <Card><CardContent className="py-12 text-center"><p role="alert">{errorMessage(query.error)}</p><Button className="mt-4" variant="outline" onClick={() => void query.refetch()}>Réessayer</Button></CardContent></Card>
-      : !query.data?.items.length ? <Card><CardContent className="py-16 text-center text-muted-foreground"><FileClock className="w-10 h-10 mx-auto mb-4 text-secondary" />Aucune opération enregistrée{filter ? " pour cette convention" : ""}.</CardContent></Card>
+      : !query.data?.items.length ? <Card><CardContent className="py-16 text-center text-muted-foreground"><FileClock className="w-10 h-10 mx-auto mb-4 text-secondary" />{filter || authorFilter ? "Aucune opération ne correspond aux filtres." : "Aucune opération enregistrée."}</CardContent></Card>
       : <div className="border rounded-xl bg-card overflow-hidden divide-y">{query.data.items.map(entry => <article key={entry.id} className="p-4 sm:p-5 flex gap-4">
         <div className="w-10 h-10 shrink-0 rounded-lg bg-accent text-primary grid place-items-center"><History className="w-5 h-5" /></div>
         <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${colors[entry.action]}`}>{labels[entry.action]}</span><span className="text-sm font-semibold">Convention #{entry.conventionId}</span></div><p className="text-sm text-muted-foreground mt-2">Par <strong className="text-foreground">{entry.actorUsername}</strong> · <time dateTime={entry.createdAt}>{new Date(entry.createdAt).toLocaleString("fr-MA", { dateStyle: "medium", timeStyle: "short" })}</time></p>
