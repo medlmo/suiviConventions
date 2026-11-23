@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { useLocation } from "wouter";
 import { LockKeyhole, ArrowRight, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { api, ApiError, errorMessage, type User, useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,6 @@ import { Input } from "@/components/ui/input";
 
 export default function SignIn() {
   const { setUser } = useAuth();
-  const [, navigate] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
@@ -19,7 +17,6 @@ export default function SignIn() {
     try {
       const authenticatedUser = await api<User>("/auth/login", { method: "POST", body: JSON.stringify({ username: username.trim(), password }) });
       await setUser(authenticatedUser);
-      navigate("/");
     } catch (cause) {
       setError(cause instanceof ApiError && cause.status === 401 ? "Identifiant ou mot de passe incorrect." : errorMessage(cause));
       setPassword("");
