@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -7,6 +7,7 @@ import {
   Document,
   Footer,
   HeadingLevel,
+  ImageRun,
   PageBreak,
   PageNumber,
   Packer,
@@ -38,6 +39,7 @@ const sections = [
         "Saisissez votre nom d’utilisateur et votre mot de passe, puis connectez-vous.",
         "Pour quitter votre compte, ouvrez le menu latéral et choisissez « Se déconnecter ».",
       ] },
+      { type: "image", file: "ecran-connexion.jpg", width: 540, height: 375, caption: "Écran de connexion — utilisez le compte communiqué par votre administrateur." },
       { type: "callout", title: "Sur téléphone ou tablette", text: "Le bouton de menu ouvre la navigation latérale. La cloche reste dans la barre supérieure. Les mêmes fonctions sont disponibles, avec les filtres et formulaires adaptés à l’écran." },
       { type: "callout", title: "Session expirée", text: "Si l’application demande une nouvelle connexion, reconnectez-vous. En cas de problème persistant, contactez l’administrateur de l’application." },
     ],
@@ -71,6 +73,7 @@ const sections = [
     title: "4. Comprendre le tableau de bord",
     intro: "Les indicateurs s’adaptent au périmètre de votre compte. Les montants sont affichés en MAD et les pourcentages aident à comparer les périodes.",
     blocks: [
+      { type: "image", file: "tableau-de-bord-mobile.jpg", width: 440, height: 480, caption: "Exemple de tableau de bord sur mobile. Les chiffres visibles sont une capture du 11 novembre 2026; les données et indicateurs affichés évoluent selon votre compte." },
       { type: "bullets", items: [
         "Nombre de conventions visées : nombre de fiches du périmètre.",
         "Budget alloué : somme des enveloppes budgétaires renseignées.",
@@ -269,12 +272,33 @@ function docTable(headers, rows) {
   });
 }
 
-function renderDocBlock(block) {
+async function renderDocBlock(block) {
   if (block.type === "paragraph") return [docParagraph(block.text)];
   if (block.type === "heading") return [docHeading(block.text, HeadingLevel.HEADING_2)];
   if (block.type === "bullets") return docList(block.items);
   if (block.type === "steps") return docList(block.items, true);
   if (block.type === "table") return [docTable(block.headers, block.rows), new Paragraph({ spacing: { after: 80 } })];
+  if (block.type === "image") {
+    const imagePath = resolve(outputDir, "screenshots", block.file);
+    const imageData = await readFile(imagePath);
+    return [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 100, after: 50 },
+        children: [new ImageRun({
+          type: "jpg",
+          data: imageData,
+          transformation: { width: block.width, height: block.height },
+          altText: { name: block.caption, title: block.caption, description: block.caption },
+        })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 160, line: 240 },
+        children: [new TextRun({ text: block.caption, font: "Arial", size: 16, italics: true, color: gray })],
+      }),
+    ];
+  }
   if (block.type === "callout") return [
     new Paragraph({
       shading: { fill: "F3F7FB", type: ShadingType.CLEAR },
@@ -312,7 +336,7 @@ async function createDocx() {
       spacing: { after: 150, line: 280 },
       children: [new TextRun({ text: section.intro, font: "Arial", size: 20, color: gray })],
     }));
-    for (const block of section.blocks) children.push(...renderDocBlock(block));
+    for (const block of section.blocks) children.push(...await renderDocBlock(block));
   }
 
   const footer = new Footer({
