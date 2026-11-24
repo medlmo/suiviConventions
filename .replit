@@ -30,7 +30,7 @@ defaultBucketID = "replit-objstore-5e7456db-566c-4a3b-b6fd-2f825410a3ee"
 
 [userenv.shared]
 MAIL_FROM = "conventions@soussmassa.ma"
-SMTP_HOST = "mail.soussmassa.ma"
+SMTP_HOST = "mailserver.soussmassa.ma"
 SMTP_PORT = "465"
 SMTP_USER = "conventions@soussmassa.ma"
 
