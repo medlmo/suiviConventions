@@ -348,6 +348,12 @@ export default function ConventionCreate() {
                     <FormMessage />
                   </FormItem>
                 )} />
+                <FormField control={form.control} name="dateVisa" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date de visa</FormLabel>
+                    <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                  </FormItem>
+                )} />
                 <FormField control={form.control} name="nature" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Objet</FormLabel>
@@ -394,12 +400,6 @@ export default function ConventionCreate() {
                         {SECTEUR_OPTIONS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="dateVisa" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date de visa</FormLabel>
-                    <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="provincesPrefectures" render={({ field }) => (

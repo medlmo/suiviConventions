@@ -633,6 +633,12 @@ export default function ConventionDetail() {
                         <FormMessage />
                       </FormItem>
                     )} />
+                    <FormField control={form.control} name="dateVisa" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date de Visa</FormLabel>
+                        <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                      </FormItem>
+                    )} />
                     <FormField control={form.control} name="competence" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Compétence</FormLabel>
@@ -710,12 +716,6 @@ export default function ConventionDetail() {
                             {SECTEUR_OPTIONS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="dateVisa" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date de Visa</FormLabel>
-                        <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
                       </FormItem>
                     )} />
                   </div>
