@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, canEditConvention, errorMessage, useAuth, type ApiError } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentHistoryField } from "@/components/document-history-field";
+import { SearchableOptionSelect } from "@/components/searchable-option-select";
 import { SuiviFinancierEditor, parseMontant, versApi, versBrouillon } from "@/components/suivi-financier-editor";
 import { MontantInput } from "@/components/montant-input";
 import type { FieldErrors } from "react-hook-form";
@@ -703,19 +704,13 @@ export default function ConventionDetail() {
                     <FormField control={form.control} name="secteur" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Secteur</FormLabel>
-                        <Select value={field.value || ""} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choisir un secteur" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {field.value && !SECTEUR_OPTIONS.includes(field.value as typeof SECTEUR_OPTIONS[number]) && (
-                              <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
-                            )}
-                            {SECTEUR_OPTIONS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <SearchableOptionSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          options={SECTEUR_OPTIONS}
+                          label="Secteur"
+                          placeholder="Choisir un secteur"
+                        />
                       </FormItem>
                     )} />
                   </div>

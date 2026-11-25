@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentHistoryField } from "@/components/document-history-field";
+import { SearchableOptionSelect } from "@/components/searchable-option-select";
 import { useAuth, errorMessage, rattachementUtilisateur } from "@/hooks/use-auth";
 import { MontantInput } from "@/components/montant-input";
 
@@ -390,16 +391,13 @@ export default function ConventionCreate() {
                 <FormField control={form.control} name="secteur" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Secteur</FormLabel>
-                    <Select value={field.value || ""} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choisir un secteur" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {SECTEUR_OPTIONS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <SearchableOptionSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={SECTEUR_OPTIONS}
+                      label="Secteur"
+                      placeholder="Choisir un secteur"
+                    />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="provincesPrefectures" render={({ field }) => (
