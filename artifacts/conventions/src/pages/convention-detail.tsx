@@ -656,7 +656,7 @@ export default function ConventionDetail() {
                         <Select value={field.value || ""} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Choisir la nature du projet" />
+                              <SelectValue placeholder="Choisir un objet" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
