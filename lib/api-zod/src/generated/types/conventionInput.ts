@@ -71,5 +71,9 @@ export interface ConventionInput {
   /** @nullable */
   nature?: string | null;
   /** @nullable */
+  initiateur?: string | null;
+  /** @nullable */
+  secteur?: string | null;
+  /** @nullable */
   commentaires?: string | null;
 }

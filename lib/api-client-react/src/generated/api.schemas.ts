@@ -405,6 +405,10 @@ export interface Convention {
   /** @nullable */
   nature?: string | null;
   /** @nullable */
+  initiateur?: string | null;
+  /** @nullable */
+  secteur?: string | null;
+  /** @nullable */
   documentConvention?: string | null;
   documents?: ConventionDocument[];
   /** @nullable */
@@ -505,6 +509,10 @@ export interface ConventionInput {
   /** @nullable */
   nature?: string | null;
   /** @nullable */
+  initiateur?: string | null;
+  /** @nullable */
+  secteur?: string | null;
+  /** @nullable */
   commentaires?: string | null;
 }
 
@@ -587,6 +595,10 @@ export interface ConventionUpdate {
   competence?: string | null;
   /** @nullable */
   nature?: string | null;
+  /** @nullable */
+  initiateur?: string | null;
+  /** @nullable */
+  secteur?: string | null;
   /** @nullable */
   documentConvention?: string | null;
   /** @nullable */

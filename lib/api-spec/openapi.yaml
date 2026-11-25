@@ -1067,6 +1067,8 @@ components:
         decision: { type: ["string", "null"] }
         competence: { type: ["string", "null"] }
         nature: { type: ["string", "null"] }
+        initiateur: { type: ["string", "null"] }
+        secteur: { type: ["string", "null"] }
         documentConvention: { type: ["string", "null"] }
         documents:
           type: array
@@ -1138,6 +1140,8 @@ components:
         natureFonds: { type: ["string", "null"] }
         competence: { type: ["string", "null"] }
         nature: { type: ["string", "null"] }
+        initiateur: { type: ["string", "null"] }
+        secteur: { type: ["string", "null"] }
         commentaires: { type: ["string", "null"] }
 
     ConventionUpdate:
@@ -1202,6 +1206,8 @@ components:
         decision: { type: ["string", "null"] }
         competence: { type: ["string", "null"] }
         nature: { type: ["string", "null"] }
+        initiateur: { type: ["string", "null"] }
+        secteur: { type: ["string", "null"] }
         documentConvention: { type: ["string", "null"] }
         ficheTechnique: { type: ["string", "null"] }
         statutConvention: { type: ["string", "null"] }

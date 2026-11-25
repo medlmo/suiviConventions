@@ -52,6 +52,7 @@ import {
 } from "@/components/maitrise-ouvrage-select";
 import { useReferenceData } from "@/hooks/use-reference-data";
 import { calculerEcheance } from "@/lib/echeances";
+import { INITIATEUR_OPTIONS, SECTEUR_OPTIONS } from "@/lib/convention-options";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { ArrowLeft, AlertTriangle, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,6 +78,8 @@ const conventionSchema = z.object({
   decision: z.string().nullable().optional(),
   competence: z.string().nullable().optional(),
   nature: z.string().nullable().optional(),
+  initiateur: z.string().nullable().optional(),
+  secteur: z.string().nullable().optional(),
   presidenceComite: z.string().nullable().optional(),
   membresComite: z.string().nullable().optional(),
   frequenceReunions: z.string().nullable().optional(),
@@ -250,6 +253,8 @@ export default function ConventionDetail() {
         decision: convention.decision,
         competence: convention.competence,
         nature: convention.nature,
+        initiateur: convention.initiateur ?? null,
+        secteur: convention.secteur ?? null,
         presidenceComite: convention.presidenceComite,
         membresComite: convention.membresComite,
         frequenceReunions: convention.frequenceReunions,
@@ -667,6 +672,42 @@ export default function ConventionDetail() {
                             <SelectItem value="Coopération décentralisée">Coopération décentralisée</SelectItem>
                             <SelectItem value="Subventions">Subventions</SelectItem>
                             <SelectItem value="Prestations">Prestations</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="initiateur" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Initiateur</FormLabel>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choisir un initiateur" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {field.value && !INITIATEUR_OPTIONS.includes(field.value as typeof INITIATEUR_OPTIONS[number]) && (
+                              <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
+                            )}
+                            {INITIATEUR_OPTIONS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="secteur" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Secteur</FormLabel>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choisir un secteur" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {field.value && !SECTEUR_OPTIONS.includes(field.value as typeof SECTEUR_OPTIONS[number]) && (
+                              <SelectItem value={field.value}>{field.value} (historique)</SelectItem>
+                            )}
+                            {SECTEUR_OPTIONS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </FormItem>

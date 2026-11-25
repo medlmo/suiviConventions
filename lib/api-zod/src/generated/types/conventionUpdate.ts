@@ -80,6 +80,10 @@ export interface ConventionUpdate {
   /** @nullable */
   nature?: string | null;
   /** @nullable */
+  initiateur?: string | null;
+  /** @nullable */
+  secteur?: string | null;
+  /** @nullable */
   documentConvention?: string | null;
   /** @nullable */
   ficheTechnique?: string | null;

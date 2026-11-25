@@ -462,6 +462,8 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
       ...(convention.typeSession ? [`Session ${convention.typeSession.toLocaleLowerCase("fr")}`] : []),
     ]),
     ligne("Objet", convention.nature),
+    ligne("Initiateur", convention.initiateur),
+    ligne("Secteur", convention.secteur),
     ligne("Compétence", convention.competence),
     ligne("Date de Visa", dateFr(convention.dateVisa)),
     rubrique("03  LOCALISATION"),

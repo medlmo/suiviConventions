@@ -674,6 +674,8 @@ export const ListConventionsResponse = zod.object({
   "decision": zod.string().nullish(),
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
+  "initiateur": zod.string().nullish(),
+  "secteur": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
   "documents": zod.array(zod.object({
   "objectPath": zod.string(),
@@ -753,6 +755,8 @@ export const CreateConventionBody = zod.object({
   "natureFonds": zod.string().nullish(),
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
+  "initiateur": zod.string().nullish(),
+  "secteur": zod.string().nullish(),
   "commentaires": zod.string().nullish()
 })
 
@@ -847,6 +851,8 @@ export const CreateConventionResponse = zod.object({
   "decision": zod.string().nullish(),
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
+  "initiateur": zod.string().nullish(),
+  "secteur": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
   "documents": zod.array(zod.object({
   "objectPath": zod.string(),
@@ -1037,6 +1043,8 @@ export const ListAlertesResponseItem = zod.object({
   "decision": zod.string().nullish(),
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
+  "initiateur": zod.string().nullish(),
+  "secteur": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
   "documents": zod.array(zod.object({
   "objectPath": zod.string(),
@@ -1173,6 +1181,8 @@ export const GetAgendaResponseItem = zod.object({
   "decision": zod.string().nullish(),
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
+  "initiateur": zod.string().nullish(),
+  "secteur": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
   "documents": zod.array(zod.object({
   "objectPath": zod.string(),
@@ -1328,6 +1338,8 @@ export const GetConventionResponse = zod.object({
   "decision": zod.string().nullish(),
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
+  "initiateur": zod.string().nullish(),
+  "secteur": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
   "documents": zod.array(zod.object({
   "objectPath": zod.string(),
@@ -1466,6 +1478,8 @@ export const UpdateConventionBody = zod.object({
   "decision": zod.string().nullish(),
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
+  "initiateur": zod.string().nullish(),
+  "secteur": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
   "ficheTechnique": zod.string().nullish(),
   "statutConvention": zod.string().nullish(),
@@ -1566,6 +1580,8 @@ export const UpdateConventionResponse = zod.object({
   "decision": zod.string().nullish(),
   "competence": zod.string().nullish(),
   "nature": zod.string().nullish(),
+  "initiateur": zod.string().nullish(),
+  "secteur": zod.string().nullish(),
   "documentConvention": zod.string().nullish(),
   "documents": zod.array(zod.object({
   "objectPath": zod.string(),

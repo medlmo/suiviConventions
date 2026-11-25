@@ -30,6 +30,7 @@ const FIELD_LABELS: Partial<Record<keyof Convention, string>> = {
   rattachement: "Rattachement", responsableProjet: "Service responsable",
   typeSession: "Type de session", session: "Session", dateVisa: "Date de visa",
   statutConvention: "Statut", decision: "Décision", competence: "Compétence", nature: "Objet",
+  initiateur: "Initiateur", secteur: "Secteur",
   provincesPrefectures: "Provinces / préfectures", communes: "Communes",
   presidenceComite: "Présidence du comité", membresComite: "Membres du comité",
   frequenceReunions: "Fréquence des réunions", dernierComite: "Dernier comité",
@@ -46,7 +47,7 @@ const FIELD_LABELS: Partial<Record<keyof Convention, string>> = {
 
 const IMPORTANT_FIELDS = new Set<keyof Convention>([
   "rattachement", "responsableProjet", "typeSession", "session", "dateVisa", "statutConvention",
-  "decision", "competence", "nature", "provincesPrefectures", "communes",
+  "decision", "competence", "nature", "initiateur", "secteur", "provincesPrefectures", "communes",
   "frequenceReunions", "dernierComite", "datePvComite", "prochainComite", "prochaineEcheance",
   "enveloppeBudgetaire", "contributionRegion", "natureFonds", "porteurProjet",
   "maitrisesOuvrage", "maitrisesOuvrageDeleguees", "partenaires", "suiviFinancier",

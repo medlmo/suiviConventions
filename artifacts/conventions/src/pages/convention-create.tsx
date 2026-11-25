@@ -38,6 +38,7 @@ import {
 } from "@/components/maitrise-ouvrage-select";
 import { useReferenceData } from "@/hooks/use-reference-data";
 import { calculerEcheance } from "@/lib/echeances";
+import { INITIATEUR_OPTIONS, SECTEUR_OPTIONS } from "@/lib/convention-options";
 import { ArrowLeft, Save, CalendarIcon, FileText, Info, Wallet } from "lucide-react";
 
 // Un champ montant vidé doit repartir à NULL, pas à 0 : z.coerce.number()
@@ -61,6 +62,8 @@ const conventionSchema = z.object({
   statutConvention: z.string().nullable().optional(),
   competence: z.string().nullable().optional(),
   nature: z.string().nullable().optional(),
+  initiateur: z.string().nullable().optional(),
+  secteur: z.string().nullable().optional(),
   presidenceComite: z.string().nullable().optional(),
   membresComite: z.string().nullable().optional(),
   frequenceReunions: z.string().nullable().optional(),
@@ -359,6 +362,36 @@ export default function ConventionCreate() {
                         <SelectItem value="Coopération décentralisée">Coopération décentralisée</SelectItem>
                         <SelectItem value="Subventions">Subventions</SelectItem>
                         <SelectItem value="Prestations">Prestations</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="initiateur" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Initiateur</FormLabel>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choisir un initiateur" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {INITIATEUR_OPTIONS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="secteur" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Secteur</FormLabel>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choisir un secteur" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SECTEUR_OPTIONS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </FormItem>

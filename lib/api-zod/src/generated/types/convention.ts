@@ -79,6 +79,10 @@ export interface Convention {
   /** @nullable */
   nature?: string | null;
   /** @nullable */
+  initiateur?: string | null;
+  /** @nullable */
+  secteur?: string | null;
+  /** @nullable */
   documentConvention?: string | null;
   documents?: ConventionDocument[];
   /** @nullable */
