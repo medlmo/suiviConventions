@@ -53,19 +53,31 @@ export const maitrisesOuvrageTable = pgTable(
   (table) => [uniqueIndex("reference_maitrises_ouvrage_nom_uq").on(table.nom)],
 );
 
+export const secteursTable = pgTable(
+  "reference_secteurs",
+  {
+    id: serial("id").primaryKey(),
+    nom: text("nom").notNull(),
+  },
+  (table) => [uniqueIndex("reference_secteurs_nom_uq").on(table.nom)],
+);
+
 export const insertReferenceDirectionSchema = createInsertSchema(directionsTable).omit({ id: true });
 export const insertReferenceDivisionSchema = createInsertSchema(divisionsTable).omit({ id: true });
 export const insertReferenceServiceSchema = createInsertSchema(servicesTable).omit({ id: true });
 export const insertReferenceServiceDgsSchema = createInsertSchema(servicesDgsTable).omit({ id: true });
 export const insertMaitriseOuvrageSchema = createInsertSchema(maitrisesOuvrageTable).omit({ id: true });
+export const insertSecteurSchema = createInsertSchema(secteursTable).omit({ id: true });
 
 export type ReferenceDirection = typeof directionsTable.$inferSelect;
 export type ReferenceDivision = typeof divisionsTable.$inferSelect;
 export type ReferenceService = typeof servicesTable.$inferSelect;
 export type ReferenceServiceDgs = typeof servicesDgsTable.$inferSelect;
 export type MaitriseOuvrage = typeof maitrisesOuvrageTable.$inferSelect;
+export type Secteur = typeof secteursTable.$inferSelect;
 export type InsertReferenceDirection = z.infer<typeof insertReferenceDirectionSchema>;
 export type InsertReferenceDivision = z.infer<typeof insertReferenceDivisionSchema>;
 export type InsertReferenceService = z.infer<typeof insertReferenceServiceSchema>;
 export type InsertReferenceServiceDgs = z.infer<typeof insertReferenceServiceDgsSchema>;
 export type InsertMaitriseOuvrage = z.infer<typeof insertMaitriseOuvrageSchema>;
+export type InsertSecteur = z.infer<typeof insertSecteurSchema>;

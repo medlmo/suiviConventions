@@ -15,4 +15,5 @@ export const ReferenceDataKind = {
   services: 'services',
   'services-dgs': 'services-dgs',
   'maitrises-ouvrage': 'maitrises-ouvrage',
+  secteurs: 'secteurs',
 } as const;

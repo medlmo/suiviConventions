@@ -6,8 +6,8 @@ export type Service = { id: number; nom: string };
 export type Division = { id: number; nom: string; services: Service[] };
 export type Direction = { id: number; direction: string; divisions: Division[] };
 export type MaitriseOuvrage = { id: number; nom: string };
-export type ReferenceData = { organisation: Direction[]; servicesDgs: Service[]; maitrisesOuvrage: MaitriseOuvrage[] };
-export type ReferenceKind = "directions" | "divisions" | "services" | "services-dgs" | "maitrises-ouvrage";
+export type ReferenceData = { organisation: Direction[]; servicesDgs: Service[]; maitrisesOuvrage: MaitriseOuvrage[]; secteurs: Service[] };
+export type ReferenceKind = "directions" | "divisions" | "services" | "services-dgs" | "maitrises-ouvrage" | "secteurs";
 export const referenceDataKey = ["reference-data"] as const;
 
 export function useReferenceData() {

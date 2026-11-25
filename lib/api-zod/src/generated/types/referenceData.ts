@@ -13,4 +13,5 @@ export interface ReferenceData {
   /** Services directement rattachés à la Direction Générale des Services, sans direction ni division intermédiaire. */
   servicesDgs: ReferenceService[];
   maitrisesOuvrage: ReferenceService[];
+  secteurs: ReferenceService[];
 }

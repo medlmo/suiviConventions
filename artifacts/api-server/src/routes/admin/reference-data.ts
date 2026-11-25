@@ -7,6 +7,7 @@ import {
   maitrisesOuvrageTable,
   servicesDgsTable,
   servicesTable,
+  secteursTable,
 } from "@workspace/db";
 import { adminRequired } from "../../lib/auth";
 import { loadReferenceData } from "../../lib/reference-data";
@@ -69,8 +70,10 @@ router.post("/admin/reference-data/:kind", adminRequired, async (req, res): Prom
         await tx.insert(servicesTable).values({ divisionId: parent.id, nom });
       } else if (kind === "services-dgs") {
         await tx.insert(servicesDgsTable).values({ nom });
-      } else {
+      } else if (kind === "maitrises-ouvrage") {
         await tx.insert(maitrisesOuvrageTable).values({ nom });
+      } else {
+        await tx.insert(secteursTable).values({ nom });
       }
       return "created" as const;
     });

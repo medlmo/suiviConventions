@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type Draft = { kind: ReferenceKind; id?: number; parentId?: number; nom: string; parentLabel?: string };
-const labels: Record<ReferenceKind, string> = { directions: "direction", divisions: "division", services: "service", "services-dgs": "service directement rattaché à la DGS", "maitrises-ouvrage": "maîtrise d’ouvrage" };
+const labels: Record<ReferenceKind, string> = { directions: "direction", divisions: "division", services: "service", "services-dgs": "service directement rattaché à la DGS", "maitrises-ouvrage": "maîtrise d’ouvrage", secteurs: "secteur" };
 const PAGE_SIZE = 20;
 
 function normalizeSearchText(value: string) {
@@ -31,10 +31,18 @@ export default function AdminReferentiel() {
   const mutation = useReferenceMutation();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState("");
-  const [activeSection, setActiveSection] = useState<"organisation" | "maitrises-ouvrage">("maitrises-ouvrage");
+  const [activeSection, setActiveSection] = useState<"organisation" | "maitrises-ouvrage" | "secteurs">("maitrises-ouvrage");
   const [search, setSearch] = useState("");
+  const [sectorSearch, setSectorSearch] = useState("");
   const [page, setPage] = useState(1);
   const maitrisesOuvrage = query.data?.maitrisesOuvrage ?? [];
+  const secteurs = query.data?.secteurs ?? [];
+  const filteredSecteurs = useMemo(() => {
+    const term = normalizeSearchText(sectorSearch.trim());
+    return secteurs
+      .filter(item => !term || normalizeSearchText(item.nom).includes(term))
+      .sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+  }, [secteurs, sectorSearch]);
   const filteredMaitrises = useMemo(() => {
     const term = normalizeSearchText(search.trim());
     return maitrisesOuvrage
@@ -56,6 +64,9 @@ export default function AdminReferentiel() {
           setActiveSection("maitrises-ouvrage");
           if (draft.id == null) setSearch("");
           setPage(1);
+        } else if (draft.kind === "secteurs") {
+          setActiveSection("secteurs");
+          if (draft.id == null) setSectorSearch("");
         }
         setDraft(null);
         setError("");
@@ -65,9 +76,9 @@ export default function AdminReferentiel() {
   };
   return <div className="space-y-6 pb-16">
     <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
-      <div><span className="text-xs font-bold uppercase tracking-widest text-secondary">Administration / données de référence</span><h1 className="text-3xl font-semibold mt-2">Référentiel</h1><p className="text-muted-foreground mt-1">Organigramme et maîtrises d’ouvrage utilisés dans les conventions et les comptes.</p></div>
-      <Button data-testid="button-add-reference" onClick={() => begin(activeSection === "organisation" ? { kind: "directions", nom: "" } : { kind: "maitrises-ouvrage", nom: "" })}>
-        <Plus className="w-4 h-4 mr-2" /> {activeSection === "organisation" ? "Nouvelle direction" : "Ajouter une maîtrise"}
+      <div><span className="text-xs font-bold uppercase tracking-widest text-secondary">Administration / données de référence</span><h1 className="text-3xl font-semibold mt-2">Référentiel</h1><p className="text-muted-foreground mt-1">Organigramme, maîtrises d’ouvrage et secteurs utilisés dans les conventions et les comptes.</p></div>
+      <Button data-testid="button-add-reference" onClick={() => begin(activeSection === "organisation" ? { kind: "directions", nom: "" } : activeSection === "secteurs" ? { kind: "secteurs", nom: "" } : { kind: "maitrises-ouvrage", nom: "" })}>
+        <Plus className="w-4 h-4 mr-2" /> {activeSection === "organisation" ? "Nouvelle direction" : activeSection === "secteurs" ? "Ajouter un secteur" : "Ajouter une maîtrise"}
       </Button>
     </div>
     <div role="group" aria-label="Sections du référentiel" className="flex flex-wrap gap-2">
@@ -88,6 +99,15 @@ export default function AdminReferentiel() {
         onClick={() => setActiveSection("maitrises-ouvrage")}
       >
         <Building2 className="mr-2 h-4 w-4" /> Maîtrises d’ouvrage
+      </Button>
+      <Button
+        type="button"
+        variant={activeSection === "secteurs" ? "default" : "outline"}
+        data-testid="button-view-sectors"
+        aria-pressed={activeSection === "secteurs"}
+        onClick={() => setActiveSection("secteurs")}
+      >
+        <Layers3 className="mr-2 h-4 w-4" /> Secteurs
       </Button>
     </div>
     {query.isPending ? <Skeleton className="h-96 rounded-xl" /> :
@@ -115,7 +135,7 @@ export default function AdminReferentiel() {
             </div>
           </section>)}
         </CardContent>
-      </Card> : <Card className="overflow-hidden shadow-sm">
+      </Card> : activeSection === "maitrises-ouvrage" ? <Card className="overflow-hidden shadow-sm">
         <div className="p-5 border-b bg-muted/30 space-y-4">
           <div><h2 className="font-semibold text-lg">Catalogue des organismes</h2><p className="text-sm text-muted-foreground">Recherchez par nom pour retrouver rapidement une entrée.</p></div>
           <div className="relative max-w-lg">
@@ -163,8 +183,32 @@ export default function AdminReferentiel() {
             </Button>
           </nav>
         </footer>
+      </Card> : <Card className="overflow-hidden shadow-sm">
+        <div className="p-5 border-b bg-muted/30 space-y-4">
+          <div><h2 className="font-semibold text-lg">Catalogue des secteurs</h2><p className="text-sm text-muted-foreground">Les modifications apportées ici seront proposées dans les conventions. Renommer un secteur met aussi à jour les conventions existantes.</p></div>
+          <div className="relative max-w-lg">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={sectorSearch}
+              data-testid="input-search-sector"
+              onChange={event => setSectorSearch(event.target.value)}
+              aria-label="Rechercher un secteur"
+              placeholder="Rechercher un secteur…"
+              className="pl-9 pr-9 bg-card"
+            />
+            {sectorSearch && <button type="button" data-testid="button-clear-sector-search" onClick={() => setSectorSearch("")} aria-label="Effacer la recherche" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted"><X className="h-3.5 w-3.5" /></button>}
+          </div>
+          <p className="text-sm text-muted-foreground" aria-live="polite"><span className="font-semibold text-foreground">{filteredSecteurs.length}</span> résultat{filteredSecteurs.length === 1 ? "" : "s"}{sectorSearch && ` pour « ${sectorSearch} »`}</p>
+        </div>
+        {filteredSecteurs.length ? <div className="divide-y">
+          {filteredSecteurs.map((item, index) => <div key={item.id} data-testid={`row-sector-${item.id}`} className="grid grid-cols-[32px_minmax(0,1fr)_40px] items-center gap-3 px-4 py-3 sm:grid-cols-[36px_minmax(0,1fr)_80px] sm:px-6">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted font-mono text-[10px] text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
+            <span className="min-w-0 text-sm" dir="auto">{item.nom}</span>
+            <Button size="sm" variant="ghost" data-testid={`button-rename-sector-${item.id}`} aria-label={`Renommer ${item.nom}`} onClick={() => begin({ kind: "secteurs", id: item.id, nom: item.nom })} className="justify-self-end"><Pencil className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Renommer</span></Button>
+          </div>)}
+        </div> : <div className="py-16 text-center text-muted-foreground">{sectorSearch ? "Aucun secteur trouvé." : "Aucun secteur enregistré."}</div>}
       </Card>}
-    <Dialog open={!!draft} onOpenChange={open => { if (!open && !mutation.isPending) setDraft(null); }}><DialogContent><DialogHeader><DialogTitle>{draft?.id == null ? "Ajouter" : "Renommer"} {draft ? `une ${labels[draft.kind]}` : ""}</DialogTitle><DialogDescription>{draft?.parentLabel ? `Dans « ${draft.parentLabel} ». ` : ""}Les noms sont utilisés dans les comptes et les conventions. Aucun élément ne peut être supprimé ici.</DialogDescription></DialogHeader>
+    <Dialog open={!!draft} onOpenChange={open => { if (!open && !mutation.isPending) setDraft(null); }}><DialogContent><DialogHeader><DialogTitle>{draft?.id == null ? "Ajouter" : "Renommer"} {draft ? `${draft.kind === "secteurs" ? "un" : "une"} ${labels[draft.kind]}` : ""}</DialogTitle><DialogDescription>{draft?.parentLabel ? `Dans « ${draft.parentLabel} ». ` : ""}Les noms sont utilisés dans les comptes et les conventions. Aucun élément ne peut être supprimé ici.</DialogDescription></DialogHeader>
       <form onSubmit={save} className="space-y-4"><div className="space-y-1.5"><label htmlFor="reference-name" className="text-sm font-medium">Nom</label><Input id="reference-name" data-testid="input-reference-name" autoFocus required maxLength={255} value={draft?.nom ?? ""} onChange={event => setDraft(previous => previous ? { ...previous, nom: event.target.value } : null)} /></div>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => setDraft(null)}>Annuler</Button><Button type="submit" disabled={mutation.isPending || !draft?.nom.trim()}>{mutation.isPending ? "Enregistrement…" : "Enregistrer"}</Button></div></form>
     </DialogContent></Dialog>
   </div>;

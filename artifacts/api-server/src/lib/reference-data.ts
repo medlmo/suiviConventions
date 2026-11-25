@@ -7,8 +7,10 @@ import {
   maitrisesOuvrageTable,
   servicesTable,
   servicesDgsTable,
+  secteursTable,
 } from "@workspace/db";
 import { organisation as organisationHistorique } from "@workspace/organisation";
+import { DEFAULT_SECTEURS } from "./secteur-options";
 import {
   buildReferenceData, isKnownDirectorate, isKnownProjectOwner, type ReferenceData,
 } from "./reference-data-domain";
@@ -33,6 +35,18 @@ async function initializeReferenceData(): Promise<void> {
         { nom: "Service Coopération" },
         { nom: "Service Juridique" },
       ]);
+    }
+    await tx.insert(secteursTable)
+      .values(DEFAULT_SECTEURS.map((nom) => ({ nom })))
+      .onConflictDoNothing({ target: secteursTable.nom });
+    const conventionsExistantes = await tx.select({ secteur: conventionsTable.secteur }).from(conventionsTable);
+    const secteursHistoriques = [...new Set(conventionsExistantes
+      .map(({ secteur }) => secteur?.trim())
+      .filter((secteur): secteur is string => !!secteur))];
+    if (secteursHistoriques.length) {
+      await tx.insert(secteursTable)
+        .values(secteursHistoriques.map((nom) => ({ nom })))
+        .onConflictDoNothing({ target: secteursTable.nom });
     }
     const [alreadyInitialized] = await tx.select({ id: directionsTable.id }).from(directionsTable).limit(1);
     if (alreadyInitialized) return;
@@ -108,5 +122,6 @@ export async function loadReferenceDataFrom(executor: ReferenceExecutor): Promis
   const services = await executor.select().from(servicesTable).orderBy(asc(servicesTable.id));
   const servicesDgs = await executor.select().from(servicesDgsTable).orderBy(asc(servicesDgsTable.id));
   const maitrisesOuvrage = await executor.select().from(maitrisesOuvrageTable).orderBy(asc(maitrisesOuvrageTable.id));
-  return buildReferenceData({ directions, divisions, services, servicesDgs, maitrisesOuvrage });
+  const secteurs = await executor.select().from(secteursTable).orderBy(asc(secteursTable.id));
+  return buildReferenceData({ directions, divisions, services, servicesDgs, maitrisesOuvrage, secteurs });
 }

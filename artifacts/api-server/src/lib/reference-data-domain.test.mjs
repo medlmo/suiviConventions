@@ -23,6 +23,7 @@ const lignes = {
   ],
   servicesDgs: [{ id: 300, nom: "Service Coopération" }],
   maitrisesOuvrage: [{ id: 400, nom: "Commune A" }],
+  secteurs: [{ id: 500, nom: "Tourisme" }],
 };
 
 test("construireReferentiel relie chaque division à sa direction et chaque service à sa division", () => {
@@ -55,6 +56,7 @@ test("construireReferentiel relie chaque division à sa direction et chaque serv
     ],
     maitrisesOuvrage: [{ id: 400, nom: "Commune A" }],
     servicesDgs: [{ id: 300, nom: "Service Coopération" }],
+    secteurs: [{ id: 500, nom: "Tourisme" }],
   });
 });
 
@@ -65,10 +67,12 @@ test("construireReferentiel conserve directions sans division et gère des liste
     services: [],
     servicesDgs: [],
     maitrisesOuvrage: [],
+    secteurs: [],
   }), {
     organisation: [{ id: 1, direction: "Direction vide", divisions: [] }],
     maitrisesOuvrage: [],
     servicesDgs: [],
+    secteurs: [],
   });
   assert.deepEqual(construireReferentiel({
     directions: [],
@@ -76,7 +80,8 @@ test("construireReferentiel conserve directions sans division et gère des liste
     services: [],
     servicesDgs: [],
     maitrisesOuvrage: [],
-  }), { organisation: [], maitrisesOuvrage: [], servicesDgs: [] });
+    secteurs: [],
+  }), { organisation: [], maitrisesOuvrage: [], servicesDgs: [], secteurs: [] });
 });
 
 test("directionConnue et maitriseOuvrageConnue distinguent les valeurs présentes", () => {

@@ -6,6 +6,7 @@ export interface ReferenceData {
   }[];
   maitrisesOuvrage: { id: number; nom: string }[];
   servicesDgs: { id: number; nom: string }[];
+  secteurs: { id: number; nom: string }[];
 }
 
 export type ReferenceDataRows = {
@@ -14,10 +15,11 @@ export type ReferenceDataRows = {
   services: { id: number; divisionId: number; nom: string }[];
   servicesDgs: { id: number; nom: string }[];
   maitrisesOuvrage: { id: number; nom: string }[];
+  secteurs: { id: number; nom: string }[];
 };
 
 export function buildReferenceData(rows: ReferenceDataRows): ReferenceData {
-  const { directions, divisions, services, servicesDgs, maitrisesOuvrage } = rows;
+  const { directions, divisions, services, servicesDgs, maitrisesOuvrage, secteurs } = rows;
   return {
     organisation: directions.map((direction) => ({
       id: direction.id,
@@ -31,6 +33,7 @@ export function buildReferenceData(rows: ReferenceDataRows): ReferenceData {
     })),
     maitrisesOuvrage: maitrisesOuvrage.map(({ id, nom }) => ({ id, nom })),
     servicesDgs: servicesDgs.map(({ id, nom }) => ({ id, nom })),
+    secteurs: secteurs.map(({ id, nom }) => ({ id, nom })),
   };
 }
 

@@ -1369,7 +1369,7 @@ components:
 
     ReferenceDataKind:
       type: string
-      enum: [directions, divisions, services, services-dgs, maitrises-ouvrage]
+      enum: [directions, divisions, services, services-dgs, maitrises-ouvrage, secteurs]
     ReferenceService:
       type: object
       required: [id, nom]
@@ -1396,7 +1396,7 @@ components:
           items: { $ref: "#/components/schemas/ReferenceDivision" }
     ReferenceData:
       type: object
-      required: [organisation, servicesDgs, maitrisesOuvrage]
+      required: [organisation, servicesDgs, maitrisesOuvrage, secteurs]
       properties:
         organisation:
           type: array
@@ -1406,6 +1406,9 @@ components:
           description: Services directement rattachés à la Direction Générale des Services, sans direction ni division intermédiaire.
           items: { $ref: "#/components/schemas/ReferenceService" }
         maitrisesOuvrage:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceService" }
+        secteurs:
           type: array
           items: { $ref: "#/components/schemas/ReferenceService" }
     ReferenceDataInput:

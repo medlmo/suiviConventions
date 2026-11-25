@@ -7,6 +7,7 @@ import {
   maitrisesOuvrageTable,
   servicesTable,
   servicesDgsTable,
+  secteursTable,
   usersTable,
 } from "@workspace/db";
 import { DIRECTION_GENERALE_SERVICES } from "@workspace/organisation";
@@ -17,6 +18,7 @@ const REFERENCE_DATA_KINDS = [
   "services",
   "services-dgs",
   "maitrises-ouvrage",
+  "secteurs",
 ] as const;
 
 export type ReferenceDataKind = (typeof REFERENCE_DATA_KINDS)[number];
@@ -81,7 +83,7 @@ export async function renameReferenceDataEntry(
             ? sql`${conventionsTable.rattachement} = ${DIRECTION_GENERALE_SERVICES}`
             : sql`${conventionsTable.rattachement} IS DISTINCT FROM ${DIRECTION_GENERALE_SERVICES}`
         }`);
-    } else {
+    } else if (kind === "maitrises-ouvrage") {
       const [current] = await tx.select().from(maitrisesOuvrageTable)
         .where(eq(maitrisesOuvrageTable.id, id)).for("update");
       if (!current) return false;
@@ -121,6 +123,15 @@ export async function renameReferenceDataEntry(
         OR ${conventionsTable.provincesPrefectures} @> ARRAY[${current.nom}]::text[]
         OR ${conventionsTable.communes} @> ARRAY[${current.nom}]::text[]
       `);
+    } else {
+      const [current] = await tx.select().from(secteursTable).where(eq(secteursTable.id, id)).for("update");
+      if (!current) return false;
+      await tx.update(secteursTable).set({ nom }).where(eq(secteursTable.id, id));
+      await tx.update(conventionsTable).set({
+        secteur: nom,
+        updatedAt: new Date(),
+        version: sql`${conventionsTable.version} + 1`,
+      }).where(eq(conventionsTable.secteur, current.nom));
     }
     return true;
   });

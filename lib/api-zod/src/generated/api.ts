@@ -324,6 +324,10 @@ export const GetReferenceDataResponse = zod.object({
   "maitrisesOuvrage": zod.array(zod.object({
   "id": zod.int(),
   "nom": zod.string()
+})),
+  "secteurs": zod.array(zod.object({
+  "id": zod.int(),
+  "nom": zod.string()
 }))
 })
 
@@ -332,7 +336,7 @@ export const GetReferenceDataResponse = zod.object({
  * @summary Ajouter une entrée au référentiel (administrateur uniquement)
  */
 export const CreateReferenceDataEntryParams = zod.object({
-  "kind": zod.enum(['directions', 'divisions', 'services', 'services-dgs', 'maitrises-ouvrage'])
+  "kind": zod.enum(['directions', 'divisions', 'services', 'services-dgs', 'maitrises-ouvrage', 'secteurs'])
 })
 
 export const createReferenceDataEntryBodyNomMax = 255;
@@ -365,6 +369,10 @@ export const CreateReferenceDataEntryResponse = zod.object({
   "maitrisesOuvrage": zod.array(zod.object({
   "id": zod.int(),
   "nom": zod.string()
+})),
+  "secteurs": zod.array(zod.object({
+  "id": zod.int(),
+  "nom": zod.string()
 }))
 })
 
@@ -376,7 +384,7 @@ export const CreateReferenceDataEntryResponse = zod.object({
 
 
 export const RenameReferenceDataEntryParams = zod.object({
-  "kind": zod.enum(['directions', 'divisions', 'services', 'services-dgs', 'maitrises-ouvrage']),
+  "kind": zod.enum(['directions', 'divisions', 'services', 'services-dgs', 'maitrises-ouvrage', 'secteurs']),
   "id": zod.coerce.number().int().min(1)
 })
 
@@ -406,6 +414,10 @@ export const RenameReferenceDataEntryResponse = zod.object({
   "nom": zod.string()
 })).describe('Services directement rattachés à la Direction Générale des Services, sans direction ni division intermédiaire.'),
   "maitrisesOuvrage": zod.array(zod.object({
+  "id": zod.int(),
+  "nom": zod.string()
+})),
+  "secteurs": zod.array(zod.object({
   "id": zod.int(),
   "nom": zod.string()
 }))

@@ -39,7 +39,7 @@ import {
 } from "@/components/maitrise-ouvrage-select";
 import { useReferenceData } from "@/hooks/use-reference-data";
 import { calculerEcheance } from "@/lib/echeances";
-import { INITIATEUR_OPTIONS, SECTEUR_OPTIONS } from "@/lib/convention-options";
+import { INITIATEUR_OPTIONS } from "@/lib/convention-options";
 import { ArrowLeft, Save, CalendarIcon, FileText, Info, Wallet } from "lucide-react";
 
 // Un champ montant vidé doit repartir à NULL, pas à 0 : z.coerce.number()
@@ -394,7 +394,7 @@ export default function ConventionCreate() {
                     <SearchableOptionSelect
                       value={field.value}
                       onChange={field.onChange}
-                      options={SECTEUR_OPTIONS}
+                      options={(reference.data?.secteurs ?? []).map(({ nom }) => nom)}
                       label="Secteur"
                       placeholder="Choisir un secteur"
                     />

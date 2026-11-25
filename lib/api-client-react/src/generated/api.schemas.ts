@@ -721,6 +721,7 @@ export const ReferenceDataKind = {
   services: 'services',
   'services-dgs': 'services-dgs',
   'maitrises-ouvrage': 'maitrises-ouvrage',
+  secteurs: 'secteurs',
 } as const;
 
 export interface ReferenceService {
@@ -745,6 +746,7 @@ export interface ReferenceData {
   /** Services directement rattachés à la Direction Générale des Services, sans direction ni division intermédiaire. */
   servicesDgs: ReferenceService[];
   maitrisesOuvrage: ReferenceService[];
+  secteurs: ReferenceService[];
 }
 
 export interface ReferenceDataInput {

@@ -7,24 +7,3 @@ export const INITIATEUR_OPTIONS = [
   "Collectivités territoriales",
   "Associations",
 ] as const;
-
-export const SECTEUR_OPTIONS = [
-  "Tourisme",
-  "Emploi",
-  "Soutien à l’investissement et aux entreprises",
-  "Santé",
-  "Artisanat",
-  "Routes",
-  "Pêche maritime et aquaculture",
-  "Agriculture",
-  "Aménagement du territoire et transport",
-  "Éducation",
-  "Formation professionnelle",
-  "Action sociale",
-  "Économie sociale et solidaire",
-  "Développement rural",
-  "Sport",
-  "Atténuation des effets des catastrophes naturelles et des inondations",
-  "Coopération internationale",
-  "Accélération industrielle",
-] as const;

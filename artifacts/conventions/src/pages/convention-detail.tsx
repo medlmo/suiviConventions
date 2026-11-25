@@ -53,7 +53,7 @@ import {
 } from "@/components/maitrise-ouvrage-select";
 import { useReferenceData } from "@/hooks/use-reference-data";
 import { calculerEcheance } from "@/lib/echeances";
-import { INITIATEUR_OPTIONS, SECTEUR_OPTIONS } from "@/lib/convention-options";
+import { INITIATEUR_OPTIONS } from "@/lib/convention-options";
 import { AlerteBadge } from "@/components/alerte-badge";
 import { ArrowLeft, AlertTriangle, Save, Trash2, CalendarIcon, FileText, Info, Building, Wallet, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -707,7 +707,7 @@ export default function ConventionDetail() {
                         <SearchableOptionSelect
                           value={field.value}
                           onChange={field.onChange}
-                          options={SECTEUR_OPTIONS}
+                          options={(reference.data?.secteurs ?? []).map(({ nom }) => nom)}
                           label="Secteur"
                           placeholder="Choisir un secteur"
                         />
