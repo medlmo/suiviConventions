@@ -41,6 +41,12 @@ function montant(value?: number | null): string {
   }).format(value);
 }
 
+function pourcentageContributionRegion(contribution?: number | null, enveloppe?: number | null): string {
+  if (contribution == null || enveloppe == null || enveloppe <= 0) return "—";
+  const pourcentage = (contribution / enveloppe) * 100;
+  return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(pourcentage)} %`;
+}
+
 function montantCentimes(value: number): bigint {
   return BigInt(Math.round(value * 100));
 }
@@ -405,6 +411,8 @@ function texte(value: string, bold = false, color = BLACK): Paragraph {
 
 function ligne(label: string, value: string | string[] | null | undefined, bold = false): TableRow {
   const values = Array.isArray(value) ? value.filter(Boolean) : value?.trim() ? [value] : [];
+  const elements = values.flatMap(item => item.split(/\r?\n/u));
+  const afficherPuces = elements.length > 1;
   return new TableRow({
     children: [
       new TableCell({
@@ -415,8 +423,8 @@ function ligne(label: string, value: string | string[] | null | undefined, bold 
       new TableCell({
         width: { size: WIDTH - 2900, type: WidthType.DXA },
         margins: { top: 100, bottom: 90, left: 180, right: 180 },
-        children: values.length
-          ? values.flatMap(item => item.split(/\r?\n/u).map(part => texte(part || " ", bold)))
+        children: elements.length
+          ? elements.map(part => texte(afficherPuces ? `• ${part || " "}` : part || " ", bold))
           : [texte(EMPTY, false, BLACK)],
       }),
     ],
@@ -463,8 +471,8 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
     ligne("Intitulé de la convention (français)", convention.objetConventionFr),
     rubrique("II. IDENTIFICATION"),
     ligne("Session", [
-      dateFr(convention.session),
       ...(convention.typeSession ? [`Session ${convention.typeSession.toLocaleLowerCase("fr")}`] : []),
+      dateFr(convention.session),
     ]),
     ligne("Objet", convention.nature),
     ligne("Initiateur", convention.initiateur),
@@ -482,6 +490,11 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
     rubrique("V. FINANCEMENT"),
     ligne("Enveloppe budgétaire (MAD)", montant(convention.enveloppeBudgetaire), true),
     ligne("Contribution de la Région (MAD)", montant(convention.contributionRegion), true),
+    ligne(
+      "Contribution de la Région (%)",
+      pourcentageContributionRegion(convention.contributionRegion, convention.enveloppeBudgetaire),
+      true,
+    ),
   ];
   return Packer.toBuffer(new Document({
     creator: "Région Souss Massa", title: `Fiche technique — Convention ${convention.id}`,
