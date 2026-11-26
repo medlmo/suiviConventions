@@ -11,9 +11,10 @@ import { isRegionalPartner } from "./situation-versements";
 const NAVY = "17365D";
 const GOLD = "C38B37";
 const LIGHT = "F3F6FA";
-const MUTED = "64748B";
+const BLACK = "000000";
 const FONT = "Georgia";
 const FONT_SIZE = 24;
+const TITLE_SIZE = 28;
 const NONE = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 const RULE = { style: BorderStyle.SINGLE, size: 4, color: "DFE5ED" };
 const WIDTH = 9800;
@@ -69,7 +70,7 @@ function celluleMontage(
         font: FONT,
         size: FONT_SIZE,
         bold: options.bold ?? false,
-        color: options.color ?? NAVY,
+        color: options.color ?? BLACK,
         rightToLeft: rtl,
       })],
     })],
@@ -86,7 +87,7 @@ function ligneEnteteMontage(columnSpan = 1): TableRow {
       children: [new Paragraph({
         keepNext: true,
         spacing: { after: 0 },
-        children: [new TextRun({ text: "06  MONTAGE FINANCIER (MAD)", font: FONT, bold: true, size: FONT_SIZE, color: "FFFFFF" })],
+        children: [new TextRun({ text: "VI. MONTAGE FINANCIER (MAD)", font: FONT, bold: true, size: FONT_SIZE, color: "FFFFFF" })],
       })],
     })],
   });
@@ -204,7 +205,7 @@ function tableauSituationVersements(convention: ConventionApi): Table {
           keepNext: true,
           spacing: { after: 0 },
           children: [new TextRun({
-            text: "07  SITUATION DES VERSEMENTS DES PARTENAIRES (MAD)",
+            text: "VII. SITUATION DES VERSEMENTS DES PARTENAIRES (MAD)",
             font: FONT,
             bold: true,
             size: FONT_SIZE,
@@ -222,7 +223,7 @@ function tableauSituationVersements(convention: ConventionApi): Table {
         columnSpan: largeurs.length,
         shading: { fill: LIGHT },
         margins: { top: 90, bottom: 80, left: 100, right: 100 },
-        children: [texte("Aucune situation des versements n'est renseignée.", false, MUTED)],
+        children: [texte("Aucune situation des versements n'est renseignée.", false, BLACK)],
       })],
     }));
   } else {
@@ -257,10 +258,10 @@ function tableauSituationVersements(convention: ConventionApi): Table {
           : `${(Number(totalCentimes) / Number(contributionCentimes) * 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %`;
       const dates = ligne.tranches.length > 0
         ? ligne.tranches.map(tranche => texte(dateFr(tranche.dateVersement)))
-        : [texte("—", false, MUTED)];
+        : [texte("—", false, BLACK)];
       const montantsTranches = ligne.tranches.length > 0
         ? ligne.tranches.map(tranche => texte(montant(tranche.montant)))
-        : [texte("—", false, MUTED)];
+        : [texte("—", false, BLACK)];
 
       rows.push(new TableRow({
         cantSplit: false,
@@ -323,7 +324,7 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
           keepNext: true,
           spacing: { after: 0 },
           children: [new TextRun({
-            text: "08  AVANCEMENT PHYSIQUE DU PROJET",
+            text: "VIII. AVANCEMENT PHYSIQUE DU PROJET",
             font: FONT,
             bold: true,
             size: FONT_SIZE,
@@ -344,7 +345,7 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
         children: [texte(
           "La nature actuelle du projet ne relève pas du suivi physique ; l’historique conservé est présenté ci-dessous.",
           false,
-          MUTED,
+          BLACK,
         )],
       })],
     }));
@@ -356,7 +357,7 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
       children: [new TableCell({
         columnSpan: largeurs.length,
         margins: { top: 90, bottom: 80, left: 100, right: 100 },
-        children: [texte("Aucun avancement physique n'a encore été constaté pour ce projet.", false, MUTED)],
+        children: [texte("Aucun avancement physique n'a encore été constaté pour ce projet.", false, BLACK)],
       })],
     }));
   } else {
@@ -390,7 +391,7 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
   })];
 }
 
-function texte(value: string, bold = false, color = NAVY): Paragraph {
+function texte(value: string, bold = false, color = BLACK): Paragraph {
   const rtl = /[\u0600-\u06FF]/u.test(value);
   return new Paragraph({
     bidirectional: rtl,
@@ -416,7 +417,7 @@ function ligne(label: string, value: string | string[] | null | undefined, bold 
         margins: { top: 100, bottom: 90, left: 180, right: 180 },
         children: values.length
           ? values.flatMap(item => item.split(/\r?\n/u).map(part => texte(part || " ", bold)))
-          : [texte(EMPTY, false, MUTED)],
+          : [texte(EMPTY, false, BLACK)],
       }),
     ],
   });
@@ -450,17 +451,17 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
     spacing: { before: 100 },
     alignment: AlignmentType.RIGHT,
     children: [
-      new TextRun({ text: "Page ", font: FONT, color: MUTED, size: FONT_SIZE }),
-      new TextRun({ children: [PageNumber.CURRENT], font: FONT, color: MUTED, size: FONT_SIZE }),
-      new TextRun({ text: " / ", font: FONT, color: MUTED, size: FONT_SIZE }),
-      new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, color: MUTED, size: FONT_SIZE }),
+      new TextRun({ text: "Page ", font: FONT, color: BLACK, size: FONT_SIZE }),
+      new TextRun({ children: [PageNumber.CURRENT], font: FONT, color: BLACK, size: FONT_SIZE }),
+      new TextRun({ text: " / ", font: FONT, color: BLACK, size: FONT_SIZE }),
+      new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, color: BLACK, size: FONT_SIZE }),
     ],
   })] });
   const rows = [
-    rubrique("01  OBJET DE LA CONVENTION"),
+    rubrique("I. OBJET DE LA CONVENTION"),
     ligne("Intitulé de la convention (arabe)", convention.nomConvention),
     ligne("Intitulé de la convention (français)", convention.objetConventionFr),
-    rubrique("02  IDENTIFICATION"),
+    rubrique("II. IDENTIFICATION"),
     ligne("Session", [
       dateFr(convention.session),
       ...(convention.typeSession ? [`Session ${convention.typeSession.toLocaleLowerCase("fr")}`] : []),
@@ -470,29 +471,29 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
     ligne("Secteur", convention.secteur),
     ligne("Compétence", convention.competence),
     ligne("Date de Visa", dateFr(convention.dateVisa)),
-    rubrique("03  LOCALISATION"),
+    rubrique("III. LOCALISATION"),
     ligne("Province(s) / préfecture(s)", convention.provincesPrefectures),
     ligne("Commune(s)", convention.communes),
-    rubrique("04  PARTIES PRENANTES"),
+    rubrique("IV. PARTIES PRENANTES"),
     ligne("Partenaires", convention.partenaires),
     ligne("Porteur du projet", convention.porteurProjet),
     ligne("Maîtrise d'ouvrage", convention.maitriseOuvrage),
     ligne("Maîtrise d'ouvrage déléguée", convention.maitriseOuvrageDeleguee),
-    rubrique("05  FINANCEMENT"),
+    rubrique("V. FINANCEMENT"),
     ligne("Enveloppe budgétaire (MAD)", montant(convention.enveloppeBudgetaire), true),
     ligne("Contribution de la Région (MAD)", montant(convention.contributionRegion), true),
   ];
   return Packer.toBuffer(new Document({
     creator: "Région Souss Massa", title: `Fiche technique — Convention ${convention.id}`,
     description: "Fiche technique de convention de partenariat",
-    styles: { default: { document: { run: { font: FONT, size: FONT_SIZE, color: NAVY, language: { value: "fr-MA", bidirectional: "ar-MA" } } } } },
+    styles: { default: { document: { run: { font: FONT, size: FONT_SIZE, color: BLACK, language: { value: "fr-MA", bidirectional: "ar-MA" } } } } },
     sections: [{
       properties: { page: { size: { width: 11906, height: 16838 },
         margin: { top: 1900, bottom: 1000, left: 1050, right: 1050, header: 320, footer: 450 } } },
       headers: { default: header }, footers: { default: footer },
       children: [
         new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [new TextRun({
-          text: "FICHE TECHNIQUE", font: FONT, bold: true, size: FONT_SIZE, color: NAVY,
+          text: "FICHE TECHNIQUE", font: FONT, bold: true, size: TITLE_SIZE, color: BLACK,
         })] }),
         new Paragraph({
           alignment: AlignmentType.RIGHT,
@@ -501,7 +502,7 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
             text: `Fiche générée le ${dateGenerationFr(dateGeneration)}`,
             font: FONT,
             size: FONT_SIZE,
-            color: MUTED,
+            color: BLACK,
           })],
         }),
         new Table({
