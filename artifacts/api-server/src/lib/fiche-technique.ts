@@ -12,6 +12,8 @@ const NAVY = "17365D";
 const GOLD = "C38B37";
 const LIGHT = "F3F6FA";
 const MUTED = "64748B";
+const FONT = "Georgia";
+const FONT_SIZE = 24;
 const NONE = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 const RULE = { style: BorderStyle.SINGLE, size: 4, color: "DFE5ED" };
 const WIDTH = 9800;
@@ -64,8 +66,8 @@ function celluleMontage(
       spacing: { before: 0, after: 0, line: 240 },
       children: [new TextRun({
         text: value,
-        font: "Arial",
-        size: 18,
+        font: FONT,
+        size: FONT_SIZE,
         bold: options.bold ?? false,
         color: options.color ?? NAVY,
         rightToLeft: rtl,
@@ -84,7 +86,7 @@ function ligneEnteteMontage(columnSpan = 1): TableRow {
       children: [new Paragraph({
         keepNext: true,
         spacing: { after: 0 },
-        children: [new TextRun({ text: "06  MONTAGE FINANCIER (MAD)", bold: true, size: 21, color: "FFFFFF" })],
+        children: [new TextRun({ text: "06  MONTAGE FINANCIER (MAD)", font: FONT, bold: true, size: FONT_SIZE, color: "FFFFFF" })],
       })],
     })],
   });
@@ -203,8 +205,9 @@ function tableauSituationVersements(convention: ConventionApi): Table {
           spacing: { after: 0 },
           children: [new TextRun({
             text: "07  SITUATION DES VERSEMENTS DES PARTENAIRES (MAD)",
+            font: FONT,
             bold: true,
-            size: 21,
+            size: FONT_SIZE,
             color: "FFFFFF",
           })],
         })],
@@ -321,8 +324,9 @@ function tableauAvancementPhysique(convention: ConventionApi): Table[] {
           spacing: { after: 0 },
           children: [new TextRun({
             text: "08  AVANCEMENT PHYSIQUE DU PROJET",
+            font: FONT,
             bold: true,
-            size: 21,
+            size: FONT_SIZE,
             color: "FFFFFF",
           })],
         })],
@@ -393,7 +397,7 @@ function texte(value: string, bold = false, color = NAVY): Paragraph {
     alignment: rtl ? AlignmentType.RIGHT : AlignmentType.LEFT,
     spacing: { before: 0, after: 60, line: 260 },
     children: [new TextRun({
-      text: value, font: "Arial", size: 20, bold, color, rightToLeft: rtl,
+      text: value, font: FONT, size: FONT_SIZE, bold, color, rightToLeft: rtl,
     })],
   });
 }
@@ -426,7 +430,7 @@ function rubrique(label: string): TableRow {
       margins: { top: 100, bottom: 80, left: 140, right: 140 },
       children: [new Paragraph({
         keepNext: true, spacing: { after: 40 },
-        children: [new TextRun({ text: label, bold: true, size: 21, color: "FFFFFF" })],
+        children: [new TextRun({ text: label, font: FONT, bold: true, size: FONT_SIZE, color: "FFFFFF" })],
       })],
     })],
   });
@@ -446,10 +450,10 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
     spacing: { before: 100 },
     alignment: AlignmentType.RIGHT,
     children: [
-      new TextRun({ text: "Page ", color: MUTED, size: 17 }),
-      new TextRun({ children: [PageNumber.CURRENT], color: MUTED, size: 17 }),
-      new TextRun({ text: " / ", color: MUTED, size: 17 }),
-      new TextRun({ children: [PageNumber.TOTAL_PAGES], color: MUTED, size: 17 }),
+      new TextRun({ text: "Page ", font: FONT, color: MUTED, size: FONT_SIZE }),
+      new TextRun({ children: [PageNumber.CURRENT], font: FONT, color: MUTED, size: FONT_SIZE }),
+      new TextRun({ text: " / ", font: FONT, color: MUTED, size: FONT_SIZE }),
+      new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, color: MUTED, size: FONT_SIZE }),
     ],
   })] });
   const rows = [
@@ -481,21 +485,22 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
   return Packer.toBuffer(new Document({
     creator: "Région Souss Massa", title: `Fiche technique — Convention ${convention.id}`,
     description: "Fiche technique de convention de partenariat",
-    styles: { default: { document: { run: { font: "Arial", size: 20, color: NAVY, language: { value: "fr-MA", bidirectional: "ar-MA" } } } } },
+    styles: { default: { document: { run: { font: FONT, size: FONT_SIZE, color: NAVY, language: { value: "fr-MA", bidirectional: "ar-MA" } } } } },
     sections: [{
       properties: { page: { size: { width: 11906, height: 16838 },
         margin: { top: 1900, bottom: 1000, left: 1050, right: 1050, header: 320, footer: 450 } } },
       headers: { default: header }, footers: { default: footer },
       children: [
         new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [new TextRun({
-          text: "FICHE TECHNIQUE", bold: true, size: 36, color: NAVY,
+          text: "FICHE TECHNIQUE", font: FONT, bold: true, size: FONT_SIZE, color: NAVY,
         })] }),
         new Paragraph({
           alignment: AlignmentType.RIGHT,
           spacing: { before: 0, after: 160 },
           children: [new TextRun({
             text: `Fiche générée le ${dateGenerationFr(dateGeneration)}`,
-            size: 17,
+            font: FONT,
+            size: FONT_SIZE,
             color: MUTED,
           })],
         }),
