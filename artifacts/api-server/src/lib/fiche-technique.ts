@@ -488,12 +488,11 @@ export async function generateTechnicalSheet(convention: ConventionApi): Promise
     ligne("Maîtrise d'ouvrage", convention.maitriseOuvrage),
     ligne("Maîtrise d'ouvrage déléguée", convention.maitriseOuvrageDeleguee),
     rubrique("V. FINANCEMENT"),
-    ligne("Enveloppe budgétaire (MAD)", montant(convention.enveloppeBudgetaire), true),
-    ligne("Contribution de la Région (MAD)", montant(convention.contributionRegion), true),
+    ligne("Enveloppe budgétaire (MAD)", montant(convention.enveloppeBudgetaire)),
+    ligne("Contribution de la Région (MAD)", montant(convention.contributionRegion)),
     ligne(
       "Contribution de la Région (%)",
       pourcentageContributionRegion(convention.contributionRegion, convention.enveloppeBudgetaire),
-      true,
     ),
   ];
   return Packer.toBuffer(new Document({
